@@ -1,0 +1,25 @@
+[
+  {
+    "filename": "server/api/index.ts",
+    "dirs": [
+      "server/api",
+      "server/api/enums",
+      "server/api/interfaces"
+    ]
+  },
+  {
+    "filename": "helpers/index.ts",
+    "dirs": ["helpers"]
+  },
+  {
+    "filename": "content/models/index.ts",
+    "dirs": ["content/models"],
+    "isModel": true,
+    "exclude": ["IFiniteObject.js", "IOption.js"]
+  },
+  {
+    "filename": "content/models.ts",
+    "dirs": ["content/models"],
+    "exclude": ["IFiniteObject.js", "IOption.js"]
+  }
+]

@@ -1,3 +1,4 @@
 *.js
 *.js.map
+content
 __pycache__

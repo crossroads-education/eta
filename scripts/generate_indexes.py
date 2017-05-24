@@ -33,17 +33,17 @@ def generate(config):
     basedir = os.path.dirname(server_dir + config["filename"])
     exclude = config["exclude"] if "exclude" in config else []
     for dirname in config["dirs"]:
-        files = os.listdir(server_dir + dirname)
-        for filename in files:
-            if filename == "index.js" or filename in exclude or not filename.endswith(".js"):
-                continue
-            module_name = filename.split("/")[0].split(".")[0]
-            path = os.path.relpath(server_dir + dirname + "/" + filename, start=basedir)
-            path = ".".join(path.split(".")[0:-1]).replace("\\", "/")
-            if "isModel" in config:
-                lines.append(generate_model(path, module_name))
-            else:
-                lines.append(generate_export(path, module_name))
+        for root, _, files in os.walk(server_dir + dirname):
+            for filename in files:
+                if filename == "index.js" or filename in exclude or not filename.endswith(".js"):
+                    continue
+                module_name = filename.split("/")[0].split(".")[0]
+                path = os.path.relpath(root + "/" + filename, start=basedir)
+                path = ".".join(path.split(".")[0:-1]).replace("\\", "/")
+                if "isModel" in config:
+                    lines.append(generate_model(path, module_name))
+                else:
+                    lines.append(generate_export(path, module_name))
     handle = open(server_dir + config["filename"], "w")
     handle.write("\n".join(lines))
     handle.close()
@@ -56,7 +56,7 @@ def main():
     handle.close()
     for config in configs:
         generate(config)
-    utils.compile_ts()
+    # utils.compile_ts()
 
 if __name__ == "__main__":
     main()

@@ -1,11 +1,7 @@
 [
   {
     "filename": "server/api/index.ts",
-    "dirs": [
-      "server/api",
-      "server/api/enums",
-      "server/api/interfaces"
-    ]
+    "dirs": ["server/api"]
   },
   {
     "filename": "helpers/index.ts",

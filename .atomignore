@@ -1,4 +1,4 @@
 *.js
 *.js.map
-content
+# content
 __pycache__

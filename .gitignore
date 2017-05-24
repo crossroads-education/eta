@@ -1,4 +1,5 @@
 /config/
+/content/
 /logs/
 /node_modules/
 *.js

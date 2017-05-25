@@ -14,6 +14,10 @@ def process_file(filename):
             continue
         if raw_line.startswith("export ") and raw_line.endswith(";"):
             continue
+        if raw_line == "// stop-generate":
+            print("stop-generate encountered in " + filename)
+            real_lines.append("}")
+            break
         real_lines.append(line)
     return real_lines
 
@@ -37,7 +41,7 @@ def main():
     handle = open(content_dir + "config.json", "r")
     content_config = json.loads(handle.read())
     handle.close()
-    lines = ['import * as linq from "linq";']
+    lines = []
     model_dirs = content_config["modelDirs"]
     model_dirs.insert(0, "enums")
     for model_dir in model_dirs:

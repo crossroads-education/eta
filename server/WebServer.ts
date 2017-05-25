@@ -1,3 +1,4 @@
+/// <reference path="../def/express.d.ts"/>
 import * as bodyParser from "body-parser";
 import * as express from "express";
 import * as expressSession from "express-session";
@@ -15,24 +16,27 @@ export default class WebServer {
     /**
     Express application powering the web server
     */
-    private app: express.Application;
+    public app: express.Application;
 
     /**
     Main HTTP(S) web server
     */
-    private server: http.Server | https.Server;
+    public server: http.Server | https.Server;
 
     /**
     Server listening on port 80, in order to redirect HTTP requests to HTTPS
     */
-    private redirectServer?: http.Server = null;
+    public redirectServer?: http.Server = null;
 
     /**
     Routes requests and loads controllers
     */
-    private pageManager: PageManager;
+    public pageManager: PageManager;
 
-    private lifecycleHandlers: eta.ILifecycleHandler[] = [];
+    /**
+    Handle lifecycle events (server start, app start, etc)
+    */
+    public lifecycleHandlers: eta.ILifecycleHandler[] = [];
 
     public constructor() {
         this.setupLifecycleHandlers();
@@ -46,7 +50,11 @@ export default class WebServer {
                     this.setupMiddleware();
                     this.setupListeners();
                     this.setupHttpServer();
-                    this.start();
+                    this.fireLifecycleEvent("beforeServerStart").then(() => {
+                        this.start();
+                    }).catch(err => {
+                        eta.logger.error(err);
+                    });
                 }).catch(err => {
                     eta.logger.error(err);
                 });
@@ -98,7 +106,7 @@ export default class WebServer {
                 }
                 try {
                     let lifecycleHandler: typeof eta.ILifecycleHandler = require(lifecycleDir + filename).default;
-                    this.lifecycleHandlers.push(new (<any>lifecycleHandler)());
+                    this.lifecycleHandlers.push(new (<any>lifecycleHandler)({server: this}));
                 } catch (err) {
                     eta.logger.error(`Couldn't load lifecycle handler ${filename}`);
                     eta.logger.error(err);
@@ -109,9 +117,11 @@ export default class WebServer {
 
     private async fireLifecycleEvent(name: string): Promise<void> {
         for (let i in this.lifecycleHandlers) {
-            let method: () => Promise<void> = (<any>this.lifecycleHandlers[i])[name];
+            let handler: any = (<any>this.lifecycleHandlers[i]);
+            let method: () => Promise<void> = handler[name];
             if (method) {
-                await method();
+                handler.server = this;
+                await method.apply(handler);
             }
         }
     }

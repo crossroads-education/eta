@@ -1,4 +1,3 @@
-/// <reference path="./def/express.d.ts"/>
 require("source-map-support").install();
 import logger from "./server/api/logger"; // Required to setup logger
 import WebServer from "./server/WebServer";

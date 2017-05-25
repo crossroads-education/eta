@@ -4,4 +4,5 @@ export {default as date} from "./date";
 export {default as fs} from "./fs";
 export {default as object} from "./object";
 export {default as path} from "./path";
+export {default as session} from "./session";
 export {default as string} from "./string";

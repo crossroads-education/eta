@@ -13,7 +13,8 @@
   "contributors": [],
   "main": "./server.js",
   "scripts": {
-    "generate": "python ./scripts/export_models.py"
+    "prepare": "npm run generate",
+    "generate": "python ./scripts/export_models.py; python ./scripts/generate_indexes.py"
   },
   "dependencies": {
     "body-parser": "^1.17.1",

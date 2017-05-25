@@ -35,13 +35,18 @@ def generate(config):
     for dirname in config["dirs"]:
         for root, _, files in os.walk(server_dir + dirname):
             for filename in files:
-                if filename == "index.js" or filename in exclude or not filename.endswith(".js"):
+                if filename == "index.js" or not filename.endswith(".js"):
+                    continue
+                if "isModel" not in config and filename in exclude:
                     continue
                 module_name = filename.split("/")[0].split(".")[0]
                 path = os.path.relpath(root + "/" + filename, start=basedir)
                 path = ".".join(path.split(".")[0:-1]).replace("\\", "/")
                 if "isModel" in config:
-                    lines.append(generate_model(path, module_name))
+                    if filename in exclude:
+                        lines.append(generate_export(path, module_name))
+                    else:
+                        lines.append(generate_model(path, module_name))
                 else:
                     lines.append(generate_export(path, module_name))
     handle = open(server_dir + config["filename"], "w")
@@ -49,14 +54,21 @@ def generate(config):
     handle.close()
     print("Wrote to " + config["filename"])
 
-def main():
-    server_dir = utils.get_server_dir()
-    handle = open(server_dir + "indexes.json", "r")
+def handle_config(filename):
+    if not os.path.exists(filename):
+        return
+    handle = open(filename, "r")
     configs = json.loads(handle.read())
     handle.close()
     for config in configs:
         generate(config)
-    # utils.compile_ts()
+
+def main():
+    server_dir = utils.get_server_dir()
+    handle_config(server_dir + "indexes.json")
+    handle_config(server_dir + "content/indexes.json")
+    print("Compiling server-side Typescript...")
+    utils.compile_ts()
 
 if __name__ == "__main__":
     main()

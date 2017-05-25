@@ -6,16 +6,5 @@
   {
     "filename": "helpers/index.ts",
     "dirs": ["helpers"]
-  },
-  {
-    "filename": "content/models/index.ts",
-    "dirs": ["content/models"],
-    "isModel": true,
-    "exclude": ["IFiniteObject.js", "IOption.js"]
-  },
-  {
-    "filename": "content/models.ts",
-    "dirs": ["content/models"],
-    "exclude": ["IFiniteObject.js", "IOption.js"]
   }
 ]

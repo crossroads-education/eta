@@ -52,7 +52,6 @@ def generate(config):
     handle = open(server_dir + config["filename"], "w")
     handle.write("\n".join(lines))
     handle.close()
-    print("Wrote to " + config["filename"])
 
 def handle_config(filename):
     if not os.path.exists(filename):

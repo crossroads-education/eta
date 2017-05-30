@@ -13,7 +13,6 @@
   "contributors": [],
   "main": "./server.js",
   "scripts": {
-    "prepare": "npm run generate",
     "generate": "python ./scripts/export_models.py && python ./scripts/generate_indexes.py"
   },
   "dependencies": {

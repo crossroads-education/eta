@@ -5,6 +5,8 @@ export default class CssTransformer extends api.IViewTransformer {
     private static redirects: {[key: string]: string} = {
         "bootstrap": "https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/css/bootstrap.min.css",
         "jquery-ui": "https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.css",
+        "select2": "https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.3/css/select2.min.css",
+        "select2-bootstrap": "https://cdnjs.cloudflare.com/ajax/libs/select2-bootstrap-css/1.4.6/select2-bootstrap.min.css",
         "source-sans-pro": "https://fonts.googleapis.com/css?family=Source+Sans+Pro:400,500,600,800"
     };
 

@@ -4,6 +4,9 @@ import * as api from "../api";
 export default class CssTransformer extends api.IViewTransformer {
     private static redirects: {[key: string]: string} = {
         "bootstrap": "https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/css/bootstrap.min.css",
+        "bootstrap-datepicker": "https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.6.4/css/bootstrap-datepicker.css",
+        "datatables": "https://cdn.datatables.net/1.10.13/css/dataTables.bootstrap.min.css",
+        "datatables-buttons": "https://cdn.datatables.net/buttons/1.2.4/css/buttons.bootstrap.min.css",
         "jquery-ui": "https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.css",
         "select2": "https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.3/css/select2.min.css",
         "select2-bootstrap": "https://cdnjs.cloudflare.com/ajax/libs/select2-bootstrap-css/1.4.6/select2-bootstrap.min.css",

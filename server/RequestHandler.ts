@@ -128,6 +128,7 @@ export default class RequestHandler extends api.IRequestHandler {
                     val = this.res.raw;
                 } else {
                     val = JSON.stringify(this.res.raw);
+                    this.res.set("Content-Type", "application/json");
                 }
                 this.res.send(val);
                 return;

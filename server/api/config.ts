@@ -24,6 +24,7 @@ export interface IConfiguration {
     dev: IDevConfiguration;
     http: IHttpConfiguration;
     https: IHttpsConfiguration;
+    logger: ILoggerConfiguration;
 }
 
 interface IAuthConfiguration {
@@ -56,4 +57,8 @@ interface IHttpsConfiguration {
     cert?: string;
     key?: string;
     port?: number;
+}
+
+interface ILoggerConfiguration {
+    logDatabaseQueries: boolean;
 }

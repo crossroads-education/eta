@@ -2,6 +2,7 @@ import * as orm from "typeorm";
 import "reflect-metadata";
 import * as helpers from "../../helpers";
 import config from "./config";
+import logger from "./logger";
 
 let conn: orm.Connection;
 export default conn;
@@ -14,6 +15,11 @@ export async function connect(): Promise<orm.Connection> {
     return await orm.createConnection({
         driver: config.db,
         entities: modelDirs,
-        autoSchemaSync: true
+        autoSchemaSync: true,
+        logging: {
+            logger: (l: any, m: any) => { logger.log(l, m); },
+            logOnlyFailedQueries: !config.logger.logDatabaseQueries,
+            logQueries: config.logger.logDatabaseQueries
+        }
     });
 }

@@ -20,7 +20,7 @@ class Logger {
         return filename + ":" + stack.getLineNumber();
     }
 
-    private log(data: string, ...args: any[]): void {
+    private write(data: string, ...args: any[]): void {
         let now: Date = new Date();
         let filename: string = HelperPath.baseDir + "/logs/" + dateFormat(now, "yyyy-mm-dd") + ".log";
         let msg: string = `(${now.toLocaleTimeString()}) [${this.getCalling()}] ${data}`;
@@ -40,23 +40,27 @@ class Logger {
     }
 
     public json(obj: any): void {
-        this.log(`[JSON] ${JSON.stringify(obj)}`);
+        this.write(`[JSON] ${JSON.stringify(obj)}`);
     }
 
     public error(err: Error | string): void {
-        this.log(`[ERROR] `, err);
+        this.write(`[ERROR] `, err);
     }
 
     public warn(msg: string): void {
-        this.log(`[WARN] ${msg}`);
+        this.write(`[WARN] ${msg}`);
     }
 
     public info(msg: string): void {
-        this.log(`[INFO] ${msg}`);
+        this.write(`[INFO] ${msg}`);
     }
 
     public trace(msg: string): void {
-        this.log(`[TRACE] ${msg}`);
+        this.write(`[TRACE] ${msg}`);
+    }
+
+    public log(level: string, msg: any): void {
+        this.write(`[${level}] ${msg}`);
     }
 }
 

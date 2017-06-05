@@ -16,7 +16,6 @@
     "generate": "python ./scripts/export_models.py && python ./scripts/generate_indexes.py"
   },
   "dependencies": {
-    "@types/select2": "^4.0.35",
     "body-parser": "^1.17.1",
     "chokidar": "^1.7.0",
     "connect-pg-simple": "^3.1.2",

@@ -5,7 +5,12 @@ import * as eta from "../eta";
 
 export default class HelperSession {
     public static async getFromRequest(req: http.IncomingMessage): Promise<{[key: string]: any}> {
-        let sid: string = cookie.parse(req.headers.cookie)["connect.sid"];
+        let sid: string;
+        try {
+            sid = cookie.parse(req.headers.cookie)["connect.sid"];
+        } catch (err) {
+            return null;
+        }
         if (!sid) {
             return null;
         }

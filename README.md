@@ -4,7 +4,8 @@ Project Eta is a web server written in Typescript, taking advantage of
 [MVC](https://en.wikipedia.org/wiki/Model-view-controller) patterns
 to improve readability, maintainability, and everything-else-ability when building
 web applications. Project Eta has evolved significantly from its previous iterations,
-built at both @MAC-IUPUI and @crossroads-education.
+built at both [@MAC-IUPUI](https://github.com/MAC-IUPUI) (https://mac.iupui.edu) and
+[@crossroads-education](https://github.com/crossroads-education) (https://crossroadseducation.org).
 
 ## Setup
 

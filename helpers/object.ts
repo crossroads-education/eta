@@ -12,4 +12,15 @@ export default class HelperObject {
         }
         return temp;
     }
+
+    public static merge(from: any, to: any): any {
+        for (let i in from) {
+            if (from[i] instanceof Array && to[i] instanceof Array) {
+                to[i] = to[i].concat(from[i]);
+            } else {
+                to[i] = from[i];
+            }
+        }
+        return from;
+    }
 }

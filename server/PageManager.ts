@@ -10,6 +10,7 @@ let reload: (id: string) => any = require("require-reload")(require);
 
 export default class PageManager {
     private controllers: linq.IEnumerable<typeof api.IHttpController> = null;
+    private staticViewData: {[key: string]: any};
     public constructor() { }
 
     public load(): void {
@@ -26,7 +27,7 @@ export default class PageManager {
                 this.loadController(path);
             });
         }
-        recursiveReaddir(api.constants.controllerPath, ["*.ts"], (err: NodeJS.ErrnoException, files: string[]) => {
+        recursiveReaddir(api.constants.controllerPath, (err: NodeJS.ErrnoException, files: string[]) => {
             if (err) {
                 api.logger.error(`Couldn't read the controller directory (${api.constants.controllerPath}): ${err.message}`);
                 return;
@@ -38,6 +39,18 @@ export default class PageManager {
                     controllers.push(this.loadController(f.replace(/\\/g, "/")));
                 });
             this.controllers = linq.from(controllers);
+        });
+        recursiveReaddir(api.constants.viewPath, (err: NodeJS.ErrnoException, files: string[]) => {
+            if (err) {
+                api.logger.error(`Couldn't read the view directory (${api.constants.viewPath}): ${err.message}`);
+                return;
+            }
+            this.staticViewData = {};
+            linq.from(files)
+                .where(f => f.endsWith(".json"))
+                .forEach(f => {
+                    this.loadStatic(f.replace(/\\/g, "/"));
+                });
         });
     }
 
@@ -51,6 +64,28 @@ export default class PageManager {
         return null;
     }
 
+    private loadStatic(path: string): any {
+        let mvcPath: string = path.substring(api.constants.viewPath.length - 1, path.length - 5);
+        if (this.staticViewData[mvcPath]) {
+            return this.staticViewData[mvcPath];
+        }
+        let view: any;
+        try {
+            view = JSON.parse(fs.readFileSync(path).toString());
+            if (view.include) {
+                view.include.forEach((path: string) => {
+                    path = path.startsWith("/") ? path.substring(1) : path;
+                    let more: any = this.loadStatic(api.constants.viewPath + path);
+                    view = helpers.object.merge(more, view);
+                });
+            }
+        } catch (err) {
+            api.logger.warn("Encountered invalid JSON in " + path);
+            return;
+        }
+        this.staticViewData[mvcPath] = view;
+    }
+
     public handle(req: express.Request, res: express.Response, next: Function): void {
         let tokens: string[] = req.mvcPath.split("/");
         let action: string = tokens.splice(-1, 1)[0];
@@ -58,6 +93,9 @@ export default class PageManager {
         let controllerClass: typeof api.IHttpController = this.controllers
             .where(c => c.prototype.routes.indexOf(route) != -1)
             .firstOrDefault();
+        if (this.staticViewData[req.mvcPath]) {
+            res.view = this.staticViewData[req.mvcPath];
+        }
         new RequestHandler({
             route: route,
             action: action,

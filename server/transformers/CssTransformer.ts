@@ -1,19 +1,29 @@
 import * as express from "express";
+import * as fs from "fs";
 import * as api from "../api";
+import * as helpers from "../../helpers";
 
 export default class CssTransformer extends api.IViewTransformer {
-    private static redirects: {[key: string]: string} = {
-        "bootstrap": "https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/css/bootstrap.min.css",
-        "bootstrap-datepicker": "https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.6.4/css/bootstrap-datepicker.css",
-        "datatables": "https://cdn.datatables.net/1.10.13/css/dataTables.bootstrap.min.css",
-        "datatables-buttons": "https://cdn.datatables.net/buttons/1.2.4/css/buttons.bootstrap.min.css",
-        "jquery-ui": "https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.css",
-        "select2": "https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.3/css/select2.min.css",
-        "select2-bootstrap": "https://cdnjs.cloudflare.com/ajax/libs/select2-bootstrap-css/1.4.6/select2-bootstrap.min.css",
-        "source-sans-pro": "https://fonts.googleapis.com/css?family=Source+Sans+Pro:400,500,600,800"
-    };
+    private static redirects: {[key: string]: string};
+
+    private static init(): void {
+        if (this.redirects) {
+            return;
+        }
+        let filename: string = api.constants.contentPath + "css.json";
+        if (!helpers.fs.existsSync(filename)) {
+            api.logger.warn("CSS redirect file was not found: " + filename);
+            return;
+        }
+        try {
+            this.redirects = JSON.parse(fs.readFileSync(filename).toString());
+        } catch (err) {
+            api.logger.warn("CSS redirect file is not valid JSON: " + filename);
+        }
+    }
 
     public transform(): {[key: string]: any} {
+        CssTransformer.init();
         let view: {[key: string]: any} = this.res.view;
         if (!view["css"]) {
             view["css"] = [];

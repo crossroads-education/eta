@@ -6,14 +6,7 @@ to improve readability, maintainability, and everything-else-ability when buildi
 web applications. Project Eta has evolved significantly from its previous iterations,
 built at both @MAC-IUPUI and @crossroads-education.
 
-## Installation
+## Setup
 
-Clone this repository: `git clone https://github.com/crossroads-education/eta.git`
-
-Install all dependencies: `npm i --only=prod`
-
-Install all type definitions (required for compilation): `npm i --only=dev`
-
-Compile: `tsc`
-
-Put content in the `content` directory.
+Please see [SETUP.md](https://github.com/crossroads-education/eta/blob/master/docs/SETUP.md)
+for instructions on how to set Project Eta up.

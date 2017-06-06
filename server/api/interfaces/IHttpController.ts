@@ -23,6 +23,10 @@ abstract class IHttpController extends IRequestHandler {
         more["result"] = result;
         this.res.raw = more;
     }
+
+    public isLoggedIn(): boolean {
+        return this.req.session && this.req.session["userid"];
+    }
 }
 
 export default IHttpController;

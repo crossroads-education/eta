@@ -32,6 +32,8 @@ export default class RequestHandler extends api.IRequestHandler {
             .firstOrDefault();
         if (staticDir) {
             this.serveStatic();
+        } else if (this.req.mvcPath == "/home/login" || this.req.mvcPath == "/home/register" || this.req.mvcPath == "/home/logout") {
+            this.checkAuth(); // let authentication handler redirect
         } else {
             if (this.controller) {
                 if (this.controllerPrototype.authRequired.indexOf(this.action) !== -1
@@ -63,7 +65,11 @@ export default class RequestHandler extends api.IRequestHandler {
                 case api.AuthResult.Redirected:
                     break; // do nothing
                 case api.AuthResult.Success:
-                    this.callController(); // continue in lifecycle
+                    if (this.req.mvcPath == "/home/login" || this.req.mvcPath == "/home/register" || this.req.mvcPath == "/home/logout") {
+                        this.res.redirect(this.req.session["lastPage"]);
+                    } else {
+                        this.callController(); // continue in lifecycle
+                    }
                     break;
                 default:
                     api.logger.warn("Unknown result from authentication provider for login(): " + result);
@@ -131,7 +137,7 @@ export default class RequestHandler extends api.IRequestHandler {
                     this.res.set("Content-Type", "application/json");
                 }
                 this.res.send(val);
-                return;
+                this.next();
             } else {
                 this.serveView();
             }
@@ -166,7 +172,9 @@ export default class RequestHandler extends api.IRequestHandler {
                     this.renderError(api.constants.http.InternalError);
                     return;
                 }
+                this.req.session["lastPage"] = this.req.mvcPath;
                 this.res.send(html);
+                this.next();
             });
         });
     }
@@ -204,6 +212,7 @@ export default class RequestHandler extends api.IRequestHandler {
                 errorCode: code,
                 email: "webmaster@" + api.config.http.host
             });
+            this.next();
         });
     }
 }

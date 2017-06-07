@@ -137,7 +137,6 @@ export default class RequestHandler extends api.IRequestHandler {
                     this.res.set("Content-Type", "application/json");
                 }
                 this.res.send(val);
-                this.next();
             } else {
                 this.serveView();
             }
@@ -174,7 +173,6 @@ export default class RequestHandler extends api.IRequestHandler {
                 }
                 this.req.session["lastPage"] = this.req.mvcPath;
                 this.res.send(html);
-                this.next();
             });
         });
     }
@@ -212,7 +210,6 @@ export default class RequestHandler extends api.IRequestHandler {
                 errorCode: code,
                 email: "webmaster@" + api.config.http.host
             });
-            this.next();
         });
     }
 }

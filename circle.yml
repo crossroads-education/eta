@@ -1,0 +1,18 @@
+machine:
+  node:
+    version: 6.10.0
+checkout:
+  post:
+    - mkdir ./config
+    - cp ./circle-ci/config/* ./config/
+dependencies:
+  pre:
+    - npm i -g typescript
+compile:
+  override:
+    - tsc
+test:
+  override:
+    - mocha --recursive --reporter mocha-junit-reporter:
+        environment:
+          MOCHA_FILE: $CIRCLE_TEST_REPORTS/junit/test-results.xml

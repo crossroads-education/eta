@@ -7,9 +7,9 @@ export default class HelperObject {
             return new Date(obj.getTime());
         }
         let temp: any = new obj.constructor();
-        for (let key in obj) {
+        Object.keys(obj).forEach(key => {
             temp[key] = HelperObject.clone(obj[key]);
-        }
+        });
         return temp;
     }
 

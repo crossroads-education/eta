@@ -39,7 +39,7 @@
     "socket.io": "^2.0.1",
     "source-map-support": "^0.4.15",
     "stack-trace": "0.0.9",
-    "typeorm": "0.1.0-alpha.2",
+    "typeorm": "0.1.0-alpha.4",
     "useragent": "^2.1.13"
   },
   "devDependencies": {

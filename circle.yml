@@ -1,0 +1,12 @@
+machine:
+  node:
+    version: 6.10.0
+checkout:
+  post:
+    - cp ./circle-ci/config/* ./config/
+dependencies:
+  pre:
+    - npm i -g typescript
+compile:
+  override:
+    - tsc

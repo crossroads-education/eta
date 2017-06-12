@@ -50,7 +50,7 @@ def generate(config):
                 else:
                     lines.append(generate_export(path, module_name))
     handle = open(server_dir + config["filename"], "w")
-    handle.write("\n".join(lines))
+    handle.write("\n".join(lines) + "\n")
     handle.close()
 
 def handle_config(filename):

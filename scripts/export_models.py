@@ -50,7 +50,7 @@ def main():
     raw = comment + "\n".join(lines)
     out_file = content_dir + "static/js/lib/Models.ts"
     handle = open(out_file, "w")
-    handle.write(raw)
+    handle.write(raw + "\n")
     handle.close()
     print("Wrote output to {}. Compiling client-side Typescript...".format(out_file))
     os.chdir(content_dir + "static/js")

@@ -21,6 +21,6 @@ export default class HelperObject {
                 to[i] = from[i];
             }
         }
-        return from;
+        return to;
     }
 }

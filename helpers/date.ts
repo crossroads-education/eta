@@ -5,13 +5,13 @@ export default class HelperDate {
     public static Week: Week;
     public static Month: Month;
     public static getDate(date: Date): Date {
-        return new Date(moment(date).format("YYYY-MM-DD"));
+        return new Date(date.getFullYear(), date.getMonth(), date.getDate());
     }
 
     public static getMonthsBetween(start: Date, end: Date): Month[] {
         let months: Month[] = [];
-        let startMonth: number = moment(start).month();
-        let endMonth: number = moment(end).month();
+        let startMonth: number = moment(start).month() + 1;
+        let endMonth: number = moment(end).month() + 1;
         for (let month: number = startMonth; month < endMonth; month++) {
             let start: moment.Moment = moment(month, "M");
             let end: moment.Moment = moment(start).add(1, "month").subtract(1, "day");

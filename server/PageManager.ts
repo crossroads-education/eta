@@ -102,7 +102,7 @@ export default class PageManager {
             controllerPrototype: controllerClass ? controllerClass.prototype : null,
             req: req,
             res: res,
-            next: next}
-        ).handle();
+            next: next
+        }).handle();
     }
 }

@@ -124,6 +124,9 @@ export default class RequestHandler extends api.IRequestHandler {
             });
         }
         (<any>this.controller)[this.action].apply(this.controller, params).then(() => {
+            if (this.res.finished) {
+                return;
+            }
             if (this.res.statusCode !== 200) {
                 this.renderError(this.res.statusCode);
                 return;

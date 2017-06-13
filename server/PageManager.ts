@@ -64,7 +64,7 @@ export default class PageManager {
         return null;
     }
 
-    private loadStatic(path: string): any {
+    private loadStatic(path: string): void {
         let mvcPath: string = path.substring(api.constants.viewPath.length - 1, path.length - 5);
         if (this.staticViewData[mvcPath]) {
             return this.staticViewData[mvcPath];

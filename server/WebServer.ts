@@ -71,6 +71,16 @@ export default class WebServer {
         });
     }
 
+    public async close(): Promise<void> {
+        await this.fireLifecycleEvent("onServerStop");
+        if (this.server) {
+            this.server.close();
+        }
+        if (this.redirectServer) {
+            this.redirectServer.close();
+        }
+    }
+
     private start(): void {
         let onHttpServerError: (err: Error) => void = (err: Error) => {
             eta.logger.error("Web server error occurred: " + err.message);

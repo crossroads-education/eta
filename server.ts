@@ -8,7 +8,20 @@ function main() {
         console.log("An uncaught error occurred: " + err.message);
         console.log(err.stack);
     });
-    let server: WebServer = new WebServer();
+    let server: WebServer;
+    process.on("SIGINT", () => {
+        if (!server) {
+            return;
+        }
+        logger.trace("Stopping Eta...");
+        server.close().then(() => {
+            process.exit();
+        }).catch(err => {
+            logger.error(err);
+            process.exit();
+        });
+    });
+    server = new WebServer();
 }
 
 main();

@@ -57,6 +57,7 @@
     "@types/express-session": "0.0.32",
     "@types/handlebars": "^4.0.33",
     "@types/jquery": "^2.0.45",
+    "@types/jquery-mousewheel": "^3.1.5",
     "@types/linq": "^2.2.33",
     "@types/mathjax": "0.0.31",
     "@types/mime": "0.0.29",

@@ -1,10 +1,12 @@
 [
   {
     "filename": "server/api/index.ts",
+    "type": "index",
     "dirs": ["server/api"]
   },
   {
     "filename": "helpers/index.ts",
+    "type": "index",
     "dirs": ["helpers"]
   }
 ]

@@ -58,14 +58,14 @@ def generate(config):
             for filename in files:
                 if filename == "index" + file_ending or not filename.endswith(file_ending):
                     continue
-                if config["type"] != "model" and filename in exclude:
-                    continue
                 if filename.startswith("I"):
                     real_files.insert(0, root + "/" + filename)
                 else:
                     real_files.append(root + "/" + filename)
         for filename in real_files:
             module_name = filename.split("/")[-1].split(".")[0]
+            if config["type"] != "model" and module_name in exclude:
+                continue
             path = os.path.relpath(filename, start=basedir)
             path = ".".join(path.split(".")[0:-1]).replace("\\", "/")
             if config["type"] == "model":

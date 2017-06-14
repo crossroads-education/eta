@@ -13,11 +13,12 @@ export async function connect(): Promise<orm.Connection> {
         modelDirs[i] = helpers.path.baseDir + "content/" + modelDirs[i] + "/**/*.js";
     }
     return await orm.createConnection({
+        type: <any>config.db.type,
         driver: config.db,
         entities: modelDirs,
         autoSchemaSync: true,
         logging: {
-            logger: (l: any, m: any) => { logger.log(l, m); },
+            logger: (l: string, m: any) => { logger.log(l, m); },
             logOnlyFailedQueries: !config.logger.logDatabaseQueries,
             logQueries: config.logger.logDatabaseQueries
         }

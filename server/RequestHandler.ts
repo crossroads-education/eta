@@ -194,7 +194,7 @@ export default class RequestHandler extends api.IRequestHandler {
                     this.renderError(api.constants.http.InternalError);
                     return;
                 }
-                this.res.set("Content-Type", mime.lookup(this.req.mvcPath));
+                this.res.set("Content-Type", mime.lookup(this.req.mvcPath, "text/plain"));
                 this.res.send(data);
             });
         });

@@ -98,6 +98,9 @@ def main():
     handle_config(server_dir + "content/indexes.json")
     print("Compiling server-side Typescript...")
     utils.compile_ts()
+    os.chdir(server_dir + "content/static/js")
+    print("\nCompiling client-side Typescript...")
+    utils.compile_ts()
 
 if __name__ == "__main__":
     main()

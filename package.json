@@ -9,7 +9,8 @@
   "contributors": [],
   "main": "./server.js",
   "scripts": {
-    "generate": "python ./scripts/generate_indexes.py"
+    "generate": "python ./scripts/generate_indexes.py",
+    "start": "node ./server.js"
   },
   "dependencies": {
     "body-parser": "^1.17.1",

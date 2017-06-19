@@ -1,0 +1,15 @@
+version: "3.0"
+services:
+  postgres:
+    image: "postgres:9.6"
+    environment:
+      POSTGRES_PASSWORD: wedofuh23789dfe78g
+  web:
+    build: .
+    ports:
+      - "3000:3000"
+    volumes:
+      - .:/usr/src/app
+    depends_on:
+      - postgres
+    command: ["npm", "start"]

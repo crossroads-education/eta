@@ -88,7 +88,7 @@ export default class RequestHandler extends api.IRequestHandler {
             switch (result) {
                 case api.AuthResult.NotSupported:
                     api.logger.warn("Authentication provider does not support registration.");
-                    this.renderError(api.constants.http.InternalError);
+                    this.renderError(api.constants.http.AccessDenied);
                     break;
                 case api.AuthResult.Redirected:
                     break; // do nothing

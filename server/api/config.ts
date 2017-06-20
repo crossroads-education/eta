@@ -1,4 +1,5 @@
 import * as fs from "fs";
+import * as linq from "linq";
 import {DriverOptions} from "typeorm";
 import * as helpers from "../../helpers";
 
@@ -11,6 +12,20 @@ function load(): IConfiguration {
         (<any>config)[configName] = JSON.parse(rawConfig);
     });
     config.content = JSON.parse(fs.readFileSync(helpers.path.baseDir + "content/config.json").toString());
+    linq.from(Object.keys(process.env))
+        .where(k => k.startsWith("ETA_"))
+        .forEach(k => {
+            let tokens: string[] = k.toLowerCase().split("_").splice(1);
+            let category: string = tokens[0];
+            let name: string = tokens[1];
+            let value: any;
+            try {
+                value = JSON.parse(process.env[k]);
+            } catch (err) {
+                value = process.env[k];
+            }
+            (<any>config)[category][name] = value;
+        });
     return config;
 }
 

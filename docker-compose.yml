@@ -7,6 +7,13 @@ services:
   web:
     build: .
     image: eta.crossroadseducation.org:5000/eta-v2
+    environment:
+      ETA_DB_TYPE: postgres
+      ETA_DB_HOST: postgres
+      ETA_DB_PORT: 5432
+      ETA_DB_USERNAME: postgres
+      ETA_DB_PASSWORD: wedofuh23789dfe78g
+      ETA_DB_DATABASE: postgres
     ports:
       - "3000:3000"
     volumes:

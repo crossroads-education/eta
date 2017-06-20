@@ -11,7 +11,6 @@ export default class RequestHandler extends api.IRequestHandler {
     public action: string;
     public controller: api.IHttpController;
     public controllerPrototype: api.IHttpController;
-    public authProvider: api.IAuthHandler;
 
     public constructor(init: Partial<RequestHandler>) {
         super(init);
@@ -19,11 +18,6 @@ export default class RequestHandler extends api.IRequestHandler {
         if (this.controllerPrototype) {
             this.controller = new (<any>this.controllerPrototype.constructor)();
         }
-        this.authProvider = new (<any>api.IAuthHandler.provider)({
-            req: this.req,
-            res: this.res,
-            next: this.next
-        });
     }
 
     public handle(): void {
@@ -48,57 +42,16 @@ export default class RequestHandler extends api.IRequestHandler {
         }
     }
 
-    private checkAuth(): void {
-        this.authProvider.login((err: Error, result?: api.AuthResult) => {
-            if (err) {
-                api.logger.error(err);
-                this.renderError(api.constants.http.InternalError);
-                return;
-            }
-            switch (result) {
-                case api.AuthResult.Forbidden:
-                    this.renderError(api.constants.http.AccessDenied);
-                    break;
-                case api.AuthResult.NeedsRegistration:
-                    this.tryRegister();
-                    break;
-                case api.AuthResult.Redirected:
-                    break; // do nothing
-                case api.AuthResult.Success:
-                    if (this.req.mvcPath == "/home/login" || this.req.mvcPath == "/home/register" || this.req.mvcPath == "/home/logout") {
-                        this.res.redirect(this.req.session["lastPage"]);
-                    } else {
-                        this.callController(); // continue in lifecycle
-                    }
-                    break;
-                default:
-                    api.logger.warn("Unknown result from authentication provider for login(): " + result);
-                    this.renderError(api.constants.http.InternalError);
-            }
-        });
-    }
-
-    private tryRegister() {
-        this.authProvider.register((err: Error, result?: api.AuthResult) => {
-            if (err) {
-                api.logger.error(err);
-                this.renderError(api.constants.http.InternalError);
-                return;
-            }
-            switch (result) {
-                case api.AuthResult.NotSupported:
-                    api.logger.warn("Authentication provider does not support registration.");
-                    this.renderError(api.constants.http.AccessDenied);
-                    break;
-                case api.AuthResult.Redirected:
-                    break; // do nothing
-                case api.AuthResult.Success:
-                    this.checkAuth(); // continue in lifecycle
-                    break;
-                default:
-                    api.logger.warn("Unknown result from authentication provider for register(): " + result);
-                    this.renderError(api.constants.http.InternalError);
-            }
+    private async checkAuth(): Promise<void> {
+        this.req.session["authFrom"] = this.req.mvcPath;
+        return new Promise<void>((resolve, reject) => {
+            this.req.session.save((err: Error) => {
+                if (err) {
+                    reject(err);
+                } else {
+                    this.res.redirect("/auth/" + api.config.auth.provider + "/login");
+                }
+            });
         });
     }
 

@@ -24,6 +24,24 @@ abstract class IHttpController extends IRequestHandler {
         this.res.raw = more;
     }
 
+    public redirect(url: string): void {
+        this.res.redirect(url);
+        this.res.end();
+        this.res.finished = true;
+    }
+
+    public async saveSession(): Promise<void> {
+        return new Promise<void>((resolve, reject) => {
+            this.req.session.save((err: Error) => {
+                if (err) {
+                    reject(err);
+                } else {
+                    resolve();
+                }
+            });
+        });
+    }
+
     public isLoggedIn(): boolean {
         return this.req.session && this.req.session["userid"];
     }

@@ -36,7 +36,7 @@ interface IAuthConfiguration {
 }
 
 interface IContentConfiguration {
-    auth: string;
+    authProviders: {[key: string]: string};
     lifecycleDirs: string[];
     modelDirs: string[];
 }

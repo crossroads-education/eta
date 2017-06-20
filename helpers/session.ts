@@ -7,7 +7,7 @@ export default class HelperSession {
     public static async getFromRequest(req: http.IncomingMessage): Promise<{[key: string]: any}> {
         let sid: string;
         try {
-            sid = cookie.parse(req.headers.cookie)["connect.sid"].toString();
+            sid = cookie.parse(<any>req.headers.cookie)["connect.sid"];
         } catch (err) {
             return null;
         }

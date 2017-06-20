@@ -8,6 +8,7 @@ services:
     build: .
     image: eta.crossroadseducation.org:5000/eta-v2
     environment:
+      ETA_ENVIRONMENT: docker-compose
       ETA_DB_TYPE: postgres
       ETA_DB_HOST: postgres
       ETA_DB_PORT: 5432

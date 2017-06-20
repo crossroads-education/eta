@@ -4,6 +4,10 @@ import WebServer from "./server/WebServer";
 import {connect} from "./server/api/db";
 
 function main() {
+    if (process.env.ETA_ENVIRONMENT !== "docker-compose") {
+        console.error("You must run this server with docker-compose: `docker-compose up`");
+        return;
+    }
     process.on("uncaughtException", (err: Error) => {
         console.log("An uncaught error occurred: " + err.message);
         console.log(err.stack);

@@ -24,7 +24,9 @@ function load(): IConfiguration {
             } catch (err) {
                 value = process.env[k];
             }
-            (<any>config)[category][name] = value;
+            if ((<any>config)[category]) {
+                (<any>config)[category][name] = value;
+            }
         });
     return config;
 }

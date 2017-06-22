@@ -1,5 +1,6 @@
 import * as fs from "fs";
 import * as linq from "linq";
+import * as api from "./index";
 import {DriverOptions} from "typeorm";
 import * as helpers from "../../helpers";
 
@@ -9,9 +10,18 @@ function load(): IConfiguration {
     fs.readdirSync(configDir).forEach((filename) => {
         let configName: string = filename.split(".")[0];
         let rawConfig: string = fs.readFileSync(configDir + filename).toString();
-        (<any>config)[configName] = JSON.parse(rawConfig);
+        try {
+            (<any>config)[configName] = JSON.parse(rawConfig);
+        } catch (err) {
+            api.logger.error(configDir + filename + " contains invalid JSON.");
+        }
     });
-    config.content = JSON.parse(fs.readFileSync(helpers.path.baseDir + "content/config.json").toString());
+    let raw: string = fs.readFileSync(helpers.path.baseDir + "config.json").toString();
+    try {
+        config.content = JSON.parse(raw);
+    } catch (err) {
+        api.logger.error(helpers.path.baseDir + "content/config.json contains invalid JSON.");
+    }
     linq.from(Object.keys(process.env))
         .where(k => k.startsWith("ETA_"))
         .forEach(k => {

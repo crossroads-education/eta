@@ -5,3 +5,4 @@
 *.js
 *.js.map
 __pycache__
+npm-debug.log

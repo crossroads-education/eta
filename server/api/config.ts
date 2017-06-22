@@ -16,7 +16,7 @@ function load(): IConfiguration {
             api.logger.error(configDir + filename + " contains invalid JSON.");
         }
     });
-    let raw: string = fs.readFileSync(helpers.path.baseDir + "config.json").toString();
+    let raw: string = fs.readFileSync(helpers.path.baseDir + "content/config.json").toString();
     try {
         config.content = JSON.parse(raw);
     } catch (err) {

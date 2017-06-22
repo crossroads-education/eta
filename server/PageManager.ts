@@ -93,9 +93,14 @@ export default class PageManager {
         let tokens: string[] = req.mvcPath.split("/");
         let action: string = tokens.splice(-1, 1)[0];
         let route: string = tokens.join("/");
-        let controllerClass: typeof api.IHttpController = this.controllers
-            .where(c => c.prototype.routes.indexOf(route) != -1)
-            .firstOrDefault();
+        let controllerClass: typeof api.IHttpController;
+        try {
+            controllerClass = this.controllers
+               .where(c => c.prototype.routes.indexOf(route) != -1)
+               .firstOrDefault();
+        } catch (err) {
+            api.logger.warn("Couldn't load controller for request. Are there non-controller files in /content/controllers?");
+        }
         if (this.staticViewData[req.mvcPath]) {
             res.view = this.staticViewData[req.mvcPath];
         }

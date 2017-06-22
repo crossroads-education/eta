@@ -39,36 +39,28 @@ export default class WebServer {
     public lifecycleHandlers: eta.ILifecycleHandler[] = [];
 
     public constructor() {
-        this.setupLifecycleHandlers();
-        this.fireLifecycleEvent("onAppStart").then(() => {
-            this.app = express();
-            connect().then((conn: orm.Connection) => {
-                (<any>eta).db = conn;
-                eta.logger.info("Successfully connected to the database.");
-                this.fireLifecycleEvent("onDatabaseConnect").then(() => {
-                    this.configureExpress();
-                    this.setupMiddleware();
-                    this.setupListeners();
-                    this.setupHttpServer();
-                    this.fireLifecycleEvent("beforeServerStart").then(() => {
-                        this.start();
-                    }).catch(err => {
-                        eta.logger.error(err);
-                    });
-                }).catch(err => {
-                    eta.logger.error(err);
-                });
-            }).catch(err => {
-                if (err.code == "42704" || (err[0] && err[0].code == "42704")) {
-                    eta.logger.error("Please make sure you have the latest commit version of Eta.");
-                    eta.logger.trace(err.message);
-                } else {
-                    eta.logger.error(err);
-                }
-            });
+        this.init().then(() => {
+            this.start();
         }).catch(err => {
             eta.logger.error(err);
         });
+    }
+
+    private async init(): Promise<void> {
+        this.setupLifecycleHandlers();
+        await this.fireLifecycleEvent("onAppStart");
+
+        this.app = express();
+        let conn: orm.Connection = await connect();
+        (<any>eta).db = conn;
+        eta.logger.info("Successfully connected to the database.");
+        await this.fireLifecycleEvent("onDatabaseConnect");
+
+        this.configureExpress();
+        this.setupMiddleware();
+        await this.setupListeners();
+        this.setupHttpServer();
+        await this.fireLifecycleEvent("beforeServerStart");
     }
 
     public async close(): Promise<void> {
@@ -167,9 +159,9 @@ export default class WebServer {
         }));
     }
 
-    private setupListeners(): void {
+    private async setupListeners(): Promise<void> {
         this.pageManager = new PageManager();
-        this.pageManager.load();
+        await this.pageManager.load();
         this.app.all("/*", (req: express.Request, res: express.Response, next: Function) => {
             // initialize custom express properties
             req.mvcPath = req.path;

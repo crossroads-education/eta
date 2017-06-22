@@ -13,7 +13,7 @@ export default class PageManager {
     private staticViewData: {[key: string]: any};
     public constructor() { }
 
-    public load(): void {
+    public async load(): Promise<void> {
         if (api.config.dev.enable) {
             let watcher: fs.FSWatcher = chokidar.watch(api.constants.controllerPath, {
                 persistent: false
@@ -27,30 +27,33 @@ export default class PageManager {
                 this.loadController(path);
             });
         }
-        recursiveReaddir(api.constants.controllerPath, (err: NodeJS.ErrnoException, files: string[]) => {
-            if (err) {
-                api.logger.error(`Couldn't read the controller directory (${api.constants.controllerPath}): ${err.message}`);
-                return;
-            }
-            let controllers: (typeof api.IHttpController)[] = [];
-            linq.from(files)
-                .where(f => f.endsWith(".js"))
-                .forEach(f => {
-                    controllers.push(this.loadController(f.replace(/\\/g, "/")));
+        return new Promise<void>((resolve, reject) => {
+            recursiveReaddir(api.constants.controllerPath, (err: NodeJS.ErrnoException, files: string[]) => {
+                if (err) {
+                    api.logger.error(`Couldn't read the controller directory (${api.constants.controllerPath}): ${err.message}`);
+                    return reject(err);
+                }
+                let controllers: (typeof api.IHttpController)[] = [];
+                linq.from(files)
+                    .where(f => f.endsWith(".js"))
+                    .forEach(f => {
+                        controllers.push(this.loadController(f.replace(/\\/g, "/")));
+                    });
+                this.controllers = linq.from(controllers);
+                recursiveReaddir(api.constants.viewPath, (err: NodeJS.ErrnoException, files: string[]) => {
+                    if (err) {
+                        api.logger.error(`Couldn't read the view directory (${api.constants.viewPath}): ${err.message}`);
+                        return reject(err);
+                    }
+                    this.staticViewData = {};
+                    linq.from(files)
+                        .where(f => f.endsWith(".json"))
+                        .forEach(f => {
+                            this.loadStatic(f.replace(/\\/g, "/"));
+                        });
+                    resolve();
                 });
-            this.controllers = linq.from(controllers);
-        });
-        recursiveReaddir(api.constants.viewPath, (err: NodeJS.ErrnoException, files: string[]) => {
-            if (err) {
-                api.logger.error(`Couldn't read the view directory (${api.constants.viewPath}): ${err.message}`);
-                return;
-            }
-            this.staticViewData = {};
-            linq.from(files)
-                .where(f => f.endsWith(".json"))
-                .forEach(f => {
-                    this.loadStatic(f.replace(/\\/g, "/"));
-                });
+            });
         });
     }
 

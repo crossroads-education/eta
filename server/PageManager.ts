@@ -1,4 +1,3 @@
-import * as chokidar from "chokidar";
 import * as express from "express";
 import * as fs from "fs";
 import * as linq from "linq";
@@ -6,7 +5,6 @@ import * as recursiveReaddir from "recursive-readdir";
 import * as api from "./api";
 import * as helpers from "../helpers";
 import RequestHandler from "./RequestHandler";
-let reload: (id: string) => any = require("require-reload")(require);
 
 export default class PageManager {
     private controllers: linq.IEnumerable<typeof api.IHttpController> = null;
@@ -14,19 +12,6 @@ export default class PageManager {
     public constructor() { }
 
     public async load(): Promise<void> {
-        if (api.config.dev.enable) {
-            let watcher: fs.FSWatcher = chokidar.watch(api.constants.controllerPath, {
-                persistent: false
-            });
-            watcher.on("change", (path: string) => {
-                path = path.replace(/\\/g, "/");
-                if (!path.endsWith(".js")) {
-                    return;
-                }
-                reload(path);
-                this.loadController(path);
-            });
-        }
         return new Promise<void>((resolve, reject) => {
             recursiveReaddir(api.constants.controllerPath, (err: NodeJS.ErrnoException, files: string[]) => {
                 if (err) {

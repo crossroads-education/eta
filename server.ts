@@ -5,7 +5,7 @@ import {connect} from "./server/api/db";
 
 function main() {
     if (process.env.ETA_ENVIRONMENT !== "docker-compose") {
-        console.warn("You must run this server with docker-compose: `docker-compose up`");
+        console.warn("You should run this server with docker-compose: `docker-compose up`");
     }
     process.on("uncaughtException", (err: Error) => {
         console.log("An uncaught error occurred: " + err.message);

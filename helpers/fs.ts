@@ -1,4 +1,5 @@
 import * as fs from "fs";
+import * as recursiveReaddir from "recursive-readdir";
 
 export default class HelperFS {
     /**
@@ -22,5 +23,17 @@ export default class HelperFS {
         } catch (ex) {
             return false;
         }
+    }
+
+    public static recursiveReaddir(path: string): Promise<string[]> {
+        return new Promise<string[]>((resolve, reject) => {
+            recursiveReaddir(path, (err: Error, files: string[]) => {
+                if (err) {
+                    reject(err);
+                } else {
+                    resolve(files);
+                }
+            });
+        });
     }
 }

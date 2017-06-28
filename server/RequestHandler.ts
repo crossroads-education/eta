@@ -57,7 +57,7 @@ export default class RequestHandler extends api.IRequestHandler {
 
     private callController(): void {
         if (this.controllerPrototype.actions[this.action] !== this.req.method) {
-            api.logger.trace(`URL ${this.req.mvcPath} does not have a registered controller for its method (${this.controllerPrototype.actions[this.action]} is registered).`);
+            api.logger.trace(`URL ${this.req.mvcPath} does not have a registered controller for its method (${this.req.method}).`);
             this.serveView();
             return;
         }

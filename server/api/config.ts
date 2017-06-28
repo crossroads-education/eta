@@ -19,6 +19,7 @@ function load(): IConfiguration {
     let raw: string = fs.readFileSync(helpers.path.baseDir + "content/config.json").toString();
     try {
         config.content = JSON.parse(raw);
+        config.content.lifecycleDirs.push("../server/lifecycle");
     } catch (err) {
         api.logger.error(helpers.path.baseDir + "content/config.json contains invalid JSON.");
     }

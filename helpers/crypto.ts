@@ -7,6 +7,8 @@ export default class HelperCrypto {
     }
 
     public static generateSalt(): string {
-        return randomstring.generate(20);
+        return randomstring.generate({
+            length: 20
+        });
     }
 }

@@ -19,7 +19,6 @@ export default class PageManager {
         linq.from(controllerFiles)
             .where(f => f.endsWith(".js"))
             .forEach(f => {
-                api.logger.trace(f);
                 controllers.push(this.loadController(f.replace(/\\/g, "/")));
             });
         this.controllers = linq.from(controllers);

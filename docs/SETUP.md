@@ -12,6 +12,7 @@
 - Clone this repository: `git clone https://github.com/crossroads-education/eta.git`
 - Clone your content repository to "eta/content": `cd eta; git clone your-repo-here ./content`
 - Ensure you are on NPM version 4.x (NPM 5.x is currently broken): `npm i -g npm@4.6.1`
+  (actually, npm 5.0.4 is working again)
 - Install [Typescript](https://typescriptlang.org): `npm i -g typescript`
 - Install local dependencies: `npm i`
 - Install the Python "pylint" package: `pip install pylint`

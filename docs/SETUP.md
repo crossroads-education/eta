@@ -22,8 +22,10 @@
 
 If you are using Sublime Text instead of Atom, install the TypeScript package through Sublimes package manager.
 
-## Testing with a Local Database
+## Developing & Testing with a Local Database
 
 - download and install Postgres (the [postgres app](http://postgresapp.com/) works well for OSX)
 - create a database and a user for eta (e.g. useing the command line tools, or a GUI tool like [pgAdmin](https://www.pgadmin.org/))
 - adjust the config files
+- you can run `tsc -w` in the project directory to automatically rebuild all js files when the typescript files change
+- use `node server.js` or maybe `nodemon server.js` to start the server

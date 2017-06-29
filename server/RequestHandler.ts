@@ -44,6 +44,9 @@ export default class RequestHandler extends api.IRequestHandler {
 
     private async checkAuth(): Promise<void> {
         this.req.session["authFrom"] = this.req.mvcPath;
+        if (!this.req.session["lastPage"]) {
+            this.req.session["lastPage"] = this.req.mvcPath;
+        }
         return new Promise<void>((resolve, reject) => {
             this.req.session.save((err: Error) => {
                 if (err) {
@@ -127,7 +130,9 @@ export default class RequestHandler extends api.IRequestHandler {
                     this.renderError(api.constants.http.InternalError);
                     return;
                 }
-                this.req.session["lastPage"] = this.req.mvcPath;
+                if (!this.req.mvcPath.startsWith("/auth/")) {
+                    this.req.session["lastPage"] = this.req.mvcPath;
+                }
                 this.res.send(html);
             });
         });

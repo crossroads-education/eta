@@ -1,0 +1,9 @@
+{
+  "type": "postgres",
+  "host": "localhost",
+  "port": 5432,
+  "username": "eta",
+  "password": "foobar",
+  "database": "eta",
+  "schemaName": "public"
+}

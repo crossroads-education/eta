@@ -1,10 +1,21 @@
 machine:
   node:
     version: 6.10.0
+  environment:
+    ETA_AUTH_PROVIDER: local
+    ETA_DB_PROVIDER: postgres
+    ETA_DB_HOST: localhost
+    ETA_DB_PORT: 5432
+    ETA_DB_USERNAME: ubuntu
+    ETA_DB_DATABASE: circle_test
 checkout:
   post:
-    - mkdir ./config
-    - cp ./circle-ci/config/* ./config/
+    - cp config/auth.sample.json config/auth.json
+    - cp config/db.sample.json config/db.json
+    - cp config/dev.sample.json config/dev.json
+    - cp config/http.sample.json config/http.json
+    - cp config/https.sample.json config/https.json
+    - cp config/logger.sample.json config/logger.json
 dependencies:
   pre:
     - npm i -g typescript

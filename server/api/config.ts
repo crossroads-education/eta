@@ -8,6 +8,7 @@ function load(): IConfiguration {
     let configDir: string = helpers.path.baseDir + "config/";
     config = <any>{};
     fs.readdirSync(configDir).forEach((filename) => {
+        if (filename.endsWith(".sample.json")) return;
         let configName: string = filename.split(".")[0];
         let rawConfig: string = fs.readFileSync(configDir + filename).toString();
         try {

@@ -43,7 +43,7 @@ abstract class IHttpController extends IRequestHandler {
     }
 
     public isLoggedIn(): boolean {
-        return this.req.session && this.req.session["userid"];
+        return !!this.req.session && !!this.req.session.userid;
     }
 }
 

@@ -12,4 +12,10 @@ declare namespace Express {
             [key: string]: any;
         };
     }
+
+    export interface SessionData {
+        userid: number;
+        authFrom: string;
+        lastPage: string;
+    }
 }

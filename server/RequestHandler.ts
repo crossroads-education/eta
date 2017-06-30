@@ -31,7 +31,7 @@ export default class RequestHandler extends api.IRequestHandler {
         } else {
             if (this.controller) {
                 if (this.controllerPrototype.authRequired.indexOf(this.action) !== -1
-                    && !this.req.session["userid"]) { // requires login but is not logged in
+                    && !this.req.session.userid) { // requires login but is not logged in
                     this.checkAuth();
                 } else {
                     this.callController();
@@ -43,9 +43,9 @@ export default class RequestHandler extends api.IRequestHandler {
     }
 
     private async checkAuth(): Promise<void> {
-        this.req.session["authFrom"] = this.req.mvcPath;
-        if (!this.req.session["lastPage"]) {
-            this.req.session["lastPage"] = this.req.mvcPath;
+        this.req.session.authFrom = this.req.mvcPath;
+        if (!this.req.session.lastPage) {
+            this.req.session.lastPage = this.req.mvcPath;
         }
         return new Promise<void>((resolve, reject) => {
             this.req.session.save((err: Error) => {
@@ -131,7 +131,7 @@ export default class RequestHandler extends api.IRequestHandler {
                     return;
                 }
                 if (!this.req.mvcPath.startsWith("/auth/")) {
-                    this.req.session["lastPage"] = this.req.mvcPath;
+                    this.req.session.lastPage = this.req.mvcPath;
                 }
                 this.res.send(html);
             });

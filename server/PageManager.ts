@@ -93,6 +93,9 @@ export default class PageManager {
             req: req,
             res: res,
             next: next
-        }).handle();
+        }).handle().then(() => { })
+        .catch(err => {
+            api.logger.error(err);
+        });
     }
 }

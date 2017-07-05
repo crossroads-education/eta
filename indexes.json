@@ -5,6 +5,11 @@
     "dirs": ["server/api"]
   },
   {
+    "filename": "server/transformers/index.ts",
+    "type": "index",
+    "dirs": ["server/transformers"]
+  },
+  {
     "filename": "helpers/index.ts",
     "type": "index",
     "dirs": ["helpers"]

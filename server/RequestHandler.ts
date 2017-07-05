@@ -4,13 +4,14 @@ import * as linq from "linq";
 import * as mime from "mime";
 import * as api from "./api";
 import * as helpers from "../helpers";
-import Transformers from "./transformers";
+import * as transformers from "./transformers";
 
 export default class RequestHandler extends api.IRequestHandler {
     public route: string;
     public action: string;
     public controller: api.IHttpController;
     public controllerPrototype: api.IHttpController;
+    private transformers: api.IRequestTransformer[];
 
     public constructor(init: Partial<RequestHandler>) {
         super(init);
@@ -20,19 +21,28 @@ export default class RequestHandler extends api.IRequestHandler {
         }
     }
 
-    public handle(): void {
+    public async handle(): Promise<void> {
         let staticDir: string = linq.from(api.constants.staticDirs)
             .where(d => this.req.mvcPath.startsWith("/" + d + "/"))
             .firstOrDefault();
         if (staticDir) {
-            this.serveStatic();
-        } else if (this.req.mvcPath == "/home/login" || this.req.mvcPath == "/home/register" || this.req.mvcPath == "/home/logout") {
-            this.checkAuth(); // let authentication handler redirect
+            return this.serveStatic();
+        }
+        this.initTransformers();
+        this.fireTransformEvent("onRequest");
+        if (this.res.finished) return;
+        // ['', 'auth', 'login'] vs ['', 'auth', 'local', 'login']
+        if (this.req.mvcPath.startsWith("/auth/") && this.req.mvcPath.split("/").length === 3) {
+            this.req.session.authFrom = this.req.session.lastPage;
+            await this.saveSession();
+            this.redirect("/auth/" + api.config.auth.provider + "/" + this.action);
         } else {
             if (this.controller) {
                 if (this.controllerPrototype.authRequired.indexOf(this.action) !== -1
-                    && !this.req.session.userid) { // requires login but is not logged in
-                    this.checkAuth();
+                    && !this.isLoggedIn()) { // requires login but is not logged in
+                    this.req.session.authFrom = this.req.mvcPath;
+                    await this.saveSession();
+                    this.redirect("/auth/" + api.config.auth.provider + "/login");
                 } else {
                     this.callController();
                 }
@@ -42,25 +52,8 @@ export default class RequestHandler extends api.IRequestHandler {
         }
     }
 
-    private async checkAuth(): Promise<void> {
-        this.req.session.authFrom = this.req.mvcPath;
-        if (!this.req.session.lastPage) {
-            this.req.session.lastPage = this.req.mvcPath;
-        }
-        return new Promise<void>((resolve, reject) => {
-            this.req.session.save((err: Error) => {
-                if (err) {
-                    reject(err);
-                } else {
-                    this.res.redirect("/auth/" + api.config.auth.provider + "/login");
-                }
-            });
-        });
-    }
-
     private callController(): void {
         if (this.controllerPrototype.actions[this.action] !== this.req.method) {
-            api.logger.trace(`URL ${this.req.mvcPath} does not have a registered controller for its method (${this.req.method}).`);
             this.serveView();
             return;
         }
@@ -81,6 +74,8 @@ export default class RequestHandler extends api.IRequestHandler {
         }
         (<any>this.controller)[this.action].apply(this.controller, params).then(() => {
             if (this.res.finished) {
+                this.req.session["lastPage"] = this.req.mvcPath;
+                this.req.session.save(function() {});
                 return;
             }
             if (this.res.statusCode !== 200) {
@@ -107,20 +102,13 @@ export default class RequestHandler extends api.IRequestHandler {
 
     private serveView(): void {
         let viewPath: string = api.constants.viewPath + this.req.mvcPath.substring(1);
-        Transformers().forEach((t: typeof api.IViewTransformer) => {
-            let transformer: api.IViewTransformer = new (<any>t)({
-                req: this.req,
-                res: this.res,
-                next: this.next
-            });
-            this.res.view = transformer.transform();
-        });
         helpers.fs.exists(viewPath + ".pug", (exists: boolean) => {
             if (!exists) {
-                api.logger.trace(`View ${viewPath}.pug does not exist.`);
                 this.renderError(api.constants.http.NotFound);
                 return;
             }
+            this.fireTransformEvent("beforeResponse");
+            if (this.res.finished) return;
             if (api.config.dev.enable) {
                 this.res.view["compileDebug"] = true;
             }
@@ -142,7 +130,6 @@ export default class RequestHandler extends api.IRequestHandler {
         let staticPath: string = api.constants.staticPath + this.req.mvcPath;
         helpers.fs.exists(staticPath, (exists: boolean) => {
             if (!exists) {
-                api.logger.trace(`Static file ${this.req.mvcPath} does not exist.`);
                 this.renderError(api.constants.http.NotFound);
                 return;
             }
@@ -171,6 +158,27 @@ export default class RequestHandler extends api.IRequestHandler {
                 errorCode: code,
                 email: "webmaster@" + api.config.http.host
             });
+        });
+    }
+
+    private initTransformers(): void {
+        this.transformers = [];
+        Object.keys(transformers).forEach(key => {
+            let Transformer: typeof api.IRequestTransformer = (<any>transformers)[key];
+            this.transformers.push(new (<any>Transformer)({
+                req: this.req,
+                res: this.res,
+                next: this.next
+            }));
+        });
+    }
+
+    private fireTransformEvent(name: string): void {
+        this.transformers.forEach(t => {
+            let method: () => Promise<void> = (<any>t)[name];
+            if (method) {
+                method.apply(t);
+            }
         });
     }
 }

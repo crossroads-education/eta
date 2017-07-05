@@ -1,11 +1,11 @@
 import * as fs from "fs";
 import * as linq from "linq";
-import * as api from "./index";
+import constants from "./constants";
+import logger from "./logger";
 import {DriverOptions} from "typeorm";
-import * as helpers from "../../helpers";
 
 function load(): IConfiguration {
-    let configDir: string = helpers.path.baseDir + "config/";
+    let configDir: string = constants.basePath + "config/";
     config = <any>{};
     fs.readdirSync(configDir).forEach((filename) => {
         if (filename.endsWith(".sample.json")) return;
@@ -14,15 +14,15 @@ function load(): IConfiguration {
         try {
             (<any>config)[configName] = JSON.parse(rawConfig);
         } catch (err) {
-            api.logger.error(configDir + filename + " contains invalid JSON.");
+            logger.error(configDir + filename + " contains invalid JSON.");
         }
     });
-    let raw: string = fs.readFileSync(helpers.path.baseDir + "content/config.json").toString();
+    let raw: string = fs.readFileSync(constants.basePath + "content/config.json").toString();
     try {
         config.content = JSON.parse(raw);
         config.content.lifecycleDirs.push("../server/lifecycle");
     } catch (err) {
-        api.logger.error(helpers.path.baseDir + "content/config.json contains invalid JSON.");
+        logger.error(constants.basePath + "content/config.json contains invalid JSON.");
     }
     linq.from(Object.keys(process.env))
         .where(k => k.startsWith("ETA_"))

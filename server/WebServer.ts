@@ -101,7 +101,7 @@ export default class WebServer {
 
     private setupLifecycleHandlers() {
         eta.config.content.lifecycleDirs.forEach(lifecycleDir => {
-            lifecycleDir = eta.path.baseDir + "content/" + lifecycleDir + "/";
+            lifecycleDir = eta.constants.basePath + "content/" + lifecycleDir + "/";
             fs.readdirSync(lifecycleDir).forEach(filename => {
                 if (!filename.endsWith(".js")) {
                     return;

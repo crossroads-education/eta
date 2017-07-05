@@ -1,19 +1,19 @@
 import * as dateFormat from "dateformat";
 import * as fs from "fs";
 import * as stackTrace from "stack-trace";
-import HelperPath from "../../helpers/path";
+import constants from "./constants";
 
 class Logger {
     public constructor() {
         try {
-            fs.accessSync(HelperPath.baseDir + "/logs");
+            fs.accessSync(constants.basePath + "/logs");
         } catch (ex) {
-            fs.mkdirSync(HelperPath.baseDir + "/logs");
+            fs.mkdirSync(constants.basePath + "/logs");
         }
     }
 
     private getCalling(): string {
-        let rootCount: number = HelperPath.baseDir.split("/").length;
+        let rootCount: number = constants.basePath.split("/").length;
         let stack: stackTrace.StackFrame = stackTrace.parse(new Error())[3];
         let filename: string = stack.getFileName().replace(/\\/g, "/");
         filename = "/" + filename.split("/").splice(rootCount - 1).join("/");
@@ -22,7 +22,7 @@ class Logger {
 
     private write(data: string, ...args: any[]): void {
         let now: Date = new Date();
-        let filename: string = HelperPath.baseDir + "/logs/" + dateFormat(now, "yyyy-mm-dd") + ".log";
+        let filename: string = constants.basePath + "/logs/" + dateFormat(now, "yyyy-mm-dd") + ".log";
         let msg: string = `(${now.toLocaleTimeString()}) [${this.getCalling()}] ${data}`;
         if (args.length > 0) {
             console.log(msg, args);

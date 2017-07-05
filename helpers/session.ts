@@ -25,4 +25,16 @@ export default class HelperSession {
         }
         return rows[0].sess;
     }
+
+    public static async save(session: Express.SessionData): Promise<void> {
+        return new Promise<void>((resolve, reject) => {
+            session.save((err: Error) => {
+                if (err) {
+                    reject(err);
+                } else {
+                    resolve();
+                }
+            });
+        });
+    }
 }

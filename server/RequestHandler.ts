@@ -73,9 +73,9 @@ export default class RequestHandler extends api.IRequestHandler {
             });
         }
         (<any>this.controller)[this.action].apply(this.controller, params).then(() => {
-            if (this.res.finished) {
-                this.req.session["lastPage"] = this.req.mvcPath;
-                this.req.session.save(function() {});
+            if (this.res.finished && this.req.method === "GET") {
+                this.req.session.lastPage = this.req.mvcPath;
+                this.saveSession();
                 return;
             }
             if (this.res.statusCode !== 200) {
@@ -118,7 +118,7 @@ export default class RequestHandler extends api.IRequestHandler {
                     this.renderError(api.constants.http.InternalError);
                     return;
                 }
-                if (!this.req.mvcPath.startsWith("/auth/")) {
+                if (!this.req.mvcPath.startsWith("/auth/") && this.req.method === "GET") {
                     this.req.session.lastPage = this.req.mvcPath;
                 }
                 this.res.send(html);

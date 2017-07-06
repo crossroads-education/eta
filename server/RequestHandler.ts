@@ -73,9 +73,11 @@ export default class RequestHandler extends api.IRequestHandler {
             });
         }
         (<any>this.controller)[this.action].apply(this.controller, params).then(() => {
-            if (this.res.finished && this.req.method === "GET") {
-                this.req.session.lastPage = this.req.mvcPath;
-                this.saveSession();
+            if (this.res.finished) {
+                if (this.req.method === "GET") {
+                    this.req.session.lastPage = this.req.mvcPath;
+                    this.saveSession();
+                }
                 return;
             }
             if (this.res.statusCode !== 200) {

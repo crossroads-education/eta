@@ -25,18 +25,25 @@ class Logger {
         let filename: string = constants.basePath + "/logs/" + dateFormat(now, "yyyy-mm-dd") + ".log";
         let msg: string = `(${now.toLocaleTimeString()}) [${this.getCalling()}] ${data}`;
         if (args.length > 0) {
-            console.log(msg, args);
+            args = args[0] instanceof Array ? args[0] : args;
+            args.splice(0, 0, msg);
+            console.log.apply(console, args);
+            args.splice(0, 1);
         } else {
             console.log(msg);
         }
         for (let i: number = 0; i < args.length; i++) {
-            msg += " " + JSON.stringify(msg);
+            msg += " " + JSON.stringify(args[i]);
         }
         fs.appendFile(filename, msg + "\n", (err: NodeJS.ErrnoException) => {
             if (err) {
                 console.log("Could not append log to " + filename + ": " + err.message);
             }
         });
+    }
+
+    public obj(...args: any[]): void {
+        this.write("[OBJ]", args);
     }
 
     public json(obj: any): void {

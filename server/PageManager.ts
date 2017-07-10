@@ -16,7 +16,7 @@ export default class PageManager {
     public async load(): Promise<void> {
         let controllerFiles: string[] = await helpers.fs.recursiveReaddir(api.constants.controllerPath);
         let controllers: (typeof api.IHttpController)[] = [];
-        linq.from(controllerFiles)
+        linq.from(controllerFiles.sort())
             .where(f => f.endsWith(".js"))
             .forEach(f => {
                 controllers.push(this.loadController(f.replace(/\\/g, "/")));
@@ -24,7 +24,7 @@ export default class PageManager {
         this.controllers = linq.from(controllers);
         let viewStaticFiles: string[] = await helpers.fs.recursiveReaddir(api.constants.viewPath);
         this.staticViewData = {};
-        linq.from(viewStaticFiles)
+        linq.from(viewStaticFiles.sort())
             .where(f => f.endsWith(".json"))
             .forEach(f => {
                 this.loadStatic(f.replace(/\\/g, "/"));
@@ -57,7 +57,7 @@ export default class PageManager {
         let view: any;
         try {
             view = JSON.parse(fs.readFileSync(path).toString());
-            if (view.include) {
+            if (view.include !== undefined) {
                 view.include.forEach((path: string) => {
                     path = path.startsWith("/") ? path.substring(1) : path;
                     let more: any = this.loadStatic(api.constants.viewPath + path);
@@ -69,6 +69,7 @@ export default class PageManager {
             return;
         }
         this.staticViewData[mvcPath] = view;
+        return view;
     }
 
     public handle(req: express.Request, res: express.Response, next: Function): void {

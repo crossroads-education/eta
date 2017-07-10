@@ -156,7 +156,7 @@ export default class WebServer {
         await this.pageManager.load();
         this.app.all("/*", (req: express.Request, res: express.Response, next: Function) => {
             // initialize custom express properties
-            req.mvcPath = req.path;
+            req.mvcPath = decodeURIComponent(req.path);
             if (req.mvcPath === "/") {
                 req.mvcPath = "/home/index";
             } else if (req.mvcPath.endsWith("/")) {

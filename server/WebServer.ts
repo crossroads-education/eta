@@ -38,15 +38,7 @@ export default class WebServer {
     */
     public lifecycleHandlers: eta.ILifecycleHandler[] = [];
 
-    public constructor() {
-        this.init().then(() => {
-            this.start();
-        }).catch(err => {
-            eta.logger.error(err);
-        });
-    }
-
-    private async init(): Promise<void> {
+    public async init(): Promise<void> {
         this.setupLifecycleHandlers();
         await this.fireLifecycleEvent("onAppStart");
 
@@ -73,7 +65,7 @@ export default class WebServer {
         }
     }
 
-    private start(): void {
+    public start(): void {
         let onHttpServerError: (err: Error) => void = (err: Error) => {
             eta.logger.error("Web server error occurred: " + err.message);
         };

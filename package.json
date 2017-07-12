@@ -37,7 +37,7 @@
     "socket.io": "^2.0.3",
     "source-map-support": "^0.4.15",
     "stack-trace": "0.0.10",
-    "typeorm": "0.1.0-alpha.24"
+    "typeorm": "0.1.0-alpha.31"
   },
   "devDependencies": {
     "@types/body-parser": "^1.16.4",

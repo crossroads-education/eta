@@ -17,4 +17,12 @@ export default class HelperArray {
             arr.splice(i, 1);
         });
     }
+
+    public static async forEachAsync<T>(arr: T[], worker: (element: T) => Promise<void>): Promise<void> {
+        let promises: Promise<void>[] = [];
+        arr.forEach(e => {
+            promises.push(worker(e));
+        });
+        await Promise.all(promises);
+    }
 }

@@ -60,10 +60,15 @@ def generate(config):
             for filename in files:
                 if filename == "index" + file_ending or not filename.endswith(file_ending):
                     continue
+                absolute_filename = root + "/" + filename
+                if file_ending == ".js":
+                    if not os.path.exists(absolute_filename.replace(".js", ".ts")):
+                        print("Extra file ({}) found. Skipping.".format(absolute_filename))
+                        continue
                 if filename.startswith("I"):
-                    real_files.insert(0, root + "/" + filename)
+                    real_files.insert(0, absolute_filename)
                 else:
-                    real_files.append(root + "/" + filename)
+                    real_files.append(absolute_filename)
         for filename in real_files:
             module_name = filename.split("/")[-1].split(".")[0]
             if config["type"] != "model" and module_name in exclude:

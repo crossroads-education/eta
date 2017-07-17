@@ -1,5 +1,5 @@
-import * as dateFormat from "dateformat";
 import * as fs from "fs";
+import * as moment from "moment";
 import * as stackTrace from "stack-trace";
 import constants from "./constants";
 
@@ -22,7 +22,7 @@ class Logger {
 
     private write(data: string, ...args: any[]): void {
         let now: Date = new Date();
-        let filename: string = constants.basePath + "/logs/" + dateFormat(now, "yyyy-mm-dd") + ".log";
+        let filename: string = constants.basePath + "/logs/" + moment(now).format("YYYY-MM-DD") + ".log";
         let msg: string = `(${now.toLocaleTimeString()}) [${this.getCalling()}] ${data}`;
         if (args.length > 0) {
             args = args[0] instanceof Array ? args[0] : args;

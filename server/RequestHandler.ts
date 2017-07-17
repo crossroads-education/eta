@@ -1,6 +1,5 @@
 import * as express from "express";
 import * as fs from "fs";
-import * as linq from "linq";
 import * as mime from "mime";
 import * as api from "./api";
 import * as helpers from "../helpers";
@@ -22,9 +21,7 @@ export default class RequestHandler extends api.IRequestHandler {
     }
 
     public async handle(): Promise<void> {
-        let staticDir: string = linq.from(api.constants.staticDirs)
-            .where(d => this.req.mvcPath.startsWith("/" + d + "/"))
-            .firstOrDefault();
+        let staticDir: string = api.constants.staticDirs.find(d => this.req.mvcPath.startsWith("/" + d + "/"));
         if (staticDir) {
             return this.serveStatic();
         }

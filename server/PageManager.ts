@@ -1,6 +1,5 @@
 import * as express from "express";
 import * as fs from "fs";
-import * as linq from "linq";
 import * as api from "./api";
 import * as helpers from "../helpers";
 import RequestHandler from "./RequestHandler";
@@ -9,23 +8,21 @@ const requireReload: (path: string) => any = require("require-reload")(require);
 
 export default class PageManager {
     private isInitialized: boolean = false;
-    private controllers: linq.IEnumerable<typeof api.IHttpController> = null;
+    private controllers: (typeof api.IHttpController)[] = null;
     private staticViewData: {[key: string]: any};
     public constructor() { }
 
     public async load(): Promise<void> {
         let controllerFiles: string[] = await helpers.fs.recursiveReaddir(api.constants.controllerPath);
-        let controllers: (typeof api.IHttpController)[] = [];
-        linq.from(controllerFiles.sort())
-            .where(f => f.endsWith(".js"))
-            .forEach(f => {
-                controllers.push(this.loadController(f.replace(/\\/g, "/")));
-            });
-        this.controllers = linq.from(controllers);
+        this.controllers = controllerFiles
+            .filter(f => f.endsWith(".js"))
+            .sort()
+            .map(f => this.loadController(f.replace(/\\/g, "/")));
         let viewStaticFiles: string[] = await helpers.fs.recursiveReaddir(api.constants.viewPath);
         this.staticViewData = {};
-        linq.from(viewStaticFiles.sort())
-            .where(f => f.endsWith(".json"))
+        viewStaticFiles
+            .filter(f => f.endsWith(".json"))
+            .sort()
             .forEach(f => {
                 this.loadStatic(f.replace(/\\/g, "/"));
             });
@@ -79,8 +76,7 @@ export default class PageManager {
         let controllerClass: typeof api.IHttpController;
         try {
             controllerClass = this.controllers
-               .where(c => c.prototype.routes.indexOf(route) != -1)
-               .firstOrDefault();
+               .find(c => c.prototype.routes.indexOf(route) != -1);
         } catch (err) {
             api.logger.warn("Couldn't load controller for request. Are there non-controller files in /content/controllers?");
         }

@@ -1,5 +1,4 @@
 import * as fs from "fs";
-import * as linq from "linq";
 import constants from "./constants";
 import logger from "./logger";
 import {DriverOptions} from "typeorm";
@@ -24,8 +23,8 @@ function load(): IConfiguration {
     } catch (err) {
         logger.error(constants.basePath + "content/config.json contains invalid JSON.");
     }
-    linq.from(Object.keys(process.env))
-        .where(k => k.startsWith("ETA_"))
+    Object.keys(process.env)
+        .filter(k => k.startsWith("ETA_"))
         .forEach(k => {
             let tokens: string[] = k.toLowerCase().split("_").splice(1);
             let category: string = tokens[0];

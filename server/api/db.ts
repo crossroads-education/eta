@@ -19,7 +19,7 @@ export async function connect(): Promise<orm.Connection> {
         entities: modelDirs,
         autoSchemaSync: true,
         logging: {
-            logger: (l: string, m: any) => { logger.log(l, m); },
+            logger: (l: string, m: any) => { logger.log(l, "[" + logger.getCalling(4) + "] " + m); },
             logOnlyFailedQueries: !config.logger.logDatabaseQueries,
             logQueries: config.logger.logDatabaseQueries
         }

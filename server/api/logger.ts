@@ -12,9 +12,9 @@ class Logger {
         }
     }
 
-    private getCalling(): string {
+    public getCalling(level: number =  3): string {
         let rootCount: number = constants.basePath.split("/").length;
-        let stack: stackTrace.StackFrame = stackTrace.parse(new Error())[3];
+        let stack: stackTrace.StackFrame = stackTrace.parse(new Error())[level];
         let filename: string = stack.getFileName().replace(/\\/g, "/");
         filename = "/" + filename.split("/").splice(rootCount - 1).join("/");
         return filename + ":" + stack.getLineNumber();

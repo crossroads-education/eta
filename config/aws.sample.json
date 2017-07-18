@@ -1,0 +1,7 @@
+{
+  "use": false,
+  "accessKeyId": "<YOUR_ACCESS_KEY_ID>",
+  "secretAccessKey": "<YOUR_SECRET_ACCESS_KEY>",
+  "region": "us-east-1",
+  "bucketName": "<YOUR_BUCKET_NAME>"
+}

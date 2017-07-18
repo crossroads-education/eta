@@ -60,7 +60,7 @@ interface IAuthConfiguration {
         url: string;
         svc: string;
     };
-    provider: "cas";
+    provider: string;
 }
 
 interface IContentConfiguration {

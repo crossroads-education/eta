@@ -11,19 +11,17 @@ machine:
 checkout:
   post:
     - cp config/auth.sample.json config/auth.json
+    - cp config/aws.sample.json config/aws.json
     - cp config/db.sample.json config/db.json
     - cp config/dev.sample.json config/dev.json
     - cp config/http.sample.json config/http.json
     - cp config/https.sample.json config/https.json
     - cp config/logger.sample.json config/logger.json
-dependencies:
-  pre:
-    - npm i -g typescript
 compile:
   override:
-    - tsc
+    - npm run compile
 test:
   override:
-    - mocha --recursive --reporter mocha-junit-reporter:
+    - npm run test:
         environment:
           MOCHA_FILE: $CIRCLE_TEST_REPORTS/junit/test-results.xml

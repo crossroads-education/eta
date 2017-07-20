@@ -16,7 +16,7 @@ def to_camel_case(string):
     return string[0].lower() + string[1:]
 
 def compile_ts():
-    if os.system("tsc") is 0:
+    if os.system("npm run compile") is 0:
         print("Finished compilation.")
     else:
         print("Compilation failed: non-zero exit code detected.")

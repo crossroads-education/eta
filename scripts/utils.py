@@ -15,8 +15,11 @@ def get_timestamp():
 def to_camel_case(string):
     return string[0].lower() + string[1:]
 
-def compile_ts():
-    if os.system("npm run compile") is 0:
+def compile_ts(is_client=False):
+    cmd = "npm run compile"
+    if is_client:
+        cmd += "-client"
+    if os.system(cmd) is 0:
         print("Finished compilation.")
     else:
         print("Compilation failed: non-zero exit code detected.")

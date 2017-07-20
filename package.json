@@ -9,9 +9,11 @@
   "contributors": [],
   "main": "./server.js",
   "scripts": {
-    "lint": "node ./node_modules/tslint/bin/tslint -c tslint.json -p tsconfig.json",
     "compile": "node ./node_modules/typescript/bin/tsc",
+    "compile-client": "node ./node_modules/typescript/bin/tsc -p ./content/static/js/",
     "generate": "python ./scripts/generate_indexes.py",
+    "lint": "node ./node_modules/tslint/bin/tslint -c tslint.json -p tsconfig.json",
+    "lint-client": "node ./node_modules/tslint/bin/tslint -c tslint.json -p ./content/static/js/tsconfig.json",
     "start": "node ./server.js",
     "test": "node ./node_modules/mocha/bin/mocha --recursive"
   },

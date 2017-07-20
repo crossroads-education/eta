@@ -104,7 +104,7 @@ def main():
     print("Compiling server-side Typescript...")
     utils.compile_ts()
     print("\nCompiling client-side Typescript...")
-    utils.compile_ts()
+    utils.compile_ts(True)
 
 if __name__ == "__main__":
     main()

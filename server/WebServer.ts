@@ -14,28 +14,28 @@ import PageManager from "./PageManager";
 
 export default class WebServer {
     /**
-    Express application powering the web server
-    */
+     * Express application powering the web server
+     */
     public app: express.Application;
 
     /**
-    Main HTTP(S) web server
-    */
+     * Main HTTP(S) web server
+     */
     public server: http.Server | https.Server;
 
     /**
-    Server listening on port 80, in order to redirect HTTP requests to HTTPS
-    */
-    public redirectServer?: http.Server = null;
+     * Server listening on port 80, in order to redirect HTTP requests to HTTPS
+     */
+    public redirectServer?: http.Server = undefined;
 
     /**
-    Routes requests and loads controllers
-    */
+     * Routes requests and loads controllers
+     */
     public pageManager: PageManager;
 
     /**
-    Handle lifecycle events (server start, app start, etc)
-    */
+     * Handle lifecycle events (server start, app start, etc)
+     */
     public lifecycleHandlers: eta.ILifecycleHandler[] = [];
 
     public async init(): Promise<void> {
@@ -84,7 +84,7 @@ export default class WebServer {
         });
 
 
-        if (this.redirectServer != null) {
+        if (this.redirectServer !== undefined) {
             this.redirectServer.listen(eta.config.http.port, () => {
                 eta.logger.info("Web server (redirect) started on port " + eta.config.http.port);
             });

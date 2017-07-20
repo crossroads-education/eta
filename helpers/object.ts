@@ -1,6 +1,6 @@
 export default class HelperObject {
     public static clone(obj: any): any {
-        if (obj == null || typeof (obj) !== "object") {
+        if (obj === undefined || typeof (obj) !== "object") {
             return obj; // any non-objects are passed by value, not reference
         }
         if (obj instanceof Date) {

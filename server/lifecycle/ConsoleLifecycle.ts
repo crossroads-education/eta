@@ -25,7 +25,7 @@ export default class ConsoleLifecycle extends eta.ILifecycleHandler {
     }
 
     private async handle(line: string): Promise<void> {
-        if (line == "reload") {
+        if (line === "reload") {
             await this.server.pageManager.reload();
             eta.logger.trace("Finished reloading all controllers.");
         } else if (line.length > 0) {

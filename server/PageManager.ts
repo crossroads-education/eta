@@ -8,7 +8,7 @@ const requireReload: (path: string) => any = require("require-reload")(require);
 
 export default class PageManager {
     private isInitialized = false;
-    private controllers: (typeof api.IHttpController)[] = null;
+    private controllers: (typeof api.IHttpController)[] = undefined;
     private staticViewData: {[key: string]: any};
     public constructor() { }
 
@@ -30,7 +30,7 @@ export default class PageManager {
     }
 
     public async reload(): Promise<void> {
-        this.controllers = null;
+        this.controllers = undefined;
         this.staticViewData = {};
         return this.load();
     }
@@ -43,7 +43,7 @@ export default class PageManager {
             api.logger.warn(`Couldn't load controller ${path}`);
             api.logger.error(err);
         }
-        return null;
+        return undefined;
     }
 
     private loadStatic(path: string): void {
@@ -76,7 +76,7 @@ export default class PageManager {
         let controllerClass: typeof api.IHttpController;
         try {
             controllerClass = this.controllers
-               .find(c => c.prototype.routes.indexOf(route) != -1);
+               .find(c => c.prototype.routes.indexOf(route) !== -1);
         } catch (err) {
             api.logger.warn("Couldn't load controller for request. Are there non-controller files in /content/controllers?");
         }
@@ -86,7 +86,7 @@ export default class PageManager {
         new RequestHandler({
             route,
             action,
-            controllerPrototype: controllerClass ? controllerClass.prototype : null,
+            controllerPrototype: controllerClass ? controllerClass.prototype : undefined,
             req,
             res,
             next

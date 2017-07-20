@@ -1,6 +1,6 @@
 import IHttpController from "./interfaces/IHttpController";
 
-export default class mvc {
+export default class MVC {
     public static action(method: string): any {
         return function(target: IHttpController, propertyKey: string, descriptor: PropertyDescriptor): any {
             if (!target.actions) {
@@ -31,7 +31,7 @@ export default class mvc {
 
     public static get(): any {
         return function(target: IHttpController, propertyKey: string, descriptor: PropertyDescriptor): any {
-            return mvc.action("GET")(target, propertyKey, descriptor);
+            return MVC.action("GET")(target, propertyKey, descriptor);
         };
     }
 
@@ -46,7 +46,7 @@ export default class mvc {
 
     public static post(): any {
         return function(target: IHttpController, propertyKey: string, descriptor: PropertyDescriptor): any {
-            return mvc.action("POST")(target, propertyKey, descriptor);
+            return MVC.action("POST")(target, propertyKey, descriptor);
         };
     }
 

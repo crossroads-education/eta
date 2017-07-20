@@ -5,7 +5,7 @@ import config from "./config";
 import constants from "./constants";
 import logger from "./logger";
 
-let conn: orm.Connection;
+let conn: orm.Connection; // tslint:disable-line
 export default conn;
 
 export async function connect(): Promise<orm.Connection> {

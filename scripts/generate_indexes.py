@@ -14,7 +14,7 @@ import utils
 def generate_model(path, module_name):
     return """import {name} from "./{path}";
 export {{default as {name}}} from "./{path}";
-export let {lowerName}: orm.Repository<{name}> = null;
+export let {lowerName}: orm.Repository<{name}> = undefined;
 """.format(name=module_name, lowerName=utils.to_camel_case(module_name), path=path)
 
 def generate_index(path, module_name):

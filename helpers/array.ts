@@ -12,7 +12,7 @@ export default class HelperArray {
 
     public static removeIndexes(arr: any[], indexes: number[]): void {
         // sort in descending order
-        indexes = indexes.sort((a, b) => a == b ? 0 : (a > b ? -1 : 1));
+        indexes = indexes.sort((a, b) => a === b ? 0 : (a > b ? -1 : 1));
         indexes.forEach(i => {
             arr.splice(i, 1);
         });

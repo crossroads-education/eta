@@ -82,7 +82,7 @@ export default class RequestHandler extends api.IRequestHandler {
                 return;
             }
             if (this.controllerPrototype.raw.indexOf(this.action) !== -1) {
-                let val: string | Buffer = null;
+                let val: string | Buffer = undefined;
                 if (typeof(this.res.raw) === "string" || this.res.raw instanceof Buffer) {
                     val = this.res.raw;
                 } else {
@@ -145,7 +145,7 @@ export default class RequestHandler extends api.IRequestHandler {
     }
 
     private renderError(code: number): void {
-        if (this.res.statusCode == 200) {
+        if (this.res.statusCode === 200) {
             this.res.statusCode = code;
         }
         let errorView: string = api.constants.viewPath + "errors/" + code.toString();

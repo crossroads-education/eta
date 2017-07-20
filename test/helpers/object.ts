@@ -4,9 +4,6 @@ import HelperObject from "../../helpers/object";
 
 describe("HelperObject", function(): void {
     describe("#clone()", function(): void {
-        it("should return null when passed null", function(): void {
-            assert.strictEqual(null, HelperObject.clone(null));
-        });
         it("should return undefined when passed undefined", function(): void {
             assert.strictEqual(undefined, HelperObject.clone(undefined));
         });

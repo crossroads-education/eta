@@ -6,7 +6,7 @@ export default class HelperObject {
         if (obj instanceof Date) {
             return new Date(obj.getTime());
         }
-        let temp: any = new obj.constructor();
+        const temp: any = new obj.constructor();
         Object.keys(obj).forEach(key => {
             temp[key] = HelperObject.clone(obj[key]);
         });
@@ -14,7 +14,7 @@ export default class HelperObject {
     }
 
     public static merge(from: any, to: any): any {
-        for (let i in from) {
+        for (const i in from) {
             if (from[i] instanceof Array && to[i] instanceof Array) {
                 to[i] = to[i].concat(from[i]);
             } else {

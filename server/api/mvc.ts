@@ -32,7 +32,7 @@ export default class mvc {
     public static get(): any {
         return function(target: IHttpController, propertyKey: string, descriptor: PropertyDescriptor): any {
             return mvc.action("GET")(target, propertyKey, descriptor);
-        }
+        };
     }
 
     public static params(names: string[]): any {
@@ -56,7 +56,7 @@ export default class mvc {
                 target.raw = [];
             }
             target.raw.push(propertyKey);
-        }
+        };
     }
 
     public static route(route: string): any {

@@ -1,6 +1,6 @@
 export default class HelperArray {
     public static remove<T>(arr: T[], selector: (element: T) => boolean): number {
-        let indexes: number[] = [];
+        const indexes: number[] = [];
         arr.forEach((e, i) => {
             if (selector(e)) {
                 indexes.push(i);
@@ -19,7 +19,7 @@ export default class HelperArray {
     }
 
     public static async forEachAsync<T>(arr: T[], worker: (element: T) => Promise<void>): Promise<void> {
-        let promises: Promise<void>[] = [];
+        const promises: Promise<void>[] = [];
         arr.forEach(e => {
             promises.push(worker(e));
         });

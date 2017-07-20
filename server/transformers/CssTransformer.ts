@@ -10,7 +10,7 @@ export default class CssTransformer extends eta.IRequestTransformer {
         if (this.redirects) {
             return;
         }
-        let filename: string = eta.constants.contentPath + "css.json";
+        const filename: string = eta.constants.contentPath + "css.json";
         if (!helpers.fs.existsSync(filename)) {
             eta.logger.warn("CSS redirect file was not found: " + filename);
             return;
@@ -24,14 +24,14 @@ export default class CssTransformer extends eta.IRequestTransformer {
 
     public beforeResponse(): void {
         CssTransformer.init();
-        let view: {[key: string]: any} = this.res.view;
+        const view: {[key: string]: any} = this.res.view;
         if (!view["css"]) {
             view["css"] = [];
         }
-        let css: string[] = view["css"];
-        for (let i: number = 0; i < css.length; i++) {
+        const css: string[] = view["css"];
+        for (let i = 0; i < css.length; i++) {
             if (css[i][0] === "@") {
-                let name: string = css[i].substring(1);
+                const name: string = css[i].substring(1);
                 if (CssTransformer.redirects[name]) {
                     css[i] = CssTransformer.redirects[name];
                 } else {

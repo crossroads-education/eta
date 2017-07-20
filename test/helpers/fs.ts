@@ -20,11 +20,11 @@ describe("HelperFS", function(): void {
 
     describe("#existsSync", function(): void {
         it("should show this file as existing", function(): void {
-            let result: boolean = HelperFS.existsSync(process.cwd() + "/test/helpers/fs.js");
+            const result: boolean = HelperFS.existsSync(process.cwd() + "/test/helpers/fs.js");
             assert.ok(result);
         });
         it("should show a gibberish file as not existing", function(): void {
-            let result: boolean = HelperFS.existsSync(process.cwd() + "/tegfeiofgj.gd");
+            const result: boolean = HelperFS.existsSync(process.cwd() + "/tegfeiofgj.gd");
             assert.ok(!result);
         });
     });

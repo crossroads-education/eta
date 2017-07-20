@@ -3,17 +3,17 @@ import * as mocha from "mocha";
 import HelperDate from "../../helpers/date";
 
 describe("HelperDate", function() {
-    let start: Date = new Date("2017-02-07");
-    let end: Date = new Date("2017-05-10");
+    const start: Date = new Date("2017-02-07");
+    const end: Date = new Date("2017-05-10");
     describe("#getDate()", function(): void {
         it("should not mutate the parameter", function(): void {
-            let param: Date = new Date();
-            let copy: Date = new Date(param.getTime());
-            let result: Date = HelperDate.getDate(param);
+            const param: Date = new Date();
+            const copy: Date = new Date(param.getTime());
+            const result: Date = HelperDate.getDate(param);
             assert.deepEqual(copy, param);
         });
         it("should not return a Date with any time", function(): void {
-            let result: Date = HelperDate.getDate(new Date());
+            const result: Date = HelperDate.getDate(new Date());
             assert.equal(0, result.getHours());
             assert.equal(0, result.getMinutes());
             assert.equal(0, result.getSeconds());
@@ -21,7 +21,7 @@ describe("HelperDate", function() {
         });
     });
     describe("#getMonthsBetween()", function(): void {
-        let result: (typeof HelperDate.Month)[] = HelperDate.getMonthsBetween(start, end);
+        const result: (typeof HelperDate.Month)[] = HelperDate.getMonthsBetween(start, end);
         // getMonthsBetween(February, May) should return [February, March, April]
         it("should not mutate `start`", function(): void {
             assert.deepEqual(new Date(start.getTime()), start);
@@ -46,7 +46,7 @@ describe("HelperDate", function() {
     });
 
     describe("#getWeeksBetween()", function(): void {
-        let result: (typeof HelperDate.Week)[] = HelperDate.getWeeksBetween(start, end);
+        const result: (typeof HelperDate.Week)[] = HelperDate.getWeeksBetween(start, end);
         it("should not mutate `start`", function(): void {
             assert.deepEqual(new Date(start.getTime()), start);
         });
@@ -57,20 +57,20 @@ describe("HelperDate", function() {
             assert.equal(13, result.length);
         });
         it("should return the correct weeks", function(): void {
-            for (let i: number = 0; i < result.length; i++) {
+            for (let i = 0; i < result.length; i++) {
                 assert.equal(i + 6, result[i].number);
             }
         });
         it("should return the correct start dates", function(): void {
-            let temp: Date = new Date("2017-02-05 00:00:00");
-            for (let i: number = 0; i < result.length; i++) {
+            const temp: Date = new Date("2017-02-05 00:00:00");
+            for (let i = 0; i < result.length; i++) {
                 assert.deepEqual(temp, result[i].start.toDate());
                 temp.setDate(temp.getDate() + 7);
             }
         });
         it("should return the correct end dates", function(): void {
-            let temp: Date = new Date("2017-02-11 00:00:00");
-            for (let i: number = 0; i < result.length; i++) {
+            const temp: Date = new Date("2017-02-11 00:00:00");
+            for (let i = 0; i < result.length; i++) {
                 assert.deepEqual(temp, result[i].end.toDate());
                 temp.setDate(temp.getDate() + 7);
             }

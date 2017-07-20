@@ -15,8 +15,8 @@ export default class HelperSession {
             return null;
         }
         sid = sid.split(".")[0].substring(2);
-        let queryRunner: orm.QueryRunner = await eta.db.driver.createQueryRunner();
-        let rows: any[] = await queryRunner.query("SELECT expire, sess FROM session WHERE sid = $1::text", [sid]);
+        const queryRunner: orm.QueryRunner = await eta.db.driver.createQueryRunner();
+        const rows: any[] = await queryRunner.query("SELECT expire, sess FROM session WHERE sid = $1::text", [sid]);
         if (!rows || rows.length == 0) {
             return null;
         }

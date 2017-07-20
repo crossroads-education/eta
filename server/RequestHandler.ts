@@ -21,7 +21,7 @@ export default class RequestHandler extends api.IRequestHandler {
     }
 
     public async handle(): Promise<void> {
-        let staticDir: string = api.constants.staticDirs.find(d => this.req.mvcPath.startsWith("/" + d + "/"));
+        const staticDir: string = api.constants.staticDirs.find(d => this.req.mvcPath.startsWith("/" + d + "/"));
         if (staticDir) {
             return this.serveStatic();
         }
@@ -56,12 +56,12 @@ export default class RequestHandler extends api.IRequestHandler {
         }
         this.controller.req = this.req;
         this.controller.res = this.res;
-        let params: any[] = [];
-        let actionParams: string[] = this.controllerPrototype.params[this.action];
+        const params: any[] = [];
+        const actionParams: string[] = this.controllerPrototype.params[this.action];
         if (actionParams) {
-            let queryParams: any = this.req[this.req.method === "GET" ? "query" : "body"];
+            const queryParams: any = this.req[this.req.method === "GET" ? "query" : "body"];
             actionParams.forEach(p => {
-                let param: any = queryParams[p];
+                const param: any = queryParams[p];
                 try {
                     params.push(JSON.parse(param));
                 } catch (ex) {
@@ -100,7 +100,7 @@ export default class RequestHandler extends api.IRequestHandler {
     }
 
     private serveView(): void {
-        let viewPath: string = api.constants.viewPath + this.req.mvcPath.substring(1);
+        const viewPath: string = api.constants.viewPath + this.req.mvcPath.substring(1);
         helpers.fs.exists(viewPath + ".pug", (exists: boolean) => {
             if (!exists) {
                 this.renderError(api.constants.http.NotFound);
@@ -126,7 +126,7 @@ export default class RequestHandler extends api.IRequestHandler {
     }
 
     private serveStatic(): void {
-        let staticPath: string = api.constants.staticPath + this.req.mvcPath;
+        const staticPath: string = api.constants.staticPath + this.req.mvcPath;
         helpers.fs.exists(staticPath, (exists: boolean) => {
             if (!exists) {
                 this.renderError(api.constants.http.NotFound);
@@ -163,7 +163,7 @@ export default class RequestHandler extends api.IRequestHandler {
     private initTransformers(): void {
         this.transformers = [];
         Object.keys(transformers).forEach(key => {
-            let Transformer: typeof api.IRequestTransformer = (<any>transformers)[key];
+            const Transformer: typeof api.IRequestTransformer = (<any>transformers)[key];
             this.transformers.push(new (<any>Transformer)({
                 req: this.req,
                 res: this.res,
@@ -174,7 +174,7 @@ export default class RequestHandler extends api.IRequestHandler {
 
     private fireTransformEvent(name: string): void {
         this.transformers.forEach(t => {
-            let method: () => Promise<void> = (<any>t)[name];
+            const method: () => Promise<void> = (<any>t)[name];
             if (method) {
                 method.apply(t);
             }

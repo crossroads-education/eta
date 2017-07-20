@@ -11,45 +11,45 @@ describe("HelperObject", function(): void {
             assert.strictEqual(undefined, HelperObject.clone(undefined));
         });
         it("should return the same thing when passed a primitive", function(): void {
-            let val: number = 2;
+            const val = 2;
             assert.strictEqual(val, HelperObject.clone(val));
         });
         it("should return a different Date reference when passed a Date", function(): void {
-            let date: Date = new Date();
+            const date: Date = new Date();
             assert.notStrictEqual(date, HelperObject.clone(date));
         });
         it("should return a different object reference when passed an object", function(): void {
-            let obj: any = {"foo": 2, "bar": true};
+            const obj: any = {"foo": 2, "bar": true};
             assert.notStrictEqual(obj, HelperObject.clone(obj));
         });
     });
 
     describe("#merge()", function(): void {
         it("should combine properties of `from` and `to`", function(): void {
-            let from: any = { foo: true };
-            let to: any = { bar: 4 };
-            let expected: any = {
+            const from: any = { foo: true };
+            const to: any = { bar: 4 };
+            const expected: any = {
                 bar: 4,
                 foo: true
             };
             assert.deepEqual(expected, HelperObject.merge(from, to));
         });
         it("should overwrite non-array members of `to` with `from`", function(): void {
-            let from: any = { foo: true };
-            let to: any = { foo: false };
-            let expected: any = { foo: true };
+            const from: any = { foo: true };
+            const to: any = { foo: false };
+            const expected: any = { foo: true };
             assert.deepEqual(expected, HelperObject.merge(from, to));
         });
         it("should concat array members of `to` to `from`", function(): void {
-            let from: any = { foo: [2, 3] };
-            let to: any = { foo: [1] };
-            let expected: any = { foo: [1, 2, 3] };
+            const from: any = { foo: [2, 3] };
+            const to: any = { foo: [1] };
+            const expected: any = { foo: [1, 2, 3] };
             assert.deepEqual(expected, HelperObject.merge(from, to));
         });
         it("should return the same reference as `to`", function(): void {
-            let from: any = { foo: 2 };
-            let to: any = { bar: 3 };
-            let result: any = HelperObject.merge(from, to);
+            const from: any = { foo: 2 };
+            const to: any = { bar: 3 };
+            const result: any = HelperObject.merge(from, to);
             assert.strictEqual(to, result);
         });
     });

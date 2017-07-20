@@ -7,18 +7,18 @@ import RequestHandler from "./RequestHandler";
 const requireReload: (path: string) => any = require("require-reload")(require);
 
 export default class PageManager {
-    private isInitialized: boolean = false;
+    private isInitialized = false;
     private controllers: (typeof api.IHttpController)[] = null;
     private staticViewData: {[key: string]: any};
     public constructor() { }
 
     public async load(): Promise<void> {
-        let controllerFiles: string[] = await helpers.fs.recursiveReaddir(api.constants.controllerPath);
+        const controllerFiles: string[] = await helpers.fs.recursiveReaddir(api.constants.controllerPath);
         this.controllers = controllerFiles
             .filter(f => f.endsWith(".js"))
             .sort()
             .map(f => this.loadController(f.replace(/\\/g, "/")));
-        let viewStaticFiles: string[] = await helpers.fs.recursiveReaddir(api.constants.viewPath);
+        const viewStaticFiles: string[] = await helpers.fs.recursiveReaddir(api.constants.viewPath);
         this.staticViewData = {};
         viewStaticFiles
             .filter(f => f.endsWith(".json"))
@@ -36,7 +36,7 @@ export default class PageManager {
     }
 
     private loadController(path: string): typeof api.IHttpController {
-        let requireTemp = this.isInitialized ? requireReload : require;
+        const requireTemp = this.isInitialized ? requireReload : require;
         try {
             return require(path).default;
         } catch (err) {
@@ -47,7 +47,7 @@ export default class PageManager {
     }
 
     private loadStatic(path: string): void {
-        let mvcPath: string = path.substring(api.constants.viewPath.length - 1, path.length - 5);
+        const mvcPath: string = path.substring(api.constants.viewPath.length - 1, path.length - 5);
         if (this.staticViewData[mvcPath]) {
             return this.staticViewData[mvcPath];
         }
@@ -57,7 +57,7 @@ export default class PageManager {
             if (view.include !== undefined) {
                 view.include.forEach((path: string) => {
                     path = path.startsWith("/") ? path.substring(1) : path;
-                    let more: any = this.loadStatic(api.constants.viewPath + path);
+                    const more: any = this.loadStatic(api.constants.viewPath + path);
                     view = helpers.object.merge(more, view);
                 });
             }
@@ -70,9 +70,9 @@ export default class PageManager {
     }
 
     public handle(req: express.Request, res: express.Response, next: Function): void {
-        let tokens: string[] = req.mvcPath.split("/");
-        let action: string = tokens.splice(-1, 1)[0];
-        let route: string = tokens.join("/");
+        const tokens: string[] = req.mvcPath.split("/");
+        const action: string = tokens.splice(-1, 1)[0];
+        const route: string = tokens.join("/");
         let controllerClass: typeof api.IHttpController;
         try {
             controllerClass = this.controllers
@@ -84,12 +84,12 @@ export default class PageManager {
             res.view = this.staticViewData[req.mvcPath];
         }
         new RequestHandler({
-            route: route,
-            action: action,
+            route,
+            action,
             controllerPrototype: controllerClass ? controllerClass.prototype : null,
-            req: req,
-            res: res,
-            next: next
+            req,
+            res,
+            next
         }).handle().then(() => { })
         .catch(err => {
             api.logger.error(err);

@@ -1,7 +1,7 @@
 require("source-map-support").install();
 import logger from "./server/api/logger"; // Required to setup logger
 import WebServer from "./server/WebServer";
-import {connect} from "./server/api/db";
+import { connect } from "./server/api/db";
 
 function main() {
     if (process.env.ETA_ENVIRONMENT !== "docker-compose") {

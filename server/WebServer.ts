@@ -9,7 +9,7 @@ import * as multer from "multer";
 import * as orm from "typeorm";
 import * as pg from "pg";
 import * as eta from "../eta";
-import {connect} from "./api/db";
+import { connect } from "./api/db";
 import PageManager from "./PageManager";
 
 export default class WebServer {
@@ -43,7 +43,7 @@ export default class WebServer {
         await this.fireLifecycleEvent("onAppStart");
 
         this.app = express();
-        let conn: orm.Connection = await connect();
+        const conn: orm.Connection = await connect();
         (<any>eta).db = conn;
         eta.logger.info("Successfully connected to the database.");
         await this.fireLifecycleEvent("onDatabaseConnect");
@@ -66,7 +66,7 @@ export default class WebServer {
     }
 
     public start(): void {
-        let onHttpServerError: (err: Error) => void = (err: Error) => {
+        const onHttpServerError: (err: Error) => void = (err: Error) => {
             eta.logger.error("Web server error occurred: " + err.message);
         };
         this.server.on("error", onHttpServerError);
@@ -74,7 +74,7 @@ export default class WebServer {
             this.redirectServer.on("error", onHttpServerError);
         }
 
-        let port: number = eta.config.https.enable ? eta.config.https.port : eta.config.http.port;
+        const port: number = eta.config.https.enable ? eta.config.https.port : eta.config.http.port;
 
         this.server.listen(port, () => {
             eta.logger.info("Web server (main) started on port " + port);
@@ -99,7 +99,7 @@ export default class WebServer {
                     return;
                 }
                 try {
-                    let lifecycleHandler: typeof eta.ILifecycleHandler = require(lifecycleDir + filename).default;
+                    const lifecycleHandler: typeof eta.ILifecycleHandler = require(lifecycleDir + filename).default;
                     this.lifecycleHandlers.push(new (<any>lifecycleHandler)({server: this}));
                 } catch (err) {
                     eta.logger.error(`Couldn't load lifecycle handler ${filename}`);
@@ -110,9 +110,9 @@ export default class WebServer {
     }
 
     private async fireLifecycleEvent(name: string): Promise<void> {
-        for (let i in this.lifecycleHandlers) {
-            let handler: any = (<any>this.lifecycleHandlers[i]);
-            let method: () => Promise<void> = handler[name];
+        for (const i in this.lifecycleHandlers) {
+            const handler: any = (<any>this.lifecycleHandlers[i]);
+            const method: () => Promise<void> = handler[name];
             if (method) {
                 handler.server = this;
                 await method.apply(handler);
@@ -130,11 +130,11 @@ export default class WebServer {
     }
 
     private setupMiddleware(): void {
-        let dbcfg: any = eta.config.db;
-        let connectionString: string = `postgres://${dbcfg.username}:${dbcfg.password}@${dbcfg.host}:${dbcfg.port}/${dbcfg.database}`;
+        const dbcfg: any = eta.config.db;
+        const connectionString = `postgres://${dbcfg.username}:${dbcfg.password}@${dbcfg.host}:${dbcfg.port}/${dbcfg.database}`;
         this.app.use(expressSession({
             store: new (require("connect-pg-simple")(expressSession))({
-                pg: pg,
+                pg,
                 conString: connectionString
             }),
             resave: true,
@@ -179,7 +179,7 @@ export default class WebServer {
         }
 
         // HTTPS (and redirect server)
-        let sslOptions: any = {
+        const sslOptions: any = {
             "key": fs.readFileSync(eta.config.https.key),
             "cert": fs.readFileSync(eta.config.https.cert),
             "secureProtocol": "TLSv1_2_method"

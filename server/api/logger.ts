@@ -12,18 +12,18 @@ class Logger {
         }
     }
 
-    public getCalling(level: number =  3): string {
-        let rootCount: number = constants.basePath.split("/").length;
-        let stack: stackTrace.StackFrame = stackTrace.parse(new Error())[level];
+    public getCalling(level =  3): string {
+        const rootCount: number = constants.basePath.split("/").length;
+        const stack: stackTrace.StackFrame = stackTrace.parse(new Error())[level];
         let filename: string = stack.getFileName().replace(/\\/g, "/");
         filename = "/" + filename.split("/").splice(rootCount - 1).join("/");
         return filename + ":" + stack.getLineNumber();
     }
 
     private write(data: string, ...args: any[]): void {
-        let now: Date = new Date();
-        let filename: string = constants.basePath + "/logs/" + moment(now).format("YYYY-MM-DD") + ".log";
-        let msg: string = `(${now.toLocaleTimeString()}) [${this.getCalling()}] ${data}`;
+        const now: Date = new Date();
+        const filename: string = constants.basePath + "/logs/" + moment(now).format("YYYY-MM-DD") + ".log";
+        let msg = `(${now.toLocaleTimeString()}) [${this.getCalling()}] ${data}`;
         if (args.length > 0) {
             args = args[0] instanceof Array ? args[0] : args;
             args.splice(0, 0, msg);
@@ -32,7 +32,7 @@ class Logger {
         } else {
             console.log(msg);
         }
-        for (let i: number = 0; i < args.length; i++) {
+        for (let i = 0; i < args.length; i++) {
             msg += " " + JSON.stringify(args[i]);
         }
         fs.appendFile(filename, msg + "\n", (err: NodeJS.ErrnoException) => {
@@ -71,5 +71,5 @@ class Logger {
     }
 }
 
-let logger: Logger = new Logger();
+const logger: Logger = new Logger();
 export default logger;

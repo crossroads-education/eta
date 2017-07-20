@@ -9,7 +9,7 @@ export default class RedirectTransformer extends eta.IRequestTransformer {
         if (this.redirects) {
             return;
         }
-        let filenames: string[] = [
+        const filenames: string[] = [
             eta.constants.basePath + "redirects.json",
             eta.constants.contentPath + "redirects.json"
         ];
@@ -31,7 +31,7 @@ export default class RedirectTransformer extends eta.IRequestTransformer {
 
     public onRequest(): void {
         RedirectTransformer.init();
-        let redirectUrl: string = RedirectTransformer.redirects[this.req.mvcPath];
+        const redirectUrl: string = RedirectTransformer.redirects[this.req.mvcPath];
         if (redirectUrl) {
             this.redirect(redirectUrl);
         }

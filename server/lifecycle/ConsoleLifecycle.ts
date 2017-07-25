@@ -34,6 +34,8 @@ export default class ConsoleLifecycle extends eta.ILifecycleHandler {
     }
 
     public async onServerStop(): Promise<void> {
-        this.console.close();
+        if (this.console) {
+            this.console.close();
+        }
     }
 }

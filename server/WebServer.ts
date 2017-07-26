@@ -164,7 +164,14 @@ export default class WebServer {
             if (req.mvcPath.split("/").length === 2) {
                 req.mvcPath = "/home" + req.mvcPath;
             }
-            const host: string = req.get("host").replace(":" + eta.config.https.port, eta.config.https.realPort.toString());
+            let host: string = req.get("host");
+            if (eta.config.https.realPort !== undefined) {
+                let realPort = "";
+                if (<any>eta.config.https.realPort !== false) {
+                    realPort = ":" + eta.config.https.realPort.toString();
+                }
+                host = host.replace(":" + eta.config.https.port, realPort);
+            }
             req.baseUrl = req.protocol + "://" + host + "/";
             req.fullUrl = req.baseUrl + req.mvcPath.substring(1);
             res.view = {};

@@ -84,6 +84,7 @@ interface IHttpsConfiguration {
     cert?: string;
     key?: string;
     port?: number;
+    realPort?: number;
 }
 
 interface ILoggerConfiguration {

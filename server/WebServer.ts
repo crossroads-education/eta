@@ -83,7 +83,6 @@ export default class WebServer {
             });
         });
 
-
         if (this.redirectServer !== undefined) {
             this.redirectServer.listen(eta.config.http.port, () => {
                 eta.logger.info("Web server (redirect) started on port " + eta.config.http.port);
@@ -165,7 +164,8 @@ export default class WebServer {
             if (req.mvcPath.split("/").length === 2) {
                 req.mvcPath = "/home" + req.mvcPath;
             }
-            req.baseUrl = req.protocol + "://" + req.get("host") + "/";
+            const host: string = req.get("host").replace(":" + eta.config.https.port, eta.config.https.realPort.toString());
+            req.baseUrl = req.protocol + "://" + host + "/";
             req.fullUrl = req.baseUrl + req.mvcPath.substring(1);
             res.view = {};
             return this.pageManager.handle(req, res, next);
@@ -193,7 +193,7 @@ export default class WebServer {
 
         this.redirectServer = http.createServer((req: http.IncomingMessage, res: http.ServerResponse) => {
             res.writeHead(301, {
-                Location: "https://" + eta.config.http.host + ":" + eta.config.https.port + req.url
+                Location: "https://" + eta.config.http.host + ":" + eta.config.https.realPort + req.url
             });
             res.end();
         });

@@ -29,7 +29,7 @@ export default class RedirectTransformer extends eta.IRequestTransformer {
         });
     }
 
-    public onRequest(): void {
+    public async onRequest(): Promise<void> {
         RedirectTransformer.init();
         const redirectUrl: string = RedirectTransformer.redirects[this.req.mvcPath];
         if (redirectUrl) {

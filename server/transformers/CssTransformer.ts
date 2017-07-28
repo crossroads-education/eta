@@ -22,7 +22,7 @@ export default class CssTransformer extends eta.IRequestTransformer {
         }
     }
 
-    public beforeResponse(): void {
+    public async beforeResponse(): Promise<void> {
         CssTransformer.init();
         const view: {[key: string]: any} = this.res.view;
         if (!view["css"]) {

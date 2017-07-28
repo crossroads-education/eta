@@ -2,8 +2,8 @@ import * as express from "express";
 import IRequestHandler from "./IRequestHandler";
 
 abstract class IRequestTransformer extends IRequestHandler {
-    onRequest(): void { }
-    beforeResponse(): void { }
+    public async onRequest(): Promise<void> { }
+    public async beforeResponse(): Promise<void> { }
 }
 
 export default IRequestTransformer;

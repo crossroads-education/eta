@@ -66,6 +66,8 @@ interface IAuthConfiguration {
 interface IContentConfiguration {
     lifecycleDirs: string[];
     modelDirs: string[];
+    transformerDirs: string[];
+    validator: string;
 }
 
 interface IDevConfiguration {

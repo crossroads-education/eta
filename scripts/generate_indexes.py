@@ -1,5 +1,6 @@
 import json
 import os
+import sys
 import utils
 
 """
@@ -33,7 +34,6 @@ def generate_export(path):
         if raw_line.startswith("export ") and raw_line.endswith(";"):
             continue
         if raw_line == "// stop-generate":
-            print("stop-generate encountered in " + path)
             real_lines.append("}")
             break
         real_lines.append(line)
@@ -63,7 +63,6 @@ def generate(config):
                 absolute_filename = root + "/" + filename
                 if file_ending == ".js":
                     if not os.path.exists(absolute_filename.replace(".js", ".ts")):
-                        print("Extra file ({}) found. Skipping.".format(absolute_filename))
                         continue
                 if filename.startswith("I"):
                     real_files.insert(0, absolute_filename)
@@ -101,10 +100,12 @@ def main():
     server_dir = utils.get_server_dir()
     handle_config(server_dir + "indexes.json")
     handle_config(server_dir + "content/indexes.json")
-    print("Compiling server-side Typescript...")
-    utils.compile_ts()
-    print("\nCompiling client-side Typescript...")
-    utils.compile_ts(True)
+    print("Finished generating indexes and exports.")
+    if len(sys.argv) > 1 and sys.argv[1] == "compile":
+        print("Compiling server-side Typescript...")
+        utils.compile_ts()
+        print("\nCompiling client-side Typescript...")
+        utils.compile_ts(True)
 
 if __name__ == "__main__":
     main()

@@ -14,6 +14,7 @@
     "generate": "python ./scripts/generate_indexes.py",
     "lint": "node ./node_modules/tslint/bin/tslint -c tslint.json -p tsconfig.json",
     "lint-client": "node ./node_modules/tslint/bin/tslint -c tslint.json -p ./content/static/js/tsconfig.json",
+    "pull": "sh ./scripts/pull.sh",
     "start": "node ./server.js",
     "test": "node ./node_modules/mocha/bin/mocha --recursive",
     "test-content": "node ./node_modules/mocha/bin/mocha --recursive ./content/test"

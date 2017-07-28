@@ -15,7 +15,8 @@
     "lint": "node ./node_modules/tslint/bin/tslint -c tslint.json -p tsconfig.json",
     "lint-client": "node ./node_modules/tslint/bin/tslint -c tslint.json -p ./content/static/js/tsconfig.json",
     "start": "node ./server.js",
-    "test": "node ./node_modules/mocha/bin/mocha --recursive"
+    "test": "node ./node_modules/mocha/bin/mocha --recursive",
+    "test-content": "node ./node_modules/mocha/bin/mocha --recursive ./content/test"
   },
   "standard": {
     "parser": "typescript-eslint-parser",

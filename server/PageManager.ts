@@ -58,7 +58,7 @@ export default class PageManager {
                 view.include.forEach((path: string) => {
                     path = path.startsWith("/") ? path.substring(1) : path;
                     const more: any = this.loadStatic(api.constants.viewPath + path);
-                    view = helpers.object.merge(more, view);
+                    view = helpers.object.merge(more, view, true);
                 });
             }
         } catch (err) {

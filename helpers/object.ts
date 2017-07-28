@@ -13,10 +13,10 @@ export default class HelperObject {
         return temp;
     }
 
-    public static merge(from: any, to: any): any {
+    public static merge(from: any, to: any, reverseArrays = false): any {
         for (const i in from) {
             if (from[i] instanceof Array && to[i] instanceof Array) {
-                to[i] = to[i].concat(from[i]);
+                to[i] = reverseArrays ? from[i].concat(to[i]) : to[i].concat(from[i]);
             } else {
                 to[i] = from[i];
             }

@@ -33,7 +33,13 @@ class Logger {
             console.log(msg);
         }
         for (let i = 0; i < args.length; i++) {
-            msg += " " + JSON.stringify(args[i]);
+            let value: any = args[i];
+            if (value instanceof Error) {
+                value = value.toString();
+            } else {
+                value = JSON.stringify(value);
+            }
+            msg += " " + value;
         }
         fs.appendFile(filename, msg + "\n", (err: NodeJS.ErrnoException) => {
             if (err) {

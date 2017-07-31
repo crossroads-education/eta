@@ -16,13 +16,6 @@ function load(): IConfiguration {
             logger.error(configDir + filename + " contains invalid JSON.");
         }
     });
-    const raw: string = fs.readFileSync(constants.basePath + "content/config.json").toString();
-    try {
-        config.content = JSON.parse(raw);
-        config.content.lifecycleDirs.push("../server/lifecycle");
-    } catch (err) {
-        logger.error(constants.basePath + "content/config.json contains invalid JSON.");
-    }
     Object.keys(process.env)
         .filter(k => k.startsWith("ETA_"))
         .forEach(k => {
@@ -47,15 +40,15 @@ export default config = load();
 
 export interface IConfiguration {
     auth: IAuthConfiguration;
-    content: IContentConfiguration;
     db: DriverOptions;
     dev: IDevConfiguration;
     http: IHttpConfiguration;
     https: IHttpsConfiguration;
     logger: ILoggerConfiguration;
+    modules: {[key: string]: IModuleConfiguration};
 }
 
-interface IAuthConfiguration {
+export interface IAuthConfiguration {
     cas: {
         url: string;
         svc: string;
@@ -63,24 +56,30 @@ interface IAuthConfiguration {
     provider: string;
 }
 
-interface IContentConfiguration {
+export interface IModuleConfiguration {
+    controllerDirs: string[];
+    css: {[key: string]: string};
     lifecycleDirs: string[];
     modelDirs: string[];
+    name: string;
+    redirects: {[key: string]: string};
+    rootDir: string;
+    staticDirs: string[];
     transformerDirs: string[];
-    validator: string;
+    viewDirs: string[];
 }
 
-interface IDevConfiguration {
+export interface IDevConfiguration {
     enable: boolean;
 }
 
-interface IHttpConfiguration {
+export interface IHttpConfiguration {
     host: string;
     port: number;
     sessionSecret: string;
 }
 
-interface IHttpsConfiguration {
+export interface IHttpsConfiguration {
     enable: boolean;
     ca?: string;
     cert?: string;
@@ -89,6 +88,6 @@ interface IHttpsConfiguration {
     realPort?: number;
 }
 
-interface ILoggerConfiguration {
+export interface ILoggerConfiguration {
     logDatabaseQueries: boolean;
 }

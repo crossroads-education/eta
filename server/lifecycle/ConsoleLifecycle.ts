@@ -26,7 +26,8 @@ export default class ConsoleLifecycle extends eta.ILifecycleHandler {
 
     private async handle(line: string): Promise<void> {
         if (line === "reload") {
-            await this.server.pageManager.reload();
+            await eta.array.forEachAsync(Object.keys(this.server.moduleLoaders)
+                .map(k => this.server.moduleLoaders[k]), m => m.loadAll());
             eta.logger.trace("Finished reloading all controllers.");
         } else if (line.length > 0) {
             eta.logger.trace("Unrecognized command: " + line);

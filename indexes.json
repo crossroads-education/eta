@@ -13,5 +13,10 @@
     "filename": "helpers/index.ts",
     "type": "index",
     "dirs": ["helpers"]
+  },
+  {
+    "filename": "lib/index.ts",
+    "type": "index",
+    "dirs": ["lib"]
   }
 ]

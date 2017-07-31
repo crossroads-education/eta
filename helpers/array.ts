@@ -18,11 +18,17 @@ export default class HelperArray {
         });
     }
 
-    public static async forEachAsync<T>(arr: T[], worker: (element: T) => Promise<void>): Promise<void> {
-        const promises: Promise<void>[] = [];
-        arr.forEach(e => {
-            promises.push(worker(e));
-        });
-        await Promise.all(promises);
+    public static async forEachAsync<T>(arr: T[], worker: (element: T) => Promise<void>, inOrder = false): Promise<void> {
+        if (inOrder) {
+            for (let i = 0; i < arr.length; i++) {
+                await worker(arr[i]);
+            }
+        } else {
+            const promises: Promise<void>[] = [];
+            arr.forEach(e => {
+                promises.push(worker(e));
+            });
+            await Promise.all(promises);
+        }
     }
 }

@@ -10,16 +10,10 @@ export default class CssTransformer extends eta.IRequestTransformer {
         if (this.redirects) {
             return;
         }
-        const filename: string = eta.constants.contentPath + "css.json";
-        if (!helpers.fs.existsSync(filename)) {
-            eta.logger.warn("CSS redirect file was not found: " + filename);
-            return;
-        }
-        try {
-            this.redirects = JSON.parse(fs.readFileSync(filename).toString());
-        } catch (err) {
-            eta.logger.warn("CSS redirect file is not valid JSON: " + filename);
-        }
+        this.redirects = {};
+        Object.keys(eta.config.modules).forEach(k => {
+            this.redirects = eta.object.merge(eta.config.modules[k].css, this.redirects);
+        });
     }
 
     public async beforeResponse(): Promise<void> {

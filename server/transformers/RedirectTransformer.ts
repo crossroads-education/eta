@@ -9,23 +9,9 @@ export default class RedirectTransformer extends eta.IRequestTransformer {
         if (this.redirects) {
             return;
         }
-        const filenames: string[] = [
-            eta.constants.basePath + "redirects.json",
-            eta.constants.contentPath + "redirects.json"
-        ];
         this.redirects = {};
-        filenames.forEach(filename => {
-            if (!fs.existsSync(filename)) {
-                return;
-            }
-            let data: any = fs.readFileSync(filename);
-            try {
-                data = JSON.parse(data.toString());
-            } catch (err) {
-                eta.logger.error("Couldn't parse JSON in " + filename + ": " + err.message);
-                return;
-            }
-            eta.object.merge(data, this.redirects);
+        Object.keys(eta.config.modules).forEach(k => {
+            this.redirects = eta.object.merge(eta.config.modules[k].redirects, this.redirects);
         });
     }
 

@@ -182,16 +182,16 @@ def handle_module(module_dir):
 def main():
     server_dir = utils.get_server_dir()
     handle_config(server_dir + "indexes.json", False)
-    modules = os.listdir(server_dir + "modules")
-    for module_name in modules:
-        handle_module(server_dir + "modules/" + module_name + "/")
-    generate_models()
+    if os.path.isdir(server_dir + "modules"):
+        modules = os.listdir(server_dir + "modules")
+        for module_name in modules:
+            handle_module(server_dir + "modules/" + module_name + "/")
+        generate_models()
     print("Finished generating indexes and exports.")
     if len(sys.argv) > 1 and sys.argv[1] == "compile":
         print("Compiling server-side Typescript...")
         utils.compile_ts()
-        print("\nCompiling client-side Typescript...")
-        utils.compile_ts(True)
+        # Fix client-side compilation
 
 if __name__ == "__main__":
     main()

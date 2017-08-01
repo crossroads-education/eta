@@ -11,15 +11,12 @@ export default conn;
 export async function connect(): Promise<orm.Connection> {
     const modelDirs: string[] = eta.object.clone(Object.keys(eta.config.modules)
         .map(k => eta.config.modules[k])
-        .sort((a, b) => b.name ? b.name.includes("-db-") ? -1 : 0 : 0)
         .map(m => m.modelDirs)
         .reduce((prev, next) => prev.concat(next)))
-        .map(d => d + "**/!(enums)/*.js");
+        .map(d => d + "*.js");
     // eta.object.clone(modelDirs).forEach(d => modelDirs.push(d.replace("/**/!(enums)/", "/")));
     console.log(modelDirs);
-    const connection: orm.Connection = await orm.createConnection({
-        type: <any>eta.config.db.type,
-        driver: eta.config.db,
+    const connection: orm.Connection = await orm.createConnection(eta.object.merge({
         entities: modelDirs,
         autoSchemaSync: true,
         logging: {
@@ -27,6 +24,6 @@ export async function connect(): Promise<orm.Connection> {
             logOnlyFailedQueries: !eta.config.logger.logDatabaseQueries,
             logQueries: eta.config.logger.logDatabaseQueries
         }
-    });
+    }, eta.config.db));
     return connection;
 }

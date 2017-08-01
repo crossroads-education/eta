@@ -1,7 +1,6 @@
 import * as fs from "fs";
 import constants from "./constants";
 import logger from "./logger";
-import { DriverOptions } from "typeorm";
 
 function load(): IConfiguration {
     const configDir: string = constants.basePath + "config/";
@@ -40,7 +39,7 @@ export default config = load();
 
 export interface IConfiguration {
     auth: IAuthConfiguration;
-    db: DriverOptions;
+    db: any;
     dev: IDevConfiguration;
     http: IHttpConfiguration;
     https: IHttpsConfiguration;

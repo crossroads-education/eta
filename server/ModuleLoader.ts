@@ -79,6 +79,7 @@ export default class ModuleLoader {
     }
 
     public async loadStatic(): Promise<void> {
+        this.staticFiles = {};
         await eta.array.forEachAsync(this.config.staticDirs, async d => {
             const files: string[] = await this.getFiles([d]);
             files.forEach(f => {
@@ -94,8 +95,7 @@ export default class ModuleLoader {
             const files: string[] = (await this.getFiles([viewDir]))
                 .filter(f => f.endsWith(".json"));
             await eta.array.forEachAsync(files, path => {
-                const mvcPath: string = path.substring(viewDir.length - 1, path.length - 5);
-                return <Promise<any>>this.loadSingleViewMetadata(path, mvcPath);
+                return <Promise<any>>this.loadSingleViewMetadata(path, viewDir);
             }, true);
         });
     }
@@ -107,7 +107,8 @@ export default class ModuleLoader {
         }
         let metadata: {[key: string]: any};
         try {
-            metadata = JSON.parse((await fs.readFile(path)).toString());
+            const rawJson: string = (await fs.readFile(path)).toString();
+            metadata = JSON.parse(rawJson);
         } catch (err) {
             eta.logger.warn("Encountered invalid JSON in " + path);
             return undefined;
@@ -115,7 +116,7 @@ export default class ModuleLoader {
         if (metadata.include !== undefined) {
             eta.array.forEachAsync(metadata.include, async (p: string) => {
                 p = p.startsWith("/") ? p.substring(1) : p;
-                const more: {[key: string]: any} = await this.loadSingleViewMetadata(p, viewDir);
+                const more: {[key: string]: any} = await this.loadSingleViewMetadata(viewDir + p, viewDir);
                 if (more !== undefined) {
                     metadata = eta.object.merge(more, metadata, true);
                 }

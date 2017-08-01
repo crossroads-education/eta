@@ -112,9 +112,8 @@ export default class RequestHandler extends eta.IRequestHandler {
     }
 
     private async serveView(): Promise<void> {
-        eta.logger.obj(this.server.viewFiles);
         const viewPath: string = this.server.viewFiles[this.req.mvcPath];
-        if (!await eta.fs.exists(viewPath)) {
+        if (viewPath === undefined || !await eta.fs.exists(viewPath)) {
             this.renderError(eta.constants.http.NotFound);
             return;
         }

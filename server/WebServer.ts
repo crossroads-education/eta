@@ -36,19 +36,20 @@ export default class WebServer {
 
     /** key: route */
     public controllers: {[key: string]: typeof eta.IHttpController} = {};
-    public lifecycleHandlers: (typeof eta.ILifecycleHandler)[] = [];
+    public lifecycleHandlers: eta.ILifecycleHandler[] = [];
     public requestTransformers: (typeof eta.IRequestTransformer)[] = [];
     public staticFiles: {[key: string]: string} = {};
     public viewFiles: {[key: string]: string} = {};
     public viewMetadata: {[key: string]: {[key: string]: any}} = {};
+
+    public connection: orm.Connection;
 
     public async init(): Promise<void> {
         await this.loadModules();
         await this.fireLifecycleEvent("onAppStart");
 
         this.app = express();
-        const conn: orm.Connection = await connect();
-        (<any>eta).db = conn;
+        this.connection = await connect();
         eta.logger.info("Successfully connected to the database.");
         await this.fireLifecycleEvent("onDatabaseConnect");
 
@@ -100,20 +101,22 @@ export default class WebServer {
         eta.constants.staticPaths = [];
         eta.constants.viewPaths = [];
         const moduleDirs: string[] = await fs.readdir(eta.constants.modulesPath);
+        eta.logger.info(`Found ${moduleDirs.length} modules: ${moduleDirs.join(", ")}`);
         await eta.array.forEachAsync(moduleDirs, moduleName => {
             this.moduleLoaders[moduleName] = new ModuleLoader(moduleName);
-            eta.logger.trace("Loading module " + moduleName);
             return this.moduleLoaders[moduleName].loadAll();
         });
+        let lifecycleHandlerTypes: (typeof eta.ILifecycleHandler)[] = [];
         Object.keys(this.moduleLoaders).sort().forEach(k => {
             const moduleLoader: ModuleLoader = this.moduleLoaders[k];
             this.controllers = eta.object.merge(moduleLoader.controllers, this.controllers);
-            this.lifecycleHandlers = this.lifecycleHandlers.concat(moduleLoader.lifecycleHandlers);
+            lifecycleHandlerTypes = lifecycleHandlerTypes.concat(moduleLoader.lifecycleHandlers);
             this.requestTransformers = this.requestTransformers.concat(moduleLoader.requestTransformers);
             this.staticFiles = eta.object.merge(moduleLoader.staticFiles, this.staticFiles);
             this.viewFiles = eta.object.merge(moduleLoader.viewFiles, this.viewFiles);
             this.viewMetadata = eta.object.merge(moduleLoader.viewMetadata, this.viewMetadata);
         });
+        this.lifecycleHandlers = lifecycleHandlerTypes.map((LifecycleHandler: any) => new LifecycleHandler({ server: this }));
     }
 
     private fireLifecycleEvent(name: string): Promise<void> {
@@ -121,7 +124,12 @@ export default class WebServer {
             const method: () => Promise<void> = handler[name];
             if (method) {
                 handler.server = this;
-                await method.apply(handler);
+                try {
+                    await method.apply(handler);
+                } catch (err) {
+                    eta.logger.warn("Error while firing lifecycle event " + name + " on " + handler.constructor.name);
+                    eta.logger.error(err);
+                }
             }
         });
     }

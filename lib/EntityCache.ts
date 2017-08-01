@@ -1,7 +1,7 @@
 import * as orm from "typeorm";
 import * as eta from "../eta";
 
-export default class EntityCache<T extends eta.INetworkObject> {
+export default class EntityCache<T extends { toCacheObject: () => any }> {
 
     public repository: orm.Repository<T> = undefined;
 
@@ -53,14 +53,14 @@ export default class EntityCache<T extends eta.INetworkObject> {
     }
 
     private async insertMany(objects: T[]): Promise<void> {
-        const tableName = eta.db.driver.escape(this.repository.metadata.tableName);
+        const tableName = eta.db().driver.escape(this.repository.metadata.tableName);
         let sql = "INSERT INTO " + tableName + " ";
         let sqlTokens: string[] = [];
         const columns: string[] = [];
         this.repository.metadata.columns
             .filter(c => !c.isGenerated)
             .forEach(c => {
-                sqlTokens.push(eta.db.driver.escape(c.databaseName));
+                sqlTokens.push(eta.db().driver.escape(c.databaseName));
                 columns.push(c.databaseName);
             });
         sql += "(" + sqlTokens.sort().join(",") + ") VALUES ";
@@ -83,6 +83,6 @@ export default class EntityCache<T extends eta.INetworkObject> {
             sqlTokens.push("(" + objectTokens.join(",") + ")");
         });
         sql += sqlTokens.join(",") + " ON CONFLICT DO NOTHING";
-        await eta.db.query(sql, params);
+        await eta.db().query(sql, params);
     }
 }

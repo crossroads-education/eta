@@ -5,8 +5,10 @@ import logger from "./logger";
 import * as db from "../../db";
 Object.keys(db);
 
-let conn: orm.Connection; // tslint:disable-line
-export default conn;
+function getConnection(): orm.Connection {
+    return orm.getConnection();
+}
+export default getConnection;
 
 export async function connect(): Promise<orm.Connection> {
     const modelDirs: string[] = eta.object.clone(Object.keys(eta.config.modules)
@@ -15,8 +17,7 @@ export async function connect(): Promise<orm.Connection> {
         .reduce((prev, next) => prev.concat(next)))
         .map(d => d + "*.js");
     // eta.object.clone(modelDirs).forEach(d => modelDirs.push(d.replace("/**/!(enums)/", "/")));
-    console.log(modelDirs);
-    const connection: orm.Connection = await orm.createConnection(eta.object.merge({
+    return await orm.createConnection(eta.object.merge({
         entities: modelDirs,
         autoSchemaSync: true,
         logging: {
@@ -25,5 +26,4 @@ export async function connect(): Promise<orm.Connection> {
             logQueries: eta.config.logger.logDatabaseQueries
         }
     }, eta.config.db));
-    return connection;
 }

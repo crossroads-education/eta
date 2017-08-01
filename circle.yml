@@ -19,6 +19,7 @@ checkout:
     - cp config/logger.sample.json config/logger.json
 compile:
   override:
+    - npm run generate
     - npm run compile
 test:
   override:

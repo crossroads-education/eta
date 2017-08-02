@@ -4,7 +4,7 @@ export {default as IRequestHandler} from "./interfaces/IRequestHandler";
 export {default as ILifecycleHandler} from "./interfaces/ILifecycleHandler";
 export {default as IHttpController} from "./interfaces/IHttpController";
 export {default as IExternalIntegration} from "./interfaces/IExternalIntegration";
-export {default as IAuthController} from "./interfaces/IAuthController";
+export {default as IAuthProvider} from "./interfaces/IAuthProvider";
 export {default as config} from "./config";
 export {default as constants} from "./constants";
 export {default as db} from "./db";

@@ -7,6 +7,7 @@ import * as http from "http";
 import * as https from "https";
 import * as multer from "multer";
 import * as orm from "typeorm";
+import * as passport from "passport";
 import * as pg from "pg";
 import * as eta from "../eta";
 import { connect } from "./api/db";
@@ -55,6 +56,7 @@ export default class WebServer {
 
         this.configureExpress();
         this.setupMiddleware();
+        this.setupAuthProvider();
         this.app.all("/*", this.onRequest.bind(this));
         this.setupHttpServer();
         await this.fireLifecycleEvent("beforeServerStart");
@@ -163,6 +165,9 @@ export default class WebServer {
         this.app.use(bodyParser.urlencoded({
             extended: false
         }));
+
+        this.app.use(passport.initialize());
+        this.app.use(passport.session());
     }
 
     private onRequest(req: express.Request, res: express.Response, next: Function): void {
@@ -229,6 +234,45 @@ export default class WebServer {
                 Location: "https://" + eta.config.http.host + ":" + eta.config.https.realPort + req.url
             });
             res.end();
+        });
+    }
+
+    private setupAuthProvider(): void {
+        const AuthProvider: typeof eta.IAuthProvider = require(eta.constants.modulesPath + eta.config.auth.provider + "/auth.js").default;
+        const strategy: passport.Strategy = (new (<any>AuthProvider)()).getPassportStrategy();
+        passport.use(strategy.name, strategy);
+        this.app.all("/login", (req, res, next) => {
+            if (req.method === "GET" && strategy.name === "local") {
+                if (req.session.lastPage) {
+                    req.session.authFrom = req.session.lastPage;
+                    req.session.save(() => {
+                        res.redirect("/auth/local/login");
+                    });
+                } else {
+                    res.redirect("/auth/local/login");
+                }
+                return;
+            }
+            const provider: eta.IAuthProvider = new (<any>AuthProvider)({ req, res, next });
+            passport.authenticate(strategy.name, (err: Error, user: any) => {
+                if (err) {
+                    eta.logger.error(err);
+                    RequestHandler.renderError(res, eta.constants.http.InternalError);
+                    return;
+                }
+                if (!user) return res.redirect("/login");
+                provider.onPassportLogin(user).then(() => {
+                    if (!res.finished) {
+                        req.session.userid = user.id;
+                        req.session.save(() => {
+                            res.redirect(req.session.lastPage);
+                        });
+                    }
+                }).catch(err => {
+                    eta.logger.error(err);
+                    RequestHandler.renderError(res, eta.constants.http.InternalError);
+                });
+            })(req, res, next);
         });
     }
 }

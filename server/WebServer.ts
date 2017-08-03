@@ -45,7 +45,7 @@ export default class WebServer {
 
     public connection: orm.Connection;
 
-    public async init(): Promise<void> {
+    public async init(): Promise<boolean> {
         await this.loadModules();
         await this.fireLifecycleEvent("onAppStart");
 
@@ -56,10 +56,16 @@ export default class WebServer {
 
         this.configureExpress();
         this.setupMiddleware();
-        this.setupAuthProvider();
+        try {
+            this.setupAuthProvider();
+        } catch (err) {
+            eta.logger.error(err.message);
+            return false;
+        }
         this.app.all("/*", this.onRequest.bind(this));
         this.setupHttpServer();
         await this.fireLifecycleEvent("beforeServerStart");
+        return true;
     }
 
     public async close(): Promise<void> {
@@ -238,9 +244,40 @@ export default class WebServer {
     }
 
     private setupAuthProvider(): void {
-        const AuthProvider: typeof eta.IAuthProvider = require(eta.constants.modulesPath + eta.config.auth.provider + "/auth.js").default;
-        const strategy: passport.Strategy = (new (<any>AuthProvider)()).getPassportStrategy();
+        if (!eta.config.auth.provider) {
+            throw new Error("No authentication provider is set.");
+        }
+        let AuthProvider: typeof eta.IAuthProvider;
+        try {
+            AuthProvider = require(eta.constants.modulesPath + eta.config.auth.provider + "/auth.js").default;
+        } catch (err) {
+            throw new Error("The authentication provider is not set properly. Please check that the provider module is in the correct directory and that it has been compiled.");
+        }
+        const tempProvider: eta.IAuthProvider = new (<any>AuthProvider)();
+        const overrideRoutes: string[] = tempProvider.getOverrideRoutes();
+        const strategy: passport.Strategy = tempProvider.getPassportStrategy();
         passport.use(strategy.name, strategy);
+        const getHandler = (req: express.Request, res: express.Response, next: express.NextFunction): (err: Error, user: any) => void => {
+            const provider: eta.IAuthProvider = new (<any>AuthProvider)({ req, res, next });
+            return (err: Error, user: any) => {
+                if (err) {
+                    eta.logger.error(err);
+                    RequestHandler.renderError(res, eta.constants.http.InternalError);
+                    return;
+                }
+                if (!user) return res.redirect("/login");
+                provider.onPassportLogin(user).then(() => {
+                    if (res.finished) return;
+                    req.session.userid = user.id;
+                    req.session.save(() => {
+                        res.redirect(req.session.lastPage);
+                    });
+                }).catch(err => {
+                    eta.logger.error(err);
+                    RequestHandler.renderError(res, eta.constants.http.InternalError);
+                });
+            };
+        };
         this.app.all("/login", (req, res, next) => {
             if (req.method === "GET" && strategy.name === "local") {
                 if (req.session.lastPage) {
@@ -253,26 +290,12 @@ export default class WebServer {
                 }
                 return;
             }
-            const provider: eta.IAuthProvider = new (<any>AuthProvider)({ req, res, next });
-            passport.authenticate(strategy.name, (err: Error, user: any) => {
-                if (err) {
-                    eta.logger.error(err);
-                    RequestHandler.renderError(res, eta.constants.http.InternalError);
-                    return;
-                }
-                if (!user) return res.redirect("/login");
-                provider.onPassportLogin(user).then(() => {
-                    if (!res.finished) {
-                        req.session.userid = user.id;
-                        req.session.save(() => {
-                            res.redirect(req.session.lastPage);
-                        });
-                    }
-                }).catch(err => {
-                    eta.logger.error(err);
-                    RequestHandler.renderError(res, eta.constants.http.InternalError);
-                });
-            })(req, res, next);
+            passport.authenticate(strategy.name, getHandler(req, res, next))(req, res, next);
+        });
+        overrideRoutes.forEach(r => {
+            this.app.post(r, (req, res, next) => {
+                passport.authenticate(strategy.name, getHandler(req, res, next))(req, res, next);
+            });
         });
     }
 }

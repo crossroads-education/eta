@@ -48,10 +48,7 @@ export interface IConfiguration {
 }
 
 export interface IAuthConfiguration {
-    cas: {
-        url: string;
-        svc: string;
-    };
+    [key: string]: any;
     provider: string;
 }
 

@@ -27,7 +27,11 @@ function main() {
         });
     });
     server = new WebServer();
-    server.init().then(() => {
+    server.init().then((isInitialized) => {
+        if (!isInitialized) {
+            server.close();
+            return;
+        }
         server.start();
     }).catch(err => {
         console.log(err);

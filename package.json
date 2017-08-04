@@ -10,20 +10,15 @@
   "main": "./server.js",
   "scripts": {
     "compile": "node ./node_modules/typescript/bin/tsc",
-    "compile-client": "node ./node_modules/typescript/bin/tsc -p ./content/static/js/",
+    "compile-client": "python ./scripts/compile_client.py",
     "generate": "python ./scripts/generate_indexes.py",
+    "get-module": "python ./scripts/get_module.py",
     "lint": "node ./node_modules/tslint/bin/tslint -c tslint.json -p tsconfig.json",
     "lint-client": "node ./node_modules/tslint/bin/tslint -c tslint.json -p ./content/static/js/tsconfig.json",
     "pull": "sh ./scripts/pull.sh",
     "start": "node ./server.js",
     "test": "node ./node_modules/mocha/bin/mocha --recursive",
     "test-content": "node ./node_modules/mocha/bin/mocha --recursive ./content/test"
-  },
-  "standard": {
-    "parser": "typescript-eslint-parser",
-    "plugins": [
-      "typescript"
-    ]
   },
   "dependencies": {
     "aws-sdk": "^2.86.0",
@@ -84,7 +79,8 @@
     "mocha": "^3.4.2",
     "mocha-junit-reporter": "^1.13.0",
     "tslint": "^5.5.0",
-    "typescript": "^2.4.2"
+    "typescript": "^2.4.2",
+    "typings": "^2.1.1"
   },
   "engines": {
     "node": ">=6.10.0"

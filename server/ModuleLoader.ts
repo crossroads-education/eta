@@ -53,6 +53,10 @@ export default class ModuleLoader {
                 return this.config.rootDir + d;
             });
         });
+        const configPath: string = eta.constants.basePath + "config/modules/" + this.moduleName + ".json";
+        if ((await eta.fs.exists(configPath)) === true) {
+            this.config = eta.object.merge(JSON.parse(await fs.readFile(configPath, "utf-8")), this.config);
+        }
         eta.config.modules[this.moduleName] = this.config;
     }
 

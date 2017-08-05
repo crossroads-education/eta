@@ -5,8 +5,9 @@ import logger from "./logger";
 function load(): IConfiguration {
     const configDir: string = constants.basePath + "config/";
     config = <any>{};
-    fs.readdirSync(configDir).forEach((filename) => {
-        if (filename.endsWith(".sample.json")) return;
+    fs.readdirSync(configDir)
+        .filter(f => f.endsWith(".json") && !f.endsWith(".sample.json"))
+    .forEach((filename) => {
         const configName: string = filename.split(".")[0];
         const rawConfig: string = fs.readFileSync(configDir + filename).toString();
         try {
@@ -63,6 +64,7 @@ export interface IModuleConfiguration {
     staticDirs: string[];
     transformerDirs: string[];
     viewDirs: string[];
+    [key: string]: any;
 }
 
 export interface IDevConfiguration {

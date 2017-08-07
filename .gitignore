@@ -1,4 +1,5 @@
 /config/*.json
+/config/modules/*.json
 !/config/*.sample.json
 /modules
 /logs/

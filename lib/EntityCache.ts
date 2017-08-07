@@ -15,7 +15,10 @@ export default class EntityCache<T extends { toCacheObject: () => any }> {
      */
     public count = 50;
 
-    private cache: T[] = [];
+    public archive: T[] = [];
+    public cache: T[] = [];
+    public shouldUpdateOnDuplicate = false;
+    public duplicateConstraints = "";
     private timer: number;
 
     public constructor(options: Partial<EntityCache<T>>) {
@@ -25,6 +28,7 @@ export default class EntityCache<T extends { toCacheObject: () => any }> {
 
     public add(objects: T[]): void {
         this.cache = this.cache.concat(objects);
+        this.archive = this.archive.concat(objects);
     }
 
     public dump(): void {
@@ -36,11 +40,21 @@ export default class EntityCache<T extends { toCacheObject: () => any }> {
             this.cache = [];
         } else {
             // cache is big enough to justify generating SQL
-            const objects = this.cache.splice(0, this.count);
-            this.insertMany(objects).then(() => { })
+            this.dumpMany().then(() => { })
             .catch(err => {
                 eta.logger.error(err);
             });
+        }
+    }
+
+    public dumpMany(): Promise<void> {
+        const objects = this.cache.splice(0, this.count);
+        return this.insertMany(objects);
+    }
+
+    public async dumpAll(): Promise<void> {
+        while (this.cache.length > 0) {
+            await this.dumpMany();
         }
     }
 
@@ -82,7 +96,12 @@ export default class EntityCache<T extends { toCacheObject: () => any }> {
             });
             sqlTokens.push("(" + objectTokens.join(",") + ")");
         });
-        sql += sqlTokens.join(",") + " ON CONFLICT DO NOTHING";
+        sql += sqlTokens.join(",");
+        if (this.shouldUpdateOnDuplicate) {
+            sql += " ON CONFLICT (" + this.duplicateConstraints + ") DO UPDATE SET " + columns.map(c => `"${c}" = EXCLUDED."${c}"`).join(",");
+        } else {
+            sql += " ON CONFLICT DO NOTHING";
+        }
         await eta.db().query(sql, params);
     }
 }

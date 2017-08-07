@@ -10,8 +10,8 @@
   "main": "./server.js",
   "scripts": {
     "compile": "node ./node_modules/typescript/bin/tsc",
-    "compile-client": "python ./scripts/compile_client.py",
-    "generate": "python ./scripts/generate_indexes.py",
+    "compile-client": "node ./scripts/compile-client.js",
+    "generate": "node ./scripts/generate.js",
     "get-module": "python ./scripts/get_module.py",
     "lint": "node ./node_modules/tslint/bin/tslint -c tslint.json -p tsconfig.json",
     "lint-client": "node ./node_modules/tslint/bin/tslint -c tslint.json -p ./content/static/js/tsconfig.json",

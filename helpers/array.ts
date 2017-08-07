@@ -31,4 +31,17 @@ export default class HelperArray {
             await Promise.all(promises);
         }
     }
+
+    public static unique<T>(arr: T[], uniqueIdGenerator: (element: T) => string): T[] {
+        const foundIds: string[] = [];
+        const values: T[] = [];
+        return arr.filter(e => {
+            const id: string = uniqueIdGenerator(e);
+            if (foundIds.indexOf(id) === -1) {
+                foundIds.push(id);
+                return true;
+            }
+            return false;
+        });
+    }
 }

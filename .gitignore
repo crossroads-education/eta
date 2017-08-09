@@ -13,6 +13,6 @@ package-lock.json
 /db-init.ts
 /ssl
 /docker-compose.override.yml
- /helpers/index.ts
- /lib/index.ts
- /server/api/index.ts
+/helpers/index.ts
+/lib/index.ts
+/server/api/index.ts

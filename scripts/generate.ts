@@ -25,16 +25,14 @@ function getIndexSnippet(item: ScriptItem): string {
 }
 
 function getExportSnippet(item: ScriptItem): string[] {
-    let lines: string[] = (fs.readFileSync(item.absoluteFilename.replace(/\.js/g, ".ts"), "utf-8")).split("\r\n")
-        .map(l => l.replace(/ default /g, " "))
+    let lines: string[] = (fs.readFileSync(item.absoluteFilename.replace(/\.js/g, ".ts"), "utf-8")).split("\n")
+        .map(l => l.replace(/ default /g, " ").replace(/\r/g, ""))
         .filter(l => {
             l = l.trim();
-            return !(
-                l.startsWith("@") ||
-                l.startsWith("import ") ||
-                l.length === 0 ||
-                (l.startsWith("export ") && l.endsWith(";"))
-            );
+            return !l.startsWith("@") &&
+                !l.startsWith("import ") &&
+                l.length > 0 &&
+                !(l.startsWith("export ") && l.endsWith(";"));
         });
     const stopIndex: number = lines.map(l => l.trim()).indexOf("// stop-generate");
     if (stopIndex !== -1) {

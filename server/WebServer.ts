@@ -247,11 +247,12 @@ export default class WebServer {
         if (!eta.config.auth.provider) {
             throw new Error("No authentication provider is set.");
         }
-        let AuthProvider: typeof eta.IAuthProvider;
-        try {
-            AuthProvider = require(eta.constants.modulesPath + eta.config.auth.provider + "/auth.js").default;
-        } catch (err) {
-            throw new Error("The authentication provider is not set properly. Please check that the provider module is in the correct directory and that it has been compiled.");
+        if (!this.moduleLoaders[eta.config.auth.provider]) {
+            throw new Error("The authentication provider specified (" + eta.config.auth.provider + ") is invalid.");
+        }
+        const AuthProvider: typeof eta.IAuthProvider = this.moduleLoaders[eta.config.auth.provider].authProvider;
+        if (!AuthProvider) {
+            throw new Error("The authentication provider specified (" + eta.config.auth.provider + ") + does not expose an IAuthProvider class.");
         }
         const tempProvider: eta.IAuthProvider = new (<any>AuthProvider)();
         const overrideRoutes: string[] = tempProvider.getOverrideRoutes();

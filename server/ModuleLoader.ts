@@ -5,6 +5,7 @@ import * as fs from "fs-extra";
 const requireReload: (path: string) => any = require("require-reload")(require);
 
 export default class ModuleLoader {
+    public authProvider: typeof eta.IAuthProvider;
     public controllers: {[key: string]: typeof eta.IHttpController};
     public lifecycleHandlers: (typeof eta.ILifecycleHandler)[];
     public requestTransformers: (typeof eta.IRequestTransformer)[];
@@ -30,7 +31,8 @@ export default class ModuleLoader {
             this.loadViewMetadata(),
             this.loadViews(),
             this.loadLifecycleHandlers(),
-            this.loadRequestTransformers()
+            this.loadRequestTransformers(),
+            this.loadAuthProvider()
         ]);
         this.isInitialized = true;
     }
@@ -58,6 +60,17 @@ export default class ModuleLoader {
             this.config = eta.object.merge(JSON.parse(await fs.readFile(configPath, "utf-8")), this.config);
         }
         eta.config.modules[this.moduleName] = this.config;
+    }
+
+    public async loadAuthProvider(): Promise<void> {
+        const authPath: string = this.config.rootDir + "auth.js";
+        if (!await eta.fs.exists(authPath)) return;
+        try {
+            this.authProvider = require(authPath).default;
+        } catch (err) {
+            eta.logger.warn("Couldn't load authentication provider: " + authPath);
+            eta.logger.error(err);
+        }
     }
 
     public async loadControllers(): Promise<void> {

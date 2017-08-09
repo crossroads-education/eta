@@ -2,7 +2,6 @@ import json
 import os
 import sys
 import utils
-from compile_client import compile_module as compile_client
 
 SERVER_DIR = utils.get_server_dir()
 
@@ -33,7 +32,10 @@ def get_module(git_url):
         os.chdir(module_dir)
     os.chdir(SERVER_DIR)
     os.system("npm run generate")
-    compile_client(module_name)
+    os.system("npm run compile")
+    os.system("npm run generate")
+    os.system("npm run compile")
+    os.system("npm run compile-client")
 
 def main():
     git_url = sys.argv[1] if len(sys.argv) >= 2 else utils.get_input("Git URL: ")

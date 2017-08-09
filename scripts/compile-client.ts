@@ -7,7 +7,7 @@ import HelperArray from "../helpers/array";
 import HelperFS from "../helpers/fs";
 
 const SERVER_DIR: string = utils.getServerDir();
-const COMPILER_PATH = SERVER_DIR + "node_modules/typescript/bin/tsc";
+const COMPILER_PATH = SERVER_DIR + "/node_modules/typescript/bin/tsc";
 
 export async function compileModule(moduleName: string): Promise<void> {
     const moduleDir = SERVER_DIR + "/modules/" + moduleName;
@@ -17,7 +17,11 @@ export async function compileModule(moduleName: string): Promise<void> {
         if (!await HelperFS.exists(jsDir + "/tsconfig.json")) {
             return;
         }
-        await exec("node " + COMPILER_PATH, { cwd: jsDir });
+        try {
+            await exec("node " + COMPILER_PATH, { cwd: jsDir });
+        } catch (err) {
+            console.log(err.stdout);
+        }
     }, false);
 }
 

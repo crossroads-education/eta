@@ -25,17 +25,21 @@ function getIndexSnippet(item: ScriptItem): string {
 }
 
 function getExportSnippet(item: ScriptItem): string[] {
-    const lines: string[] = (fs.readFileSync(item.absoluteFilename.replace(/\.js/g, ".ts"), "utf-8")).split("\r\n")
-        .map(l => l.replace(/ default /g, " ").trim())
-        .filter(l => !(
-            l.startsWith("@") ||
-            l.startsWith("import ") ||
-            l.length === 0 ||
-            (l.startsWith("export ") && l.endsWith(";"))
-        ));
-    const stopIndex: number = lines.indexOf("// stop-generate");
+    let lines: string[] = (fs.readFileSync(item.absoluteFilename.replace(/\.js/g, ".ts"), "utf-8")).split("\r\n")
+        .map(l => l.replace(/ default /g, " "))
+        .filter(l => {
+            l = l.trim();
+            return !(
+                l.startsWith("@") ||
+                l.startsWith("import ") ||
+                l.length === 0 ||
+                (l.startsWith("export ") && l.endsWith(";"))
+            );
+        });
+    const stopIndex: number = lines.map(l => l.trim()).indexOf("// stop-generate");
     if (stopIndex !== -1) {
-        return lines.splice(0, stopIndex);
+        lines = lines.splice(0, stopIndex);
+        lines.push("}");
     }
     return lines;
 }

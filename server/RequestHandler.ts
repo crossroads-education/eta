@@ -68,6 +68,7 @@ export default class RequestHandler extends eta.IRequestHandler {
         this.controller.req = this.req;
         this.controller.res = this.res;
         this.controller.next = this.next;
+        this.controller.server = this.server;
         const params: any[] = [];
         const actionParams: string[] = this.controllerPrototype.params[this.action];
         if (actionParams) {

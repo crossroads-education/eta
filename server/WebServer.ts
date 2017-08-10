@@ -1,6 +1,6 @@
 /// <reference path="../def/express.d.ts"/>
 import * as bodyParser from "body-parser";
-import * as connectRedis from "connect-redis";
+import * as redisSession from "connect-redis";
 import * as express from "express";
 import * as expressSession from "express-session";
 import * as fs from "fs-extra";
@@ -12,7 +12,8 @@ import * as passport from "passport";
 import * as pg from "pg";
 import * as redis from "redis";
 import * as eta from "../eta";
-import { connect } from "./api/db";
+import { connect as connectDatabase } from "./api/db";
+import { connect as connectRedis } from "./api/redis";
 import ModuleLoader from "./ModuleLoader";
 import RequestHandler from "./RequestHandler";
 
@@ -52,7 +53,8 @@ export default class WebServer {
         await this.fireLifecycleEvent("onAppStart");
 
         this.app = express();
-        this.connection = await connect();
+        this.connection = await connectDatabase();
+        (<any>eta).redis = connectRedis();
         eta.logger.info("Successfully connected to the database.");
         await this.fireLifecycleEvent("onDatabaseConnect");
 
@@ -154,17 +156,9 @@ export default class WebServer {
     }
 
     private setupMiddleware(): void {
-        const redisClient: redis.RedisClient = redis.createClient(eta.config.http.session.port, eta.config.http.session.host);
-        redisClient.on("connect", (err: Error) => {
-            eta.logger.info("Successfully connected to the Redis server.");
-        });
-        redisClient.on("error", (err: Error) => {
-            eta.logger.warn("Couldn't connect to the Redis server:");
-            eta.logger.error(err);
-        });
         this.app.use(expressSession({
-            store: new (connectRedis(expressSession))({
-                client: redisClient
+            store: new (redisSession(expressSession))({
+                client: eta.redis
             }),
             resave: true,
             saveUninitialized: false,

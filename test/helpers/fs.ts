@@ -5,13 +5,13 @@ import HelperFS from "../../helpers/fs";
 describe("HelperFS", function(): void {
     describe("#exists", function(): void {
         it("should show this file as existing", function(done: MochaDone): void {
-            HelperFS.exists(process.cwd() + "/test/helpers/fs.js", function(exists: boolean) {
+            HelperFS.exists(process.cwd() + "/test/helpers/fs.js").then(function(exists: boolean) {
                 assert.ok(exists);
                 done();
             });
         });
         it("should show a gibberish file as not existing", function(done: MochaDone): void {
-            HelperFS.exists(process.cwd() + "/tegfeiofgj.gd", function(exists: boolean) {
+            HelperFS.exists(process.cwd() + "/tegfeiofgj.gd").then(function(exists: boolean) {
                 assert.ok(!exists);
                 done();
             });

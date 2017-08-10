@@ -1,6 +1,6 @@
 {
   "name": "eta",
-  "version": "0.0.1",
+  "version": "2.2.0",
   "description": "Server for Crossroads products.",
   "homepage": "http://github.com/crossroads-education/eta/",
   "repository": "git://github.com:crossroads-education/eta.git",
@@ -10,8 +10,12 @@
   "main": "./server.js",
   "scripts": {
     "compile": "node ./node_modules/typescript/bin/tsc",
-    "compile-client": "node ./node_modules/typescript/bin/tsc -p ./content/static/js/",
-    "generate": "python ./scripts/generate_indexes.py",
+    "compile-client": "node ./scripts/compile-client.js",
+    "pregenerate-ci": "node ./node_modules/typescript/bin/tsc -m commonjs -t ES2017 ./scripts/generate-ci",
+    "generate-ci": "node ./scripts/generate-ci.js",
+    "pregenerate": "node ./node_modules/typescript/bin/tsc -m commonjs -t ES2017 ./scripts/generate",
+    "generate": "node ./scripts/generate.js",
+    "get-module": "python ./scripts/get_module.py",
     "lint": "node ./node_modules/tslint/bin/tslint -c tslint.json -p tsconfig.json",
     "lint-client": "node ./node_modules/tslint/bin/tslint -c tslint.json -p ./content/static/js/tsconfig.json",
     "pull": "sh ./scripts/pull.sh",
@@ -19,16 +23,10 @@
     "test": "node ./node_modules/mocha/bin/mocha --recursive",
     "test-content": "node ./node_modules/mocha/bin/mocha --recursive ./content/test"
   },
-  "standard": {
-    "parser": "typescript-eslint-parser",
-    "plugins": [
-      "typescript"
-    ]
-  },
   "dependencies": {
     "aws-sdk": "^2.86.0",
     "body-parser": "^1.17.2",
-    "connect-pg-simple": "^4.2.0",
+    "connect-redis": "^3.3.0",
     "cookie": "^0.3.1",
     "express": "^4.15.3",
     "express-session": "^1.15.3",
@@ -38,10 +36,15 @@
     "moment": "^2.18.1",
     "multer": "^1.3.0",
     "nodemailer": "^4.0.1",
+    "passport": "^0.3.2",
+    "passport-cas2": "0.0.8",
+    "passport-local": "^1.0.0",
+    "passport-saml": "^0.15.0",
     "pg": "^6.4.0",
     "pug": "^2.0.0-rc.2",
     "randomstring": "^1.1.5",
     "recursive-readdir": "^2.2.1",
+    "redis": "^2.8.0",
     "reflect-metadata": "^0.1.10",
     "request": "^2.81.0",
     "request-promise": "^4.2.1",
@@ -49,11 +52,12 @@
     "socket.io": "^2.0.3",
     "source-map-support": "^0.4.15",
     "stack-trace": "0.0.10",
-    "typeorm": "0.1.0-alpha.31"
+    "typeorm": "0.1.0-alpha.33"
   },
   "devDependencies": {
     "@types/body-parser": "^1.16.4",
     "@types/chai": "^4.0.0",
+    "@types/connect-redis": "0.0.6",
     "@types/cookie": "^0.3.0",
     "@types/express": "^4.0.36",
     "@types/express-session": "^1.15.0",
@@ -65,9 +69,13 @@
     "@types/node": "^8.0.5",
     "@types/nodemailer": "^1.3.32",
     "@types/oracledb": "^1.11.33",
+    "@types/passport": "^0.3.3",
+    "@types/passport-local": "^1.0.30",
+    "@types/passport-saml": "^0.15.0",
     "@types/pg": "^6.1.41",
     "@types/randomstring": "^1.1.5",
     "@types/recursive-readdir": "^1.2.28",
+    "@types/redis": "^2.6.0",
     "@types/request": "^0.0.44",
     "@types/request-promise": "^4.1.34",
     "@types/socket.io": "^1.4.29",
@@ -77,9 +85,10 @@
     "mocha": "^3.4.2",
     "mocha-junit-reporter": "^1.13.0",
     "tslint": "^5.5.0",
-    "typescript": "^2.4.2"
+    "typescript": "^2.4.2",
+    "typings": "^2.1.1"
   },
   "engines": {
-    "node": ">=6.10.0"
+    "node": ">=8.2.0"
   }
 }

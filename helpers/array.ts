@@ -18,11 +18,30 @@ export default class HelperArray {
         });
     }
 
-    public static async forEachAsync<T>(arr: T[], worker: (element: T) => Promise<void>): Promise<void> {
-        const promises: Promise<void>[] = [];
-        arr.forEach(e => {
-            promises.push(worker(e));
+    public static async forEachAsync<T>(arr: T[], worker: (element: T) => Promise<void>, inOrder = false): Promise<void> {
+        if (inOrder) {
+            for (let i = 0; i < arr.length; i++) {
+                await worker(arr[i]);
+            }
+        } else {
+            const promises: Promise<void>[] = [];
+            arr.forEach(e => {
+                promises.push(worker(e));
+            });
+            await Promise.all(promises);
+        }
+    }
+
+    public static unique<T>(arr: T[], uniqueIdGenerator: (element: T) => string): T[] {
+        const foundIds: string[] = [];
+        const values: T[] = [];
+        return arr.filter(e => {
+            const id: string = uniqueIdGenerator(e);
+            if (foundIds.indexOf(id) === -1) {
+                foundIds.push(id);
+                return true;
+            }
+            return false;
         });
-        await Promise.all(promises);
     }
 }

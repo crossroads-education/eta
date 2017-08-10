@@ -6,9 +6,11 @@ export default class HelperFS {
      * Provides functionality of deprecated fs.exists()
      * See https://github.com/nodejs/node/issues/1592
      */
-    public static exists(filename: string, callback: (exists: boolean) => void): void {
-        fs.access(filename, (err: NodeJS.ErrnoException) => {
-            callback(!err);
+    public static exists(filename: string): Promise<boolean> {
+        return new Promise<boolean>((resolve, reject) => {
+            fs.access(filename, (err: NodeJS.ErrnoException) => {
+                resolve(!err);
+            });
         });
     }
 

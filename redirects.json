@@ -1,5 +1,0 @@
-{
-  "/home/login": "/auth/login",
-  "/home/register": "/auth/register",
-  "/home/logout": "/auth/logout"
-}

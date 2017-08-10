@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "target": "es6",
+    "target": "es2017",
     "module": "commonjs",
     "moduleResolution": "node",
     "emitDecoratorMetadata": true,
@@ -14,7 +14,7 @@
   },
   "compileOnSave": true,
   "buildOnSave": false,
-  "exclude": ["node_modules", "typings", "content/static/js"],
+  "exclude": ["node_modules", "typings", "modules/*/static/js"],
   "atom": {
     "rewriteTsconfig": false
   }

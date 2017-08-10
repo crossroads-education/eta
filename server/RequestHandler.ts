@@ -2,15 +2,14 @@ import * as express from "express";
 import * as fs from "fs-extra";
 import * as mime from "mime";
 import * as eta from "../eta";
-import * as transformers from "./transformers";
+import WebServer from "./WebServer";
 
 export default class RequestHandler extends eta.IRequestHandler {
     public route: string;
     public action: string;
     public controller: eta.IHttpController;
     public controllerPrototype: eta.IHttpController;
-    private static PermissionValidator: typeof eta.IPermissionValidator;
-    private static Transformers: (typeof eta.IRequestTransformer)[] = [];
+    public server: WebServer;
     private transformers: eta.IRequestTransformer[];
 
     public constructor(init: Partial<RequestHandler>) {
@@ -22,39 +21,37 @@ export default class RequestHandler extends eta.IRequestHandler {
     }
 
     public async handle(): Promise<void> {
-        const staticDir: string = eta.constants.staticDirs.find(d => this.req.mvcPath.startsWith("/" + d + "/"));
-        if (staticDir) {
-            return this.serveStatic();
-        }
-        this.setupHandlers();
+        if (await this.checkStatic()) return;
+        this.transformers = this.server.requestTransformers.map(t => {
+            return new (<any>t)({
+                req: this.req,
+                res: this.res,
+                next: this.next
+            });
+        });
         await this.fireTransformEvent("onRequest");
         if (this.res.finished) return;
         // ['', 'auth', 'login'] vs ['', 'auth', 'local', 'login']
         if (this.req.mvcPath.startsWith("/auth/") && this.req.mvcPath.split("/").length === 3) {
             this.req.session.authFrom = this.req.session.lastPage;
             await this.saveSession();
-            this.redirect("/auth/" + eta.config.auth.provider + "/" + this.action);
+            this.redirect("/" + this.action);
         } else {
             if (this.controller) {
                 const permsRequired: any[] = this.controllerPrototype.permsRequired[this.action];
                 if (this.controllerPrototype.authRequired.indexOf(this.action) !== -1
                     && !this.isLoggedIn()) { // requires login but is not logged in
                     this.req.session.authFrom = this.req.mvcPath;
+                    eta.logger.trace("authFrom: " + this.req.mvcPath);
                     await this.saveSession();
-                    this.redirect("/auth/" + eta.config.auth.provider + "/login");
+                    this.redirect("/login");
                 } else if (permsRequired !== undefined) {
-                        const validator: eta.IPermissionValidator = new (<any>RequestHandler.PermissionValidator)({
-                            req: this.req,
-                            res: this.res,
-                            next: this.next
-                        });
-                        if (await validator.isRequestAuthorized(permsRequired)) {
-                            this.callController();
-                        } else {
-                            this.renderError(eta.constants.http.AccessDenied);
-                        }
+                    if ((await this.fireTransformEvent("isRequestAuthorized", permsRequired)) !== false) {
+                        this.callController();
+                    } else {
+                        this.renderError(eta.constants.http.AccessDenied);
                     }
-                else {
+                } else {
                     this.callController();
                 }
             } else {
@@ -70,6 +67,7 @@ export default class RequestHandler extends eta.IRequestHandler {
         }
         this.controller.req = this.req;
         this.controller.res = this.res;
+        this.controller.next = this.next;
         const params: any[] = [];
         const actionParams: string[] = this.controllerPrototype.params[this.action];
         if (actionParams) {
@@ -116,8 +114,8 @@ export default class RequestHandler extends eta.IRequestHandler {
     }
 
     private async serveView(): Promise<void> {
-        const viewPath: string = eta.constants.viewPath + this.req.mvcPath.substring(1);
-        if (!await fs.exists(viewPath + ".pug")) {
+        const viewPath: string = this.server.viewFiles[this.req.mvcPath];
+        if (viewPath === undefined || !await eta.fs.exists(viewPath)) {
             this.renderError(eta.constants.http.NotFound);
             return;
         }
@@ -130,40 +128,52 @@ export default class RequestHandler extends eta.IRequestHandler {
         try {
             html = await this.renderView(viewPath);
         } catch (err) {
+            eta.logger.error(`Rendering ${viewPath} failed: ${err.message}`);
+            this.renderError(eta.constants.http.InternalError);
             return;
         }
-        if (!this.req.mvcPath.startsWith("/auth/") && this.req.method === "GET") {
+        if (!this.req.mvcPath.startsWith("/auth/") && this.req.method === "GET" && this.req.mvcPath !== "/login") {
             this.req.session.lastPage = this.req.mvcPath;
         }
         this.res.send(html);
     }
 
-    private serveStatic(): void {
-        const staticPath: string = eta.constants.staticPath + this.req.mvcPath;
-        eta.fs.exists(staticPath, (exists: boolean) => {
-            if (!exists) {
-                this.renderError(eta.constants.http.NotFound);
-                return;
+    private async checkStatic(): Promise<boolean> {
+        const staticPath: string = this.server.staticFiles[this.req.mvcPath];
+        if (!staticPath) return false;
+        if (!await eta.fs.exists(staticPath)) {
+            eta.logger.trace("A static file was deleted after the server started. " + staticPath);
+            this.renderError(eta.constants.http.NotFound);
+            return true;
+        }
+        let data: Buffer;
+        try {
+            data = await fs.readFile(staticPath);
+        } catch (err) {
+            eta.logger.warn(`Error reading ${staticPath}`);
+            this.renderError(eta.constants.http.InternalError);
+            return true;
+        }
+        const hash: string = eta.crypto.getUnique(data);
+        this.res.setHeader("Content-Type", mime.lookup(this.req.mvcPath, "text/plain"));
+        if (!eta.config.dev.enable) {
+            this.res.setHeader("Cache-Control", "max-age=" + (60 * 60 * 24 * 30)); // cache for 30 days
+            this.res.setHeader("ETag", hash);
+            if (this.req.header("If-None-Match") === hash) {
+                this.res.sendStatus(eta.constants.http.NotModified);
+                return true;
             }
-            fs.readFile(staticPath, (err: NodeJS.ErrnoException, data: Buffer) => {
-                if (err) {
-                    eta.logger.warn(`Error reading ${staticPath}`);
-                    this.renderError(eta.constants.http.InternalError);
-                    return;
-                }
-                this.res.set("Content-Type", mime.lookup(this.req.mvcPath, "text/plain"));
-                this.res.send(data);
-            });
-        });
+            this.res.setHeader("Content-Length", data.byteLength.toString());
+        }
+        this.res.send(data);
+        return true;
     }
 
     private async renderView(viewPath: string): Promise<string> {
         return new Promise<string>((resolve, reject) => {
             this.res.render(viewPath, this.res.view, (err: Error, html: string) => {
                 if (err) {
-                    eta.logger.error(`Rendering ${viewPath} failed: ${err.message}`);
-                    this.renderError(eta.constants.http.InternalError);
-                    reject();
+                    reject(err);
                 } else {
                     resolve(html);
                 }
@@ -171,61 +181,36 @@ export default class RequestHandler extends eta.IRequestHandler {
         });
     }
 
-    private renderError(code: number): void {
-        if (this.res.statusCode === 200) {
-            this.res.statusCode = code;
-        }
-        let errorView: string = eta.constants.viewPath + "errors/" + code.toString();
-        eta.fs.exists(errorView + ".pug", (exists: boolean) => {
-            if (!exists) {
-                errorView = eta.constants.viewPath + "errors/layout";
-            }
-            this.res.render(errorView, {
-                errorCode: code,
-                email: "webmaster@" + eta.config.http.host
-            });
-        });
+    private renderError(code: number): Promise<void> {
+        return RequestHandler.renderError(this.res, code);
     }
 
-    private setupHandlers(): void {
-        if (RequestHandler.Transformers.length === 0) {
-            RequestHandler.loadHandlers();
-        }
-        this.transformers = RequestHandler.Transformers.map(t => new (<any>t)({
-            req: this.req,
-            res: this.res,
-            next: this.next
-        }));
-    }
-
-    private static loadHandlers(): void {
-        Object.keys(transformers).forEach(key => {
-            this.Transformers.push((<any>transformers)[key]);
-        });
-        eta.config.content.transformerDirs.forEach(transformerDir => {
-            transformerDir = eta.constants.contentPath + transformerDir + "/";
-            fs.readdirSync(transformerDir).forEach(filename => {
-                if (!filename.endsWith(".js")) {
-                    return;
-                }
-                try {
-                    this.Transformers.push(require(transformerDir + filename).default);
-                } catch (err) {
-                    eta.logger.error(`Couldn't load transformer ${filename}`);
-                    eta.logger.error(err);
-                }
-            });
-        });
-        const validatorPath = eta.constants.contentPath + eta.config.content.validator + ".js";
-        this.PermissionValidator = require(validatorPath).default;
-    }
-
-    private fireTransformEvent(name: string): Promise<void> {
-        return eta.array.forEachAsync(this.transformers, async t => {
+    private async fireTransformEvent(name: string, ...args: any[]): Promise<boolean> {
+        let result = true;
+        await eta.array.forEachAsync(this.transformers, async t => {
             const method: () => Promise<void> = (<any>t)[name];
             if (method) {
-                await method.apply(t);
+                const value: boolean | void = await method.apply(t, args);
+                if (typeof(value) === "boolean") {
+                    if (!value) result = false;
+                }
             }
+        });
+        return result;
+    }
+
+    public static async renderError(res: express.Response, code: number): Promise<void> {
+        if (res.statusCode !== code) {
+            res.statusCode = code;
+        }
+        const errorDir: string = eta.constants.basePath + "server/errors/";
+        let errorView: string = errorDir + code.toString();
+        if (!await eta.fs.exists(errorView + ".pug")) {
+            errorView = errorDir + "layout";
+        }
+        res.render(errorView, {
+            errorCode: code,
+            email: "support@" + eta.config.http.host
         });
     }
 }

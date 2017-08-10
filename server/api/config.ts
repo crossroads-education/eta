@@ -1,13 +1,13 @@
 import * as fs from "fs";
 import constants from "./constants";
 import logger from "./logger";
-import { DriverOptions } from "typeorm";
 
 function load(): IConfiguration {
     const configDir: string = constants.basePath + "config/";
     config = <any>{};
-    fs.readdirSync(configDir).forEach((filename) => {
-        if (filename.endsWith(".sample.json")) return;
+    fs.readdirSync(configDir)
+        .filter(f => f.endsWith(".json") && !f.endsWith(".sample.json"))
+    .forEach((filename) => {
         const configName: string = filename.split(".")[0];
         const rawConfig: string = fs.readFileSync(configDir + filename).toString();
         try {
@@ -16,13 +16,6 @@ function load(): IConfiguration {
             logger.error(configDir + filename + " contains invalid JSON.");
         }
     });
-    const raw: string = fs.readFileSync(constants.basePath + "content/config.json").toString();
-    try {
-        config.content = JSON.parse(raw);
-        config.content.lifecycleDirs.push("../server/lifecycle");
-    } catch (err) {
-        logger.error(constants.basePath + "content/config.json contains invalid JSON.");
-    }
     Object.keys(process.env)
         .filter(k => k.startsWith("ETA_"))
         .forEach(k => {
@@ -47,40 +40,48 @@ export default config = load();
 
 export interface IConfiguration {
     auth: IAuthConfiguration;
-    content: IContentConfiguration;
-    db: DriverOptions;
+    db: any;
     dev: IDevConfiguration;
     http: IHttpConfiguration;
     https: IHttpsConfiguration;
     logger: ILoggerConfiguration;
+    modules: {[key: string]: IModuleConfiguration};
 }
 
-interface IAuthConfiguration {
-    cas: {
-        url: string;
-        svc: string;
-    };
+export interface IAuthConfiguration {
+    [key: string]: any;
     provider: string;
 }
 
-interface IContentConfiguration {
+export interface IModuleConfiguration {
+    controllerDirs: string[];
+    css: {[key: string]: string};
     lifecycleDirs: string[];
     modelDirs: string[];
+    name: string;
+    redirects: {[key: string]: string};
+    rootDir: string;
+    staticDirs: string[];
     transformerDirs: string[];
-    validator: string;
+    viewDirs: string[];
+    [key: string]: any;
 }
 
-interface IDevConfiguration {
+export interface IDevConfiguration {
     enable: boolean;
 }
 
-interface IHttpConfiguration {
+export interface IHttpConfiguration {
     host: string;
     port: number;
-    sessionSecret: string;
+    session: {
+        host: string;
+        port: number;
+        secret: string;
+    };
 }
 
-interface IHttpsConfiguration {
+export interface IHttpsConfiguration {
     enable: boolean;
     ca?: string;
     cert?: string;
@@ -89,6 +90,6 @@ interface IHttpsConfiguration {
     realPort?: number;
 }
 
-interface ILoggerConfiguration {
+export interface ILoggerConfiguration {
     logDatabaseQueries: boolean;
 }

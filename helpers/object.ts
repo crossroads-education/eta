@@ -1,10 +1,10 @@
 export default class HelperObject {
-    public static clone(obj: any): any {
+    public static clone<T extends any>(obj: T): T {
         if (obj === undefined || typeof (obj) !== "object") {
             return obj; // any non-objects are passed by value, not reference
         }
         if (obj instanceof Date) {
-            return new Date(obj.getTime());
+            return <any>new Date(obj.getTime());
         }
         const temp: any = new obj.constructor();
         Object.keys(obj).forEach(key => {

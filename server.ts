@@ -1,4 +1,6 @@
 require("source-map-support").install();
+import * as dbInit from "./db";
+Object.keys(dbInit);
 import logger from "./server/api/logger"; // Required to setup logger
 import WebServer from "./server/WebServer";
 import { connect } from "./server/api/db";
@@ -25,10 +27,14 @@ function main() {
         });
     });
     server = new WebServer();
-    server.init().then(() => {
+    server.init().then((isInitialized) => {
+        if (!isInitialized) {
+            server.close();
+            return;
+        }
         server.start();
     }).catch(err => {
-        logger.error(err);
+        console.log(err);
     });
 }
 

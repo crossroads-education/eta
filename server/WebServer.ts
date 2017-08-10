@@ -1,16 +1,20 @@
 /// <reference path="../def/express.d.ts"/>
 import * as bodyParser from "body-parser";
+import * as connectRedis from "connect-redis";
 import * as express from "express";
 import * as expressSession from "express-session";
-import * as fs from "fs";
+import * as fs from "fs-extra";
 import * as http from "http";
 import * as https from "https";
 import * as multer from "multer";
 import * as orm from "typeorm";
+import * as passport from "passport";
 import * as pg from "pg";
+import * as redis from "redis";
 import * as eta from "../eta";
 import { connect } from "./api/db";
-import PageManager from "./PageManager";
+import ModuleLoader from "./ModuleLoader";
+import RequestHandler from "./RequestHandler";
 
 export default class WebServer {
     /**
@@ -29,30 +33,41 @@ export default class WebServer {
     public redirectServer?: http.Server = undefined;
 
     /**
-     * Routes requests and loads controllers
+     * Load module files
      */
-    public pageManager: PageManager;
+    public moduleLoaders: {[key: string]: ModuleLoader} = {};
 
-    /**
-     * Handle lifecycle events (server start, app start, etc)
-     */
+    /** key: route */
+    public controllers: {[key: string]: typeof eta.IHttpController} = {};
     public lifecycleHandlers: eta.ILifecycleHandler[] = [];
+    public requestTransformers: (typeof eta.IRequestTransformer)[] = [];
+    public staticFiles: {[key: string]: string} = {};
+    public viewFiles: {[key: string]: string} = {};
+    public viewMetadata: {[key: string]: {[key: string]: any}} = {};
 
-    public async init(): Promise<void> {
-        this.setupLifecycleHandlers();
+    public connection: orm.Connection;
+
+    public async init(): Promise<boolean> {
+        await this.loadModules();
         await this.fireLifecycleEvent("onAppStart");
 
         this.app = express();
-        const conn: orm.Connection = await connect();
-        (<any>eta).db = conn;
+        this.connection = await connect();
         eta.logger.info("Successfully connected to the database.");
         await this.fireLifecycleEvent("onDatabaseConnect");
 
         this.configureExpress();
         this.setupMiddleware();
-        await this.setupListeners();
+        try {
+            this.setupAuthProvider();
+        } catch (err) {
+            eta.logger.error(err.message);
+            return false;
+        }
+        this.app.all("/*", this.onRequest.bind(this));
         this.setupHttpServer();
         await this.fireLifecycleEvent("beforeServerStart");
+        return true;
     }
 
     public async close(): Promise<void> {
@@ -90,33 +105,43 @@ export default class WebServer {
         }
     }
 
-    private setupLifecycleHandlers() {
-        eta.config.content.lifecycleDirs.forEach(lifecycleDir => {
-            lifecycleDir = eta.constants.basePath + "content/" + lifecycleDir + "/";
-            fs.readdirSync(lifecycleDir).forEach(filename => {
-                if (!filename.endsWith(".js")) {
-                    return;
-                }
-                try {
-                    const lifecycleHandler: typeof eta.ILifecycleHandler = require(lifecycleDir + filename).default;
-                    this.lifecycleHandlers.push(new (<any>lifecycleHandler)({server: this}));
-                } catch (err) {
-                    eta.logger.error(`Couldn't load lifecycle handler ${filename}`);
-                    eta.logger.error(err);
-                }
-            });
+    private async loadModules(): Promise<void> {
+        eta.config.modules = {};
+        eta.constants.controllerPaths = [];
+        eta.constants.staticPaths = [];
+        eta.constants.viewPaths = [];
+        const moduleDirs: string[] = await fs.readdir(eta.constants.modulesPath);
+        eta.logger.info(`Found ${moduleDirs.length} modules: ${moduleDirs.join(", ")}`);
+        await eta.array.forEachAsync(moduleDirs, moduleName => {
+            this.moduleLoaders[moduleName] = new ModuleLoader(moduleName);
+            return this.moduleLoaders[moduleName].loadAll();
         });
+        let lifecycleHandlerTypes: (typeof eta.ILifecycleHandler)[] = [];
+        Object.keys(this.moduleLoaders).sort().forEach(k => {
+            const moduleLoader: ModuleLoader = this.moduleLoaders[k];
+            this.controllers = eta.object.merge(moduleLoader.controllers, this.controllers);
+            lifecycleHandlerTypes = lifecycleHandlerTypes.concat(moduleLoader.lifecycleHandlers);
+            this.requestTransformers = this.requestTransformers.concat(moduleLoader.requestTransformers);
+            this.staticFiles = eta.object.merge(moduleLoader.staticFiles, this.staticFiles);
+            this.viewFiles = eta.object.merge(moduleLoader.viewFiles, this.viewFiles);
+            this.viewMetadata = eta.object.merge(moduleLoader.viewMetadata, this.viewMetadata);
+        });
+        this.lifecycleHandlers = lifecycleHandlerTypes.map((LifecycleHandler: any) => new LifecycleHandler({ server: this }));
     }
 
-    private async fireLifecycleEvent(name: string): Promise<void> {
-        for (const i in this.lifecycleHandlers) {
-            const handler: any = (<any>this.lifecycleHandlers[i]);
+    private fireLifecycleEvent(name: string): Promise<void> {
+        return eta.array.forEachAsync(this.lifecycleHandlers, async (handler: any) => {
             const method: () => Promise<void> = handler[name];
             if (method) {
                 handler.server = this;
-                await method.apply(handler);
+                try {
+                    await method.apply(handler);
+                } catch (err) {
+                    eta.logger.warn("Error while firing lifecycle event " + name + " on " + handler.constructor.name);
+                    eta.logger.error(err);
+                }
             }
-        }
+        });
     }
 
     private configureExpress(): void {
@@ -129,16 +154,21 @@ export default class WebServer {
     }
 
     private setupMiddleware(): void {
-        const dbcfg: any = eta.config.db;
-        const connectionString = `postgres://${dbcfg.username}:${dbcfg.password}@${dbcfg.host}:${dbcfg.port}/${dbcfg.database}`;
+        const redisClient: redis.RedisClient = redis.createClient(eta.config.http.session.port, eta.config.http.session.host);
+        redisClient.on("connect", (err: Error) => {
+            eta.logger.info("Successfully connected to the Redis server.");
+        });
+        redisClient.on("error", (err: Error) => {
+            eta.logger.warn("Couldn't connect to the Redis server:");
+            eta.logger.error(err);
+        });
         this.app.use(expressSession({
-            store: new (require("connect-pg-simple")(expressSession))({
-                pg,
-                conString: connectionString
+            store: new (connectRedis(expressSession))({
+                client: redisClient
             }),
             resave: true,
             saveUninitialized: false,
-            secret: eta.config.http.sessionSecret
+            secret: eta.config.http.session.secret
         }));
 
         this.app.use(multer({
@@ -148,34 +178,48 @@ export default class WebServer {
         this.app.use(bodyParser.urlencoded({
             extended: false
         }));
+
+        this.app.use(passport.initialize());
+        this.app.use(passport.session());
     }
 
-    private async setupListeners(): Promise<void> {
-        this.pageManager = new PageManager();
-        await this.pageManager.load();
-        this.app.all("/*", (req: express.Request, res: express.Response, next: Function) => {
-            // initialize custom express properties
-            req.mvcPath = decodeURIComponent(req.path);
-            if (req.mvcPath === "/") {
-                req.mvcPath = "/home/index";
-            } else if (req.mvcPath.endsWith("/")) {
-                req.mvcPath += "index";
+    private onRequest(req: express.Request, res: express.Response, next: Function): void {
+        // initialize custom express properties
+        req.mvcPath = decodeURIComponent(req.path);
+        if (req.mvcPath === "/") {
+            req.mvcPath = "/home/index";
+        } else if (req.mvcPath.endsWith("/")) {
+            req.mvcPath += "index";
+        }
+        if (req.mvcPath.split("/").length === 2) {
+            req.mvcPath = "/home" + req.mvcPath;
+        }
+        let host: string = req.get("host");
+        if (eta.config.https.realPort !== undefined) {
+            let realPort = "";
+            if (<any>eta.config.https.realPort !== false) {
+                realPort = ":" + eta.config.https.realPort.toString();
             }
-            if (req.mvcPath.split("/").length === 2) {
-                req.mvcPath = "/home" + req.mvcPath;
-            }
-            let host: string = req.get("host");
-            if (eta.config.https.realPort !== undefined) {
-                let realPort = "";
-                if (<any>eta.config.https.realPort !== false) {
-                    realPort = ":" + eta.config.https.realPort.toString();
-                }
-                host = host.replace(":" + eta.config.https.port, realPort);
-            }
-            req.baseUrl = req.protocol + "://" + host + "/";
-            req.fullUrl = req.baseUrl + req.mvcPath.substring(1);
-            res.view = {};
-            return this.pageManager.handle(req, res, next);
+            host = host.replace(":" + eta.config.https.port, realPort);
+        }
+        req.baseUrl = req.protocol + "://" + host + "/";
+        req.fullUrl = req.baseUrl + req.mvcPath.substring(1);
+        res.view = {};
+        const tokens: string[] = req.mvcPath.split("/");
+        const action: string = tokens.splice(-1, 1)[0];
+        const route: string = tokens.join("/");
+        const controllerClass: typeof eta.IHttpController = this.controllers[route];
+        if (this.viewMetadata[req.mvcPath]) {
+            res.view = eta.object.clone(this.viewMetadata[req.mvcPath]);
+        }
+        new RequestHandler({
+            route, action,
+            controllerPrototype: controllerClass ? controllerClass.prototype : undefined,
+            req, res, next,
+            server: this
+        }).handle().then(() => { })
+        .catch(err => {
+            eta.logger.error(err);
         });
     }
 
@@ -203,6 +247,63 @@ export default class WebServer {
                 Location: "https://" + eta.config.http.host + ":" + eta.config.https.realPort + req.url
             });
             res.end();
+        });
+    }
+
+    private setupAuthProvider(): void {
+        if (!eta.config.auth.provider) {
+            throw new Error("No authentication provider is set.");
+        }
+        if (!this.moduleLoaders[eta.config.auth.provider]) {
+            throw new Error("The authentication provider specified (" + eta.config.auth.provider + ") is invalid.");
+        }
+        const AuthProvider: typeof eta.IAuthProvider = this.moduleLoaders[eta.config.auth.provider].authProvider;
+        if (!AuthProvider) {
+            throw new Error("The authentication provider specified (" + eta.config.auth.provider + ") + does not expose an IAuthProvider class.");
+        }
+        const tempProvider: eta.IAuthProvider = new (<any>AuthProvider)();
+        const overrideRoutes: string[] = tempProvider.getOverrideRoutes();
+        const strategy: passport.Strategy = tempProvider.getPassportStrategy();
+        passport.use(strategy.name, strategy);
+        const getHandler = (req: express.Request, res: express.Response, next: express.NextFunction): (err: Error, user: any) => void => {
+            const provider: eta.IAuthProvider = new (<any>AuthProvider)({ req, res, next });
+            return (err: Error, user: any) => {
+                if (err) {
+                    eta.logger.error(err);
+                    RequestHandler.renderError(res, eta.constants.http.InternalError);
+                    return;
+                }
+                if (!user) return res.redirect("/login");
+                provider.onPassportLogin(user).then(() => {
+                    if (res.finished) return;
+                    req.session.userid = user.id;
+                    req.session.save(() => {
+                        res.redirect(req.session.lastPage);
+                    });
+                }).catch(err => {
+                    eta.logger.error(err);
+                    RequestHandler.renderError(res, eta.constants.http.InternalError);
+                });
+            };
+        };
+        this.app.all("/login", (req, res, next) => {
+            if (req.method === "GET" && strategy.name === "local") {
+                if (req.session.lastPage) {
+                    req.session.authFrom = req.session.lastPage;
+                    req.session.save(() => {
+                        res.redirect("/auth/local/login");
+                    });
+                } else {
+                    res.redirect("/auth/local/login");
+                }
+                return;
+            }
+            passport.authenticate(strategy.name, getHandler(req, res, next))(req, res, next);
+        });
+        overrideRoutes.forEach(r => {
+            this.app.post(r, (req, res, next) => {
+                passport.authenticate(strategy.name, getHandler(req, res, next))(req, res, next);
+            });
         });
     }
 }

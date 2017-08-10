@@ -17,17 +17,18 @@ async function main(): Promise<void> {
     try {
         // export the .js files
         await exec("npm run generate", { cwd: SERVER_DIR });
+        // write some required exports
+        if (!await HelperFS.exists(SERVER_DIR + "/db.ts")) {
+            await fs.writeFile(SERVER_DIR + "/db.ts", "export const _ = true;");
+        }
+        if (!await HelperFS.exists(SERVER_DIR + "/db-init.ts")) {
+            await fs.writeFile(SERVER_DIR + "/db-init.ts", "export const _ = true;");
+        }
         // compile from the generated indexes
         await exec("npm run compile", { cwd: SERVER_DIR });
     } catch (err) {
         console.error(err.stdout);
         process.exit(1);
-    }
-    if (!await HelperFS.exists(SERVER_DIR + "/db.ts")) {
-        await fs.writeFile(SERVER_DIR + "/db.ts", "export const _ = true;");
-    }
-    if (!await HelperFS.exists(SERVER_DIR + "/db-init.ts")) {
-        await fs.writeFile(SERVER_DIR + "/db-init.ts", "export const _ = true;");
     }
 }
 

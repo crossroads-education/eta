@@ -11,4 +11,8 @@ export default class HelperCrypto {
             length: 20
         });
     }
+
+    public static getUnique(data: Buffer): string {
+        return crypto.createHash("md5").update(data).digest("hex");
+    }
 }

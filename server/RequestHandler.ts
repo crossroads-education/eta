@@ -154,7 +154,17 @@ export default class RequestHandler extends eta.IRequestHandler {
             this.renderError(eta.constants.http.InternalError);
             return true;
         }
-        this.res.set("Content-Type", mime.lookup(this.req.mvcPath, "text/plain"));
+        const hash: string = eta.crypto.getUnique(data);
+        this.res.setHeader("Content-Type", mime.lookup(this.req.mvcPath, "text/plain"));
+        if (!eta.config.dev.enable) {
+            this.res.setHeader("Cache-Control", "max-age=" + (60 * 60 * 24 * 30)); // cache for 30 days
+            this.res.setHeader("ETag", hash);
+            if (this.req.header("If-None-Match") === hash) {
+                this.res.sendStatus(eta.constants.http.NotModified);
+                return true;
+            }
+            this.res.setHeader("Content-Length", data.byteLength.toString());
+        }
         this.res.send(data);
         return true;
     }

@@ -11,6 +11,7 @@ export default class Constants {
         AccessDenied: 403,
         InternalError: 500,
         InvalidParameters: 400,
-        NotFound: 404
+        NotFound: 404,
+        NotModified: 304
     };
 }

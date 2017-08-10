@@ -31,10 +31,7 @@ def get_module(git_url):
             os.system("node " + SERVER_DIR + "node_modules/typings/dist/bin.js i")
         os.chdir(module_dir)
     os.chdir(SERVER_DIR)
-    os.system("npm run generate")
-    os.system("npm run compile")
-    os.system("npm run generate")
-    os.system("npm run compile")
+    os.system("npm run generate-ci")
     os.system("npm run compile-client")
 
 def main():

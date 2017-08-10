@@ -11,6 +11,8 @@
   "scripts": {
     "compile": "node ./node_modules/typescript/bin/tsc",
     "compile-client": "node ./scripts/compile-client.js",
+    "pregenerate-ci": "node ./node_modules/typescript/bin/tsc -m commonjs -t ES2017 ./scripts/generate-ci",
+    "generate-ci": "node ./scripts/generate-ci.js",
     "pregenerate": "node ./node_modules/typescript/bin/tsc -m commonjs -t ES2017 ./scripts/generate",
     "generate": "node ./scripts/generate.js",
     "get-module": "python ./scripts/get_module.py",

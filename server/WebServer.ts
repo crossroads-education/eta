@@ -188,7 +188,8 @@ export default class WebServer {
         if (req.mvcPath.split("/").length === 2) {
             req.mvcPath = "/home" + req.mvcPath;
         }
-        let host: string = req.get("host");
+        const hostTokens: string[] = req.get("host").split(":");
+        let host: string = eta.config.http.host + ":" + hostTokens[1];
         if (eta.config.https.realPort !== undefined) {
             let realPort = "";
             if (<any>eta.config.https.realPort !== false) {

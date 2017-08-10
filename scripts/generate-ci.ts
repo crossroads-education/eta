@@ -11,6 +11,10 @@ async function main(): Promise<void> {
     try {
         // get .js files created
         await exec("npm run compile", { cwd: SERVER_DIR });
+    } catch (err) {
+        // we know errors will occur, ignore them
+    }
+    try {
         // export the .js files
         await exec("npm run generate", { cwd: SERVER_DIR });
         // compile from the generated indexes

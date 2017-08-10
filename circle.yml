@@ -1,6 +1,6 @@
 machine:
   node:
-    version: 6.10.0
+    version: 8.2.0
   environment:
     ETA_AUTH_PROVIDER: local
     ETA_DB_PROVIDER: postgres

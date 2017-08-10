@@ -74,7 +74,11 @@ export interface IDevConfiguration {
 export interface IHttpConfiguration {
     host: string;
     port: number;
-    sessionSecret: string;
+    session: {
+        host: string;
+        port: number;
+        secret: string;
+    };
 }
 
 export interface IHttpsConfiguration {

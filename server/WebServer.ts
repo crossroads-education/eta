@@ -1,5 +1,6 @@
 /// <reference path="../def/express.d.ts"/>
 import * as bodyParser from "body-parser";
+import * as connectRedis from "connect-redis";
 import * as express from "express";
 import * as expressSession from "express-session";
 import * as fs from "fs-extra";
@@ -9,6 +10,7 @@ import * as multer from "multer";
 import * as orm from "typeorm";
 import * as passport from "passport";
 import * as pg from "pg";
+import * as redis from "redis";
 import * as eta from "../eta";
 import { connect } from "./api/db";
 import ModuleLoader from "./ModuleLoader";
@@ -152,16 +154,21 @@ export default class WebServer {
     }
 
     private setupMiddleware(): void {
-        const dbcfg: any = eta.config.db;
-        const connectionString = `postgres://${dbcfg.username}:${dbcfg.password}@${dbcfg.host}:${dbcfg.port}/${dbcfg.database}`;
+        const redisClient: redis.RedisClient = redis.createClient(eta.config.http.session.port, eta.config.http.session.host);
+        redisClient.on("connect", (err: Error) => {
+            eta.logger.info("Successfully connected to the Redis server.");
+        });
+        redisClient.on("error", (err: Error) => {
+            eta.logger.warn("Couldn't connect to the Redis server:");
+            eta.logger.error(err);
+        });
         this.app.use(expressSession({
-            store: new (require("connect-pg-simple")(expressSession))({
-                pg,
-                conString: connectionString
+            store: new (connectRedis(expressSession))({
+                client: redisClient
             }),
             resave: true,
             saveUninitialized: false,
-            secret: eta.config.http.sessionSecret
+            secret: eta.config.http.session.secret
         }));
 
         this.app.use(multer({

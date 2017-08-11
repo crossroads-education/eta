@@ -7,9 +7,10 @@ abstract class IHttpController extends IRequestHandler {
     public authRequired: string[] = [];
     public params: {[key: string]: string[]} = {};
     public permsRequired: {[key: string]: any[]} = {};
-    public server: WebServer;
     public raw: string[] = [];
     public routes: string[] = [];
+
+    public server: WebServer;
 }
 
 export default IHttpController;

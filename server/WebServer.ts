@@ -143,7 +143,7 @@ export default class WebServer {
                     eta.logger.error(err);
                 }
             }
-        });
+        }, false);
     }
 
     private configureExpress(): void {

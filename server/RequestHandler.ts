@@ -92,7 +92,7 @@ export default class RequestHandler extends eta.IRequestHandler {
         if (this.res.finished) {
             if (this.req.method === "GET") {
                 this.req.session.lastPage = this.req.mvcPath;
-                this.saveSession();
+                await this.saveSession();
             }
             return;
         }

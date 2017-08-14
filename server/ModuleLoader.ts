@@ -43,9 +43,9 @@ export default class ModuleLoader {
         this.config = JSON.parse(rawConfig.toString());
         // prepend root dir to all config-based dirs
         this.config.rootDir = rootDir;
-        Object.keys(this.config).filter(k => k.endsWith("Dirs")).forEach(k => {
-            const dirs: string[] = (<any>this.config)[k];
-            (<any>this.config)[k] = dirs.map(d => {
+        Object.keys(this.config.dirs).forEach(k => {
+            const dirs: string[] = (<any>this.config.dirs)[k];
+            (<any>this.config.dirs)[k] = dirs.map(d => {
                 if (!d.endsWith("/")) {
                     d += "/";
                 }
@@ -75,7 +75,7 @@ export default class ModuleLoader {
 
     public async loadControllers(): Promise<void> {
         this.controllers = {};
-        const controllerFiles: string[] = (await this.getFiles(this.config.controllerDirs))
+        const controllerFiles: string[] = (await this.getFiles(this.config.dirs.controllers))
             .filter(f => f.endsWith(".js"));
         const requireTemp = this.isInitialized ? requireReload : require;
         controllerFiles.forEach(cf => {
@@ -97,7 +97,7 @@ export default class ModuleLoader {
 
     public async loadStatic(): Promise<void> {
         this.staticFiles = {};
-        await eta.array.forEachAsync(this.config.staticDirs, async d => {
+        await eta.array.forEachAsync(this.config.dirs.staticFiles, async d => {
             const files: string[] = await this.getFiles([d]);
             files.forEach(f => {
                 const webPath: string = f.substring(d.length - 1);
@@ -108,7 +108,7 @@ export default class ModuleLoader {
 
     public async loadViewMetadata(): Promise<void> {
         this.viewMetadata = {};
-        await eta.array.forEachAsync(this.config.viewDirs, async viewDir => {
+        await eta.array.forEachAsync(this.config.dirs.views, async viewDir => {
             const files: string[] = (await this.getFiles([viewDir]))
                 .filter(f => f.endsWith(".json"));
             await eta.array.forEachAsync(files, path => {
@@ -128,6 +128,7 @@ export default class ModuleLoader {
             metadata = JSON.parse(rawJson);
         } catch (err) {
             eta.logger.warn("Encountered invalid JSON in " + path);
+            eta.logger.error(err);
             return undefined;
         }
         if (metadata.include !== undefined) {
@@ -145,7 +146,7 @@ export default class ModuleLoader {
 
     public async loadViews(): Promise<void> {
         this.viewFiles = {};
-        await eta.array.forEachAsync(this.config.viewDirs, async d => {
+        await eta.array.forEachAsync(this.config.dirs.views, async d => {
             const files: string[] = await this.getFiles([d]);
             files.filter(f => f.endsWith(".pug")).forEach(f => {
                 const webPath: string = f.substring(d.length - 1);
@@ -155,7 +156,7 @@ export default class ModuleLoader {
     }
 
     public async loadLifecycleHandlers(): Promise<void> {
-        const lifecycleFiles: string[] = (await this.getFiles(this.config.lifecycleDirs))
+        const lifecycleFiles: string[] = (await this.getFiles(this.config.dirs.lifecycleHandlers))
             .filter(f => f.endsWith(".js"));
         const requireTemp = this.isInitialized ? requireReload : require;
         this.lifecycleHandlers = lifecycleFiles.map(filename => {
@@ -170,7 +171,7 @@ export default class ModuleLoader {
     }
 
     public async loadRequestTransformers(): Promise<void> {
-        const transformerFiles: string[] = (await this.getFiles(this.config.transformerDirs))
+        const transformerFiles: string[] = (await this.getFiles(this.config.dirs.requestTransformers))
             .filter(f => f.endsWith(".js"));
         const requireTemp = this.isInitialized ? requireReload : require;
         this.requestTransformers = transformerFiles.map(filename => {

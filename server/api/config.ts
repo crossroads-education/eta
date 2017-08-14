@@ -54,16 +54,19 @@ export interface IAuthConfiguration {
 }
 
 export interface IModuleConfiguration {
-    controllerDirs: string[];
+    dirs: {
+        controllers: string[];
+        models: string[];
+        staticFiles: string[];
+        views: string[];
+        // hooks and handlers
+        lifecycleHandlers: string[];
+        requestTransformers: string[];
+    };
     css: {[key: string]: string};
-    lifecycleDirs: string[];
-    modelDirs: string[];
     name: string;
     redirects: {[key: string]: string};
     rootDir: string;
-    staticDirs: string[];
-    transformerDirs: string[];
-    viewDirs: string[];
     [key: string]: any;
 }
 

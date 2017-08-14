@@ -92,7 +92,7 @@ async function generateModels(): Promise<void> {
     const moduleNames: string[] = await fs.readdir(SERVER_DIR + "/modules");
     const modelDirs: string[] = moduleNames.map(moduleName => {
         const moduleConfig: any = JSON.parse(fs.readFileSync(SERVER_DIR + "/modules/" + moduleName + "/eta.json", "utf-8"));
-        return (<string[]>moduleConfig.modelDirs)
+        return (<string[]>moduleConfig.dirs.models)
             .map(d => SERVER_DIR + "/modules/" + moduleName + "/" + d);
     }).reduce((prev, next) => prev.concat(next));
     const items: ScriptItem[] = (await getScriptItems(modelDirs, ".js"))

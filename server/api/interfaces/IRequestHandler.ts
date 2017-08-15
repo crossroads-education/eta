@@ -27,7 +27,7 @@ abstract class IRequestHandler {
     }
 
     public redirect(url: string): void {
-        this.res.redirect(307, url);
+        this.res.redirect(303, url);
         this.res.end();
         this.res.finished = true;
     }

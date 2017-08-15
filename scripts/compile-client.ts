@@ -12,7 +12,7 @@ const COMPILER_PATH = SERVER_DIR + "/node_modules/typescript/bin/tsc";
 export async function compileModule(moduleName: string): Promise<void> {
     const moduleDir = SERVER_DIR + "/modules/" + moduleName;
     const moduleConfig: any = JSON.parse(await fs.readFile(moduleDir + "/eta.json", "utf-8"));
-    await HelperArray.forEachAsync(moduleConfig.staticDirs, async (staticDir: string) => {
+    await HelperArray.forEachAsync(moduleConfig.dirs.staticFiles, async (staticDir: string) => {
         const jsDir: string = moduleDir + "/" + staticDir + "/js";
         if (!await HelperFS.exists(jsDir + "/tsconfig.json")) {
             return;

@@ -27,7 +27,7 @@ class ModuleInstaller:
         os.chdir(self.dir)
         os.system("npm i --only=dev")
         os.system("npm i --only=prod")
-        for static_dir in self.config["staticDirs"]:
+        for static_dir in self.config["dirs"]["staticFiles"]:
             js_dir = "%s/%s/js" % (self.dir, static_dir)
             if not os.path.isdir(js_dir):
                 continue

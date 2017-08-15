@@ -40,6 +40,7 @@ export default config = load();
 
 export interface IConfiguration {
     auth: IAuthConfiguration;
+    aws: {[key: string]: any};
     db: any;
     dev: IDevConfiguration;
     http: IHttpConfiguration;

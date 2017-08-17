@@ -31,32 +31,25 @@ export default class RequestHandler extends eta.IRequestHandler {
         });
         await this.fireTransformEvent("onRequest");
         if (this.res.finished) return;
-        // ['', 'auth', 'login'] vs ['', 'auth', 'local', 'login']
-        if (this.req.mvcPath.startsWith("/auth/") && this.req.mvcPath.split("/").length === 3) {
-            this.req.session.authFrom = this.req.session.lastPage;
-            await this.saveSession();
-            this.redirect("/" + this.action);
-        } else {
-            if (this.controller) {
-                const permsRequired: any[] = this.controllerPrototype.permsRequired[this.action];
-                if (this.controllerPrototype.authRequired.indexOf(this.action) !== -1
-                    && !this.isLoggedIn()) { // requires login but is not logged in
-                    this.req.session.authFrom = this.req.mvcPath;
-                    eta.logger.trace("authFrom: " + this.req.mvcPath);
-                    await this.saveSession();
-                    this.redirect("/login");
-                } else if (permsRequired !== undefined) {
-                    if ((await this.fireTransformEvent("isRequestAuthorized", permsRequired)) !== false) {
-                        this.callController();
-                    } else {
-                        this.renderError(eta.constants.http.AccessDenied);
-                    }
-                } else {
+        if (this.controller) {
+            const permsRequired: any[] = this.controllerPrototype.permsRequired[this.action];
+            if (this.controllerPrototype.authRequired.indexOf(this.action) !== -1
+                && !this.isLoggedIn()) { // requires login but is not logged in
+                this.req.session.authFrom = this.req.mvcPath;
+                if (this.shouldSaveLastPage) this.req.session.lastPage = this.req.mvcPath;
+                await this.saveSession();
+                this.redirect("/login");
+            } else if (permsRequired !== undefined) {
+                if ((await this.fireTransformEvent("isRequestAuthorized", permsRequired)) !== false) {
                     this.callController();
+                } else {
+                    this.renderError(eta.constants.http.AccessDenied);
                 }
             } else {
-                await this.serveView();
+                this.callController();
             }
+        } else {
+            await this.serveView();
         }
     }
 
@@ -133,7 +126,7 @@ export default class RequestHandler extends eta.IRequestHandler {
             this.renderError(eta.constants.http.InternalError);
             return;
         }
-        if (!this.req.mvcPath.startsWith("/auth/") && this.req.method === "GET" && this.req.mvcPath !== "/login") {
+        if (this.shouldSaveLastPage()) {
             this.req.session.lastPage = this.req.mvcPath;
         }
         this.res.send(html);
@@ -184,6 +177,10 @@ export default class RequestHandler extends eta.IRequestHandler {
 
     private renderError(code: number): Promise<void> {
         return RequestHandler.renderError(this.res, code);
+    }
+
+    private shouldSaveLastPage(): boolean {
+        return !this.req.mvcPath.includes("/auth/") && this.req.method === "GET" && this.req.mvcPath !== "/home/login" && this.req.mvcPath !== "/home/logout";
     }
 
     private async fireTransformEvent(name: string, ...args: any[]): Promise<boolean> {

@@ -58,6 +58,18 @@ export default class EntityCache<T extends { toCacheObject: () => any }> {
         }
     }
 
+    public async getAllRaw(): Promise<any[]> {
+        const tableName = eta.db().driver.escape(this.repository.metadata.tableName);
+        const columns: string = [...new Set(this.repository.metadata.columns
+            .map(c => {
+                const dbName: string = eta.db().driver.escape(c.databaseName);
+                const name: string = eta.db().driver.escape(c.relationMetadata === undefined ? c.propertyName : c.databaseName);
+                return `${dbName} AS ${name}`;
+            })
+        )].join(", ");
+        return await eta.db().query(`SELECT ${columns} FROM ${tableName}`);
+    }
+
     public start(): void {
         this.timer = setInterval(this.dump.bind(this), this.interval);
     }

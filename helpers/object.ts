@@ -1,6 +1,8 @@
 export default class HelperObject {
     public static clone<T extends any>(obj: T): T {
-        if (obj === undefined || typeof (obj) !== "object") {
+        // We need to check strict null
+        // tslint:disable-next-line
+        if (obj === undefined || obj === null || typeof (obj) !== "object") {
             return obj; // any non-objects are passed by value, not reference
         }
         if (obj instanceof Date) {
@@ -22,5 +24,12 @@ export default class HelperObject {
             }
         }
         return to;
+    }
+
+    public static extend<T extends any>(obj: T, template: any): T {
+        Object.keys(template).filter(k => obj[k] === undefined).forEach(k => {
+            obj[k] = this.clone(template[k]);
+        });
+        return obj;
     }
 }

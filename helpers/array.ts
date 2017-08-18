@@ -33,15 +33,11 @@ export default class HelperArray {
     }
 
     public static unique<T>(arr: T[], uniqueIdGenerator: (element: T) => string): T[] {
-        const foundIds: string[] = [];
-        const values: T[] = [];
-        return arr.filter(e => {
+        const uniqueValues: {[key: string]: T} = {};
+        arr.forEach(e => {
             const id: string = uniqueIdGenerator(e);
-            if (foundIds.indexOf(id) === -1) {
-                foundIds.push(id);
-                return true;
-            }
-            return false;
+            uniqueValues[id] = e;
         });
+        return Object.keys(uniqueValues).map(k => uniqueValues[k]);
     }
 }

@@ -40,4 +40,16 @@ export default class HelperArray {
         });
         return Object.keys(uniqueValues).map(k => uniqueValues[k]);
     }
+
+    public static groupBy<T, K, V>(arr: T[], keySelector: (element: T) => K, valueSelector: (element: T) => V): Map<K, V[]> {
+        return arr.reduce((map, element) => {
+            const key: K = keySelector(element);
+            const value: V = valueSelector(element);
+            if (!map.has(key)) {
+                map.set(key, []);
+            }
+            map.get(key).push(value);
+            return map;
+        }, new Map<K, V[]>());
+    }
 }

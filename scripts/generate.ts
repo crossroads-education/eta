@@ -49,9 +49,6 @@ async function getScriptItems(dirs: string[], fileEnding: string, baseDir: strin
         items = items.concat((await HelperFS.recursiveReaddir(dir)).map(f => {
             f = f.replace(/\\/g, "/");
             const sortFirst: boolean = fs.readFileSync(f, "utf-8").includes("// generate:sort-first");
-            if (sortFirst) {
-                console.log("Found a sort-first: ", f);
-            }
             return <ScriptItem>{
                 name: path.basename(f, fileEnding),
                 relativeFilename: path.relative(baseDir, f).replace(/\\/g, "/"),

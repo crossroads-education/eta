@@ -11,6 +11,7 @@ interface ScriptItem {
     absoluteFilename: string;
     relativeFilename: string;
     sortFirst: boolean;
+    extends: string;
 }
 
 const SERVER_DIR: string = utils.getServerDir();
@@ -48,12 +49,20 @@ async function getScriptItems(dirs: string[], fileEnding: string, baseDir: strin
     await HelperArray.forEachAsync(dirs, async dir => {
         items = items.concat((await HelperFS.recursiveReaddir(dir)).map(f => {
             f = f.replace(/\\/g, "/");
-            const sortFirst: boolean = fs.readFileSync(f, "utf-8").includes("// generate:sort-first");
+            const body = fs.readFileSync(f, "utf-8");
+            const match = body.match(/(class|interface) [A-z\_]+ extends ([A-z\.\_]+)/);
+            let extendsName = undefined;
+            if (match) {
+                const extendTokens: string[] = match ? match[2].split(".") : [undefined];
+                extendsName = extendTokens[extendTokens.length - 1].replace(/\_js/g, "");
+                extendsName = extendsName.endsWith("_") ? extendsName.substr(0, extendsName.length - 1) : extendsName;
+            }
             return <ScriptItem>{
                 name: path.basename(f, fileEnding),
                 relativeFilename: path.relative(baseDir, f).replace(/\\/g, "/"),
                 absoluteFilename: f,
-                sortFirst
+                sortFirst: body.includes("// generate:sort-first"),
+                extends: extendsName
             };
         }).filter(f =>
             f.name !== "index" &&
@@ -61,11 +70,27 @@ async function getScriptItems(dirs: string[], fileEnding: string, baseDir: strin
             !(fileEnding === ".js" && !HelperFS.existsSync(f.absoluteFilename.replace(/\.js/g, ".ts")))
         ));
     }, true);
-    return items.sort((a, b) => {
-        if (a.sortFirst) return -1;
-        else if (b.sortFirst) return 1;
-        return 0;
-    });
+    return items;
+}
+
+function processItemExtends(items: ScriptItem[]): ScriptItem[] {
+    const processItem = (i: number) => {
+        console.log(items[i].name, "extends", items[i].extends);
+        const otherIndex = items.findIndex(item => item.name === items[i].extends);
+        if (otherIndex > i) {
+            console.log("Swapping " + items[i].name + " with " + items[otherIndex].name);
+            const temp = HelperObject.clone(items[i]);
+            items[i] = items[otherIndex];
+            items[otherIndex] = temp;
+            processItem(i);
+        }
+    };
+    for (let i = 0; i < items.length; i++) {
+        if (items[i].extends) {
+            processItem(i);
+        }
+    }
+    return items;
 }
 
 async function generateFiles(config: any, modulePath: string): Promise<void> {
@@ -73,19 +98,20 @@ async function generateFiles(config: any, modulePath: string): Promise<void> {
     const basePath: string = path.dirname(modulePath + "/" + config.filename);
     if (!config.exclude) config.exclude = [];
     const fileEnding: string = config.type === "export" ? ".ts" : ".js";
-    (await Promise.all((<string[]>config.dirs).map(d => {
+    processItemExtends((await Promise.all((<string[]>config.dirs).map(d => {
         const moduleDir: string = modulePath + "/" + d;
         return getScriptItems([moduleDir], fileEnding, moduleDir);
-    }))).reduce((prev, next) => prev.concat(next)).filter(i =>
+    }))).reduce((prev, next) =>
+            prev.concat(next)
+        ).filter(i =>
             !config.exclude.includes(i.name)
-        ).sort(i =>
-            i.name.startsWith("I") ? 0 : 1
-        ).forEach(item => {
+        )).forEach(item => {
             if (config.exclude.includes(item.name)) return;
+            // console.log(item.name);
             const snippet = config.type === "export" ? getExportSnippet(item) : [getIndexSnippet(item)];
             lines = item.sortFirst ? snippet.concat(lines) : lines.concat(snippet);
-        }
-    );
+        });
+        console.log("-", config.type);
     if (config.prepend) {
         lines = config.prepend.concat(lines);
     }

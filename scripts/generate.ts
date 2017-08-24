@@ -75,10 +75,8 @@ async function getScriptItems(dirs: string[], fileEnding: string, baseDir: strin
 
 function processItemExtends(items: ScriptItem[]): ScriptItem[] {
     const processItem = (i: number) => {
-        console.log(items[i].name, "extends", items[i].extends);
         const otherIndex = items.findIndex(item => item.name === items[i].extends);
         if (otherIndex > i) {
-            console.log("Swapping " + items[i].name + " with " + items[otherIndex].name);
             const temp = HelperObject.clone(items[i]);
             items[i] = items[otherIndex];
             items[otherIndex] = temp;
@@ -111,7 +109,6 @@ async function generateFiles(config: any, modulePath: string): Promise<void> {
             const snippet = config.type === "export" ? getExportSnippet(item) : [getIndexSnippet(item)];
             lines = item.sortFirst ? snippet.concat(lines) : lines.concat(snippet);
         });
-        console.log("-", config.type);
     if (config.prepend) {
         lines = config.prepend.concat(lines);
     }

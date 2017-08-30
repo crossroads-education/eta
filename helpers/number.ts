@@ -1,7 +1,7 @@
 export default class HelperNumber {
     /**
-     * Returns a random integer between min and max.
-     * If exclusive is true, the result will never be max.
+     * Returns a random integer between `min` and `max`.
+     * If exclusive is true, the result will never be `max`.
      * Borrowed (with modifications) from https://mzl.la/2qChqI1
      */
     public static getRandomInt(min: number, max: number, exclusive = false): number {

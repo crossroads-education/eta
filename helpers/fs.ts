@@ -1,4 +1,4 @@
-import * as fs from "fs";
+import * as fs from "fs-extra";
 import * as recursiveReaddir from "recursive-readdir";
 
 export default class HelperFS {
@@ -6,12 +6,13 @@ export default class HelperFS {
      * Provides functionality of deprecated fs.exists()
      * See https://github.com/nodejs/node/issues/1592
      */
-    public static exists(filename: string): Promise<boolean> {
-        return new Promise<boolean>((resolve, reject) => {
-            fs.access(filename, (err: NodeJS.ErrnoException) => {
-                resolve(!err);
-            });
-        });
+    public static async exists(filename: string): Promise<boolean> {
+        try {
+            await fs.access(filename);
+            return true;
+        } catch (err) {
+            return false;
+        }
     }
 
     /**
@@ -27,6 +28,9 @@ export default class HelperFS {
         }
     }
 
+    /**
+     * Maps the recursive-readdir module to a Promise interface.
+     */
     public static recursiveReaddir(path: string): Promise<string[]> {
         return new Promise<string[]>((resolve, reject) => {
             recursiveReaddir(path, (err: Error, files: string[]) => {

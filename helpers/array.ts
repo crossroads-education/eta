@@ -1,4 +1,10 @@
 export default class HelperArray {
+    /**
+     * Removes elements from `arr` which return true when passed to `selector`.
+     * @param arr Array to remove elements from
+     * @param selector Returns true when the passed element should be removed
+     * @return Number of elements removed
+     */
     public static remove<T>(arr: T[], selector: (element: T) => boolean): number {
         const indexes: number[] = [];
         arr.forEach((e, i) => {
@@ -10,6 +16,11 @@ export default class HelperArray {
         return indexes.length;
     }
 
+    /**
+     * Removes elements from `arr` whose indexes are contained in `indexes`.
+     * @param arr Array to remove elements from
+     * @param indexes Array of indexes to remove from `arr`
+     */
     public static removeIndexes(arr: any[], indexes: number[]): void {
         // sort in descending order
         indexes = indexes.sort((a, b) => a === b ? 0 : (a > b ? -1 : 1));
@@ -18,6 +29,13 @@ export default class HelperArray {
         });
     }
 
+    /**
+     * Calls (and awaits) `worker` for each element in `arr`.
+     * @deprecated You should consider using `for ... of` within an async method instead of this method.
+     * @param arr Array to iterate over
+     * @param worker Function to call on each element in `arr`
+     * @param inOrder If true, wait for each element to be finished before moving on to the next.
+     */
     public static async forEachAsync<T>(arr: T[], worker: (element: T) => Promise<void>, inOrder = false): Promise<void> {
         if (inOrder) {
             for (let i = 0; i < arr.length; i++) {
@@ -32,6 +50,12 @@ export default class HelperArray {
         }
     }
 
+    /**
+     * Returns unique values in `arr` whose keys are defined by the result of `uniqueIdGenerator`.
+     * @param arr Array to find unique values in
+     * @param uniqueIdGenerator Function to generate a unique key for elements in `arr`
+     * @return Unique elements of `arr`
+     */
     public static unique<T>(arr: T[], uniqueIdGenerator: (element: T) => string): T[] {
         const uniqueValues: {[key: string]: T} = {};
         arr.forEach(e => {
@@ -41,6 +65,9 @@ export default class HelperArray {
         return Object.keys(uniqueValues).map(k => uniqueValues[k]);
     }
 
+    /**
+     * TODO: Write documentation
+     */
     public static groupBy<T, K, V>(arr: T[], keySelector: (element: T) => K, valueSelector: (element: T) => V): Map<K, V[]> {
         return arr.reduce((map, element) => {
             const key: K = keySelector(element);

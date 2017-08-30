@@ -16,3 +16,4 @@ package-lock.json
 /helpers/index.ts
 /lib/index.ts
 /server/api/index.ts
+/docs/generated

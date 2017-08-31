@@ -66,7 +66,11 @@ export default class HelperArray {
     }
 
     /**
-     * TODO: Write documentation
+     * Group sets of values (provided by `valueSelector`) into a Map, whose keys are provided by `keySelector`.
+     * @param arr Array to group values from
+     * @param keySelector Function to generate a key for elements in `arr` (not unique)
+     * @param valueSelector Function to generate a value for elements in `arr` to be stored in the returned Map
+     * @return The grouped set of key:value[] relationships
      */
     public static groupBy<T, K, V>(arr: T[], keySelector: (element: T) => K, valueSelector: (element: T) => V): Map<K, V[]> {
         return arr.reduce((map, element) => {

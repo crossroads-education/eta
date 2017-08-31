@@ -1,11 +1,16 @@
 export default class HelperObject {
+    /**
+     * Creates an in-memory copy of an object.
+     * @param obj The object to clone
+     * @return The cloned object
+     */
     public static clone<T extends any>(obj: T): T {
         // We need to check strict null
         // tslint:disable-next-line
         if (obj === undefined || obj === null || typeof (obj) !== "object") {
             return obj; // any non-objects are passed by value, not reference
         }
-        if (obj instanceof Date) {
+        if (obj instanceof Date) { // special handling to speed things up
             return <any>new Date(obj.getTime());
         }
         const temp: any = new obj.constructor();

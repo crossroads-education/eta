@@ -4,10 +4,31 @@ import HelperObject from "./object";
 export default class HelperDate {
     public static Week: Week;
     public static Month: Month;
+
+    /**
+     * Truncates the time component of a Date.
+     * @param date The Date to truncate
+     * @return The date component of `date`
+     */
     public static getDate(date: Date): Date {
         return new Date(date.getFullYear(), date.getMonth(), date.getDate());
     }
 
+    /**
+     * Creates a Date object from a time string.
+     * @param time The time to parse (formatted as hour:minute)
+     * @return The created Date object
+     */
+    public static getFromTime(time: string): Date {
+        return moment(time, ["H:m"]).toDate();
+    }
+
+    /**
+     * Gets all months between `start` and `end`, inclusively.
+     * @param start The start of the range
+     * @param end The end of the range
+     * @return The months between `start` and `end`
+     */
     public static getMonthsBetween(start: Date, end: Date): Month[] {
         const months: Month[] = [];
         const startMonth: number = moment(start).month() + 1;
@@ -24,6 +45,12 @@ export default class HelperDate {
         return months;
     }
 
+    /**
+     * Gets all weeks between `start` and `end`, inclusively.
+     * @param start The start of the range
+     * @param end The end of the range
+     * @return The weeks between `start` and `end`
+     */
     public static getWeeksBetween(start: Date, end: Date): Week[] {
         const weeks: Week[] = [];
         const startWeek: number = moment(start).week();

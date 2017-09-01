@@ -66,6 +66,29 @@ export default class HelperArray {
     }
 
     /**
+     * Returns unique values in `arr`. No ID generator is needed, since this method only accepts arrays of primitive types.
+     * @param arr Array to find unique values in
+     * @return Unique elements of `arr`
+     */
+    public static uniquePrimitive<T extends number | string | boolean | symbol>(arr: T[]): T[] {
+        return [...new Set(arr)];
+    }
+
+    /**
+     * Inserts `values` at a specific `index` in `arr`.
+     * @param arr Array to insert into
+     * @param index Index to insert at
+     * @param values Values to insert
+     */
+    public static insert<T>(arr: T[], index: number, values: T[]): void {
+        if (values.length === 1) {
+            arr.splice(index, 0, values[0]);
+        } else {
+            Array.prototype.splice.apply(arr, (<any[]>[index, 0]).concat(values));
+        }
+    }
+
+    /**
      * Group sets of values (provided by `valueSelector`) into a Map, whose keys are provided by `keySelector`.
      * @param arr Array to group values from
      * @param keySelector Function to generate a key for elements in `arr` (not unique)

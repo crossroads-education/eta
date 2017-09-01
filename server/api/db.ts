@@ -3,7 +3,7 @@ import "reflect-metadata";
 import * as eta from "../../eta";
 import logger from "./logger";
 import * as db from "../../db";
-Object.keys(db);
+Object.keys(db); // Initializes models
 
 function getConnection(): orm.Connection {
     return orm.getConnection();

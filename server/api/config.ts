@@ -55,6 +55,9 @@ export interface IAuthConfiguration {
 }
 
 export interface IModuleConfiguration {
+    /**
+     * Directory definitions for various item types
+     */
     dirs: {
         controllers: string[];
         models: string[];
@@ -64,9 +67,22 @@ export interface IModuleConfiguration {
         lifecycleHandlers: string[];
         requestTransformers: string[];
     };
+    /**
+     * CSS redirect mappings
+     */
     css: {[key: string]: string};
+    /**
+     * The actual name of the module (in filesystem as well)
+     */
     name: string;
+    /**
+     * Redirect definitions (i.e., "/home/index": "/home/otherPage" would redirect from index to otherPage)
+     */
     redirects: {[key: string]: string};
+    /**
+     * Absolute path to module directory.
+     * Generated on module load by ModuleLoader.
+     */
     rootDir: string;
     [key: string]: any;
 }
@@ -76,11 +92,26 @@ export interface IDevConfiguration {
 }
 
 export interface IHttpConfiguration {
+    /**
+     * Host to redirect to when needed
+     */
     host: string;
+    /**
+     * Port to listen on
+     */
     port: number;
     session: {
+        /**
+         * Hostname to connect Redis to
+         */
         host: string;
+        /**
+         * Port to connect Redis to
+         */
         port: number;
+        /**
+         * Unique string to help encode session ids
+         */
         secret: string;
     };
 }

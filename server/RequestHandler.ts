@@ -62,10 +62,10 @@ export default class RequestHandler extends eta.IRequestHandler {
         this.controller.res = this.res;
         this.controller.next = this.next;
         this.controller.server = this.server;
-        const params: any[] = [];
+        const params: {[key: string]: any} = {};
+        const queryParams: {[key: string]: any} = this.req[this.req.method === "GET" ? "query" : "body"];
         const actionParams: string[] = this.controllerPrototype.params[this.action];
-        if (actionParams) {
-            const queryParams: any = this.req[this.req.method === "GET" ? "query" : "body"];
+        if (actionParams) { // TODO Remove deprecated @eta.mvc.params() support
             actionParams.forEach(p => {
                 const param: any = queryParams[p];
                 try {
@@ -76,7 +76,13 @@ export default class RequestHandler extends eta.IRequestHandler {
             });
         }
         try {
-            await (<any>this.controller)[this.action].apply(this.controller, params);
+            if (actionParams) {
+                // TODO Remove deprecated @eta.mvc.params() support
+                eta.logger.warn("@eta.mvc.params() is deprecated.");
+                await (<any>this.controller)[this.action].apply(this.controller, params);
+            } else {
+                await (<any>this.controller)[this.action].apply(this.controller, [queryParams]);
+            }
         } catch (err) {
             eta.logger.error(err);
             this.renderError(eta.constants.http.InternalError);

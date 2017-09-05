@@ -62,21 +62,30 @@ export default class RequestHandler extends eta.IRequestHandler {
         this.controller.res = this.res;
         this.controller.next = this.next;
         this.controller.server = this.server;
-        const params: {[key: string]: any} = {};
+        const params: any[] = [];
         const queryParams: {[key: string]: any} = this.req[this.req.method === "GET" ? "query" : "body"];
+        let areParametersBad = false;
+        Object.keys(queryParams).forEach(k => {
+            if (k.includes("[")) {
+                areParametersBad = true;
+            }
+            try {
+                queryParams[k] = JSON.parse(queryParams[k]);
+            } catch (err) {
+            }
+        });
+        if (areParametersBad) {
+            eta.logger.warn("Received bad parameters to " + this.req.mvcPath + "! Make sure your parameters are encoded as JSON.");
+        }
         const actionParams: string[] = this.controllerPrototype.params[this.action];
-        if (actionParams) { // TODO Remove deprecated @eta.mvc.params() support
+        const useLegacyParams: boolean = actionParams !== undefined;
+        if (useLegacyParams) { // TODO Remove deprecated @eta.mvc.params() support
             actionParams.forEach(p => {
-                const param: any = queryParams[p];
-                try {
-                    params.push(JSON.parse(param));
-                } catch (ex) {
-                    params.push(param);
-                }
+                params.push(queryParams[p]);
             });
         }
         try {
-            if (actionParams) {
+            if (useLegacyParams) {
                 // TODO Remove deprecated @eta.mvc.params() support
                 eta.logger.warn("@eta.mvc.params() is deprecated.");
                 await (<any>this.controller)[this.action].apply(this.controller, params);

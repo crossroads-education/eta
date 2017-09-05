@@ -25,6 +25,7 @@ export default class MVC {
             if (!target.prototype.routes) target.prototype.routes = [];
             if (!target.prototype.actions) target.prototype.actions = {};
             if (!target.prototype.raw) target.prototype.raw = [];
+            if (!target.prototype.params) target.prototype.params = {};
             if (!target.prototype.authRequired) target.prototype.authRequired = [];
             if (!target.prototype.permsRequired) target.prototype.permsRequired = {};
         };

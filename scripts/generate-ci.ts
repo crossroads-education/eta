@@ -21,9 +21,6 @@ async function main(): Promise<void> {
         if (!await HelperFS.exists(SERVER_DIR + "/db.ts")) {
             await fs.writeFile(SERVER_DIR + "/db.ts", "export const _ = true;");
         }
-        if (!await HelperFS.exists(SERVER_DIR + "/db-init.ts")) {
-            await fs.writeFile(SERVER_DIR + "/db-init.ts", "export const _ = true;");
-        }
         // compile from the generated indexes
         await exec("npm run compile", { cwd: SERVER_DIR });
     } catch (err) {

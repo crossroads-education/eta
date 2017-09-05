@@ -63,20 +63,35 @@ export default class RequestHandler extends eta.IRequestHandler {
         this.controller.next = this.next;
         this.controller.server = this.server;
         const params: any[] = [];
+        const queryParams: {[key: string]: any} = this.req[this.req.method === "GET" ? "query" : "body"];
+        let areParametersBad = false;
+        Object.keys(queryParams).forEach(k => {
+            if (k.includes("[")) {
+                areParametersBad = true;
+            }
+            try {
+                queryParams[k] = JSON.parse(queryParams[k]);
+            } catch (err) {
+            }
+        });
+        if (areParametersBad) {
+            eta.logger.warn("Received bad parameters to " + this.req.mvcPath + "! Make sure your parameters are encoded as JSON.");
+        }
         const actionParams: string[] = this.controllerPrototype.params[this.action];
-        if (actionParams) {
-            const queryParams: any = this.req[this.req.method === "GET" ? "query" : "body"];
+        const useLegacyParams: boolean = actionParams !== undefined;
+        if (useLegacyParams) { // TODO Remove deprecated @eta.mvc.params() support
             actionParams.forEach(p => {
-                const param: any = queryParams[p];
-                try {
-                    params.push(JSON.parse(param));
-                } catch (ex) {
-                    params.push(param);
-                }
+                params.push(queryParams[p]);
             });
         }
         try {
-            await (<any>this.controller)[this.action].apply(this.controller, params);
+            if (useLegacyParams) {
+                // TODO Remove deprecated @eta.mvc.params() support
+                eta.logger.warn("@eta.mvc.params() is deprecated.");
+                await (<any>this.controller)[this.action].apply(this.controller, params);
+            } else {
+                await (<any>this.controller)[this.action].apply(this.controller, [queryParams]);
+            }
         } catch (err) {
             eta.logger.error(err);
             this.renderError(eta.constants.http.InternalError);

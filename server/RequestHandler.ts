@@ -192,9 +192,14 @@ export default class RequestHandler extends eta.IRequestHandler {
         await eta.array.forEachAsync(this.transformers, async t => {
             const method: () => Promise<void> = (<any>t)[name];
             if (method) {
-                const value: boolean | void = await method.apply(t, args);
-                if (typeof(value) === "boolean") {
-                    if (!value) result = false;
+                try {
+                    const value: boolean | void = await method.apply(t, args);
+                    if (typeof(value) === "boolean") {
+                        if (!value) result = false;
+                    }
+                } catch (err) {
+                    eta.logger.error(err);
+                    result = false;
                 }
             }
         });

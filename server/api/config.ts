@@ -8,7 +8,8 @@ function load(): IConfiguration {
     fs.readdirSync(configDir)
         .filter(f => f.endsWith(".json") && !f.endsWith(".sample.json"))
     .forEach((filename) => {
-        const configName: string = filename.split(".")[0];
+        const configNameTokens: string[] = filename.split(".");
+        const configName: string = configNameTokens.splice(0, configNameTokens.length - 1).join(".");
         const rawConfig: string = fs.readFileSync(configDir + filename).toString();
         try {
             (<any>config)[configName] = JSON.parse(rawConfig);

@@ -2,9 +2,21 @@ import json
 import os
 import shutil
 import sys
+from urllib.parse import urlparse as parse_url
 import utils
 
 SERVER_DIR = utils.get_server_dir()
+
+def get_dependency(url):
+    parsed_url = parse_url("https://" + url)
+    if parsed_url.netloc == "" or parsed_url.scheme == "":
+        print("Please format dependency URLs as: username/repository (only Github repositories)")
+        print("Couldn't get dependency: " + url)
+        return
+    print("Installing dependency... ({})".format(url))
+    if not ModuleInstaller("git@github.com:" + parsed_url.path[1:]).install():
+        print("Skipping dependency {}: Already installed.".format(url))
+    print("Successfully installed dependency " + url)
 
 class ModuleInstaller:
     def __init__(self, git_url):
@@ -16,8 +28,11 @@ class ModuleInstaller:
     def install(self):
         if os.system("git clone %s %s" % (self.git_url, self.dir)) is not 0:
             print("Couldn't clone the repository. Please check that the Git URL exists and that your SSH key is valid.")
-            return
+            return False
         self.config = json.loads(utils.read_file(self.dir + "/eta.json"))
+        if "dependencies" in self.config:
+            for dependency_url in self.config["dependencies"]:
+                get_dependency(dependency_url)
         self.fire_hook("preinstall")
         if self.config["name"] != self.name:
             self.name = self.config["name"]
@@ -41,6 +56,7 @@ class ModuleInstaller:
         os.chdir(SERVER_DIR)
         os.system("npm run generate-ci")
         os.system("npm run compile-client")
+        return True
 
     def fire_hook(self, hook_name):
         if "hooks" not in self.config:

@@ -92,7 +92,7 @@ export default class EntityCache<T extends { toCacheObject: () => any }> {
             try {
                 return o.toCacheObject();
             } catch (err) {
-                // eta.logger.error(err);
+                eta.logger.error(err);
                 return undefined;
             }
         }).filter(o => o !== undefined);

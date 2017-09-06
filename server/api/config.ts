@@ -85,6 +85,13 @@ export interface IModuleConfiguration {
      * Generated on module load by ModuleLoader.
      */
     rootDir: string;
+    /**
+     * Modules that this module requires.
+     * Format: username/repository
+     * Only Github repositories are supported.
+     */
+    dependencies: string[];
+    hooks: {[key: string]: {cwd: string, exec: string}[]};
     [key: string]: any;
 }
 

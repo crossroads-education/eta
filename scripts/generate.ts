@@ -132,7 +132,7 @@ async function generateModels(): Promise<void> {
     ];
     let exportLines: string[] = [];
     await HelperArray.forEachAsync(items, async item => {
-        const code: string = await fs.readFile(item.absoluteFilename, "utf-8");
+        const code: string = await fs.readFile(item.absoluteFilename.replace(/\.js/g, ".ts"), "utf-8");
         if (code.includes("// generate:ignore-file")) {
             dbLines.push(getIndexSnippet(item));
         } else {

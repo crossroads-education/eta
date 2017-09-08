@@ -1,6 +1,0 @@
-logs
-*.ts
-*.js.map
-node_modules
-content/node_modules
-content/static/js/typings

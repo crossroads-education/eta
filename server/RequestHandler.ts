@@ -163,11 +163,12 @@ export default class RequestHandler extends eta.IRequestHandler {
             this.renderError(eta.constants.http.InternalError);
             return true;
         }
+        const mimeType = mime.lookup(this.req.mvcPath, "text/plain");
         if (eta.config.dev.enable) {
             this.res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
             this.res.setHeader("Pragma", "no-cache");
             this.res.setHeader("Expires", "0");
-        } else {
+        } else if (mimeType !== "application/javascript" && mimeType !== "text/css") { // don't cache JS and CSS
             const hash: string = eta.crypto.getUnique(data);
             this.res.setHeader("Cache-Control", "max-age=" + 60 * 60 * 24 * 30); // 30 days
             this.res.setHeader("ETag", hash);
@@ -176,7 +177,7 @@ export default class RequestHandler extends eta.IRequestHandler {
                 return true;
             }
         }
-        this.res.setHeader("Content-Type", mime.lookup(this.req.mvcPath, "text/plain"));
+        this.res.setHeader("Content-Type", mimeType);
         this.res.setHeader("Content-Length", data.byteLength.toString());
         this.res.send(data);
         return true;

@@ -26,16 +26,16 @@ test:
     - npm run test:
         environment:
           MOCHA_FILE: $CIRCLE_TEST_REPORTS/junit/test-results.xml
-deployment:
-  production:
-    branch: master
-    codedeploy:
-      etaV22:
-        application_root: /app
-        revision_location:
-          revision_type: S3
-          s3_location:
-            bucket: eta-v22-bucket
-            key_pattern: apps/etaV22-{SHORT_COMMIT}-{BUILD_NUM}
-        region: us-east-2
-        deployment_group: etaV22-deployment-group
+# deployment:
+#   production:
+#     branch: master
+#     codedeploy:
+#       etaV22:
+#         application_root: /app
+#         revision_location:
+#           revision_type: S3
+#           s3_location:
+#             bucket: eta-v22-bucket
+#             key_pattern: apps/etaV22-{SHORT_COMMIT}-{BUILD_NUM}
+#         region: us-east-2
+#         deployment_group: etaV22-deployment-group

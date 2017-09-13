@@ -87,7 +87,6 @@ export default class RequestHandler extends eta.IRequestHandler {
         try {
             if (useLegacyParams) {
                 // TODO Remove deprecated @eta.mvc.params() support
-                eta.logger.warn("@eta.mvc.params() is deprecated.");
                 await (<any>this.controller)[this.action].apply(this.controller, params);
             } else {
                 await (<any>this.controller)[this.action].apply(this.controller, [queryParams]);

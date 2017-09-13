@@ -199,6 +199,10 @@ export default class WebServer {
         }
         req.baseUrl = req.protocol + "://" + host + "/";
         req.fullUrl = req.baseUrl + req.mvcPath.substring(1);
+        req.mvcFullPath = req.mvcPath;
+        if (req.originalUrl.includes("?")) {
+            req.mvcFullPath += "?" + req.originalUrl.split("?").slice(-1)[0];
+        }
         res.view = {};
         const tokens: string[] = req.mvcPath.split("/");
         const action: string = tokens.splice(-1, 1)[0];

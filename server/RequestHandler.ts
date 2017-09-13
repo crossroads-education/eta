@@ -35,8 +35,8 @@ export default class RequestHandler extends eta.IRequestHandler {
             const permsRequired: any[] = this.controllerPrototype.permsRequired[this.action];
             if (this.controllerPrototype.authRequired.indexOf(this.action) !== -1
                 && !this.isLoggedIn()) { // requires login but is not logged in
-                this.req.session.authFrom = this.req.mvcPath;
-                if (this.shouldSaveLastPage) this.req.session.lastPage = this.req.mvcPath;
+                this.req.session.authFrom = this.req.mvcFullPath;
+                if (this.shouldSaveLastPage) this.req.session.lastPage = this.req.mvcFullPath;
                 await this.saveSession();
                 this.redirect("/login");
             } else if (permsRequired !== undefined) {
@@ -98,7 +98,7 @@ export default class RequestHandler extends eta.IRequestHandler {
         }
         if (this.res.finished) {
             if (this.req.method === "GET") {
-                this.req.session.lastPage = this.req.mvcPath;
+                this.req.session.lastPage = this.req.mvcFullPath;
                 await this.saveSession();
             }
             return;
@@ -141,7 +141,7 @@ export default class RequestHandler extends eta.IRequestHandler {
             return;
         }
         if (this.shouldSaveLastPage()) {
-            this.req.session.lastPage = this.req.mvcPath;
+            this.req.session.lastPage = this.req.mvcFullPath;
         }
         this.res.send(html);
     }

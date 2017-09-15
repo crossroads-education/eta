@@ -8,7 +8,7 @@ import { connect } from "./server/api/db";
 /**
  * Sets the webserver up and starts it. Called once on app start.
  */
-function main() {
+export default async function main(): Promise<void> {
     if (process.env.ETA_ENVIRONMENT !== "docker-compose") {
         console.warn("You should run this server with docker-compose: `docker-compose up`");
     }
@@ -17,28 +17,28 @@ function main() {
         console.log(err.stack);
     });
     let server: WebServer;
-    process.on("SIGINT", () => { // gracefully close server on CTRL+C
+    process.on("SIGINT", async () => { // gracefully close server on CTRL+C
         if (!server) {
             return;
         }
         logger.trace("Stopping Eta...");
-        server.close().then(() => {
-            process.exit();
-        }).catch(err => {
+        try {
+            await server.close();
+        } catch (err) {
             logger.error(err);
+        } finally {
             process.exit();
-        });
+        }
     });
     server = new WebServer();
-    server.init().then((isInitialized) => {
-        if (!isInitialized) {
-            server.close();
-            return;
-        }
-        server.start();
-    }).catch(err => {
-        console.log(err);
-    });
+    if (!await server.init()) {
+        server.close();
+        return;
+    }
+    server.start();
 }
 
-main();
+if (!module.parent) {
+    main().then(() => { })
+    .catch(err => console.error(err));
+}

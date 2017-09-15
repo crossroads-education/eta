@@ -48,7 +48,7 @@ export default class WebServer {
 
     public connection: orm.Connection;
 
-    // TODO: Probably should provide a little documentation on the server init
+    // TODO: Document WebServer.init()
     public async init(): Promise<boolean> {
         await this.loadModules();
         await this.fireLifecycleEvent("onAppStart");
@@ -120,7 +120,7 @@ export default class WebServer {
             return this.moduleLoaders[moduleName].loadAll();
         });
         let lifecycleHandlerTypes: (typeof eta.ILifecycleHandler)[] = [];
-        //TODO Explain this mapping
+        // map all modules' objects into webserver's global arrays
         Object.keys(this.moduleLoaders).sort().forEach(k => {
             const moduleLoader: ModuleLoader = this.moduleLoaders[k];
             this.controllers = eta.object.merge(moduleLoader.controllers, this.controllers);
@@ -156,9 +156,12 @@ export default class WebServer {
             this.app.disable("view cache"); // pull Pug views from filesystem on request
         }
     }
-    // TODO: Document
+
+    /**
+     * Initializes ExpressJS middleware
+     */
     private setupMiddleware(): void {
-        this.app.use(expressSession({
+        this.app.use(expressSession({ // sets up req.session provider
             store: new (redisSession(expressSession))({
                 client: eta.redis
             }),
@@ -166,15 +169,16 @@ export default class WebServer {
             saveUninitialized: false,
             secret: eta.config.http.session.secret
         }));
-        //QUESTION What doees this actually do?
-        this.app.use(multer({
+
+        this.app.use(multer({ // sets up support for file uploads
             storage: multer.memoryStorage()
         }).any());
 
-        this.app.use(bodyParser.urlencoded({
+        this.app.use(bodyParser.urlencoded({ // sets up support for standard POST bodies
             extended: false
         }));
 
+        // sets up auth provider
         this.app.use(passport.initialize());
         this.app.use(passport.session());
     }
@@ -182,7 +186,7 @@ export default class WebServer {
     private onRequest(req: express.Request, res: express.Response, next: Function): void {
         // initialize custom express properties
         req.mvcPath = decodeURIComponent(req.path);
-        // TODO: Document if tree
+        // ensure that mvcPath always has a route and action (/route.../action)
         if (req.mvcPath === "/") {
             req.mvcPath = "/home/index";
         } else if (req.mvcPath.endsWith("/")) {
@@ -207,15 +211,16 @@ export default class WebServer {
             req.mvcFullPath += "?" + req.originalUrl.split("?").slice(-1)[0];
         }
         res.view = {};
-        // TODO Explain this methodology
         const tokens: string[] = req.mvcPath.split("/");
+        // action is the last token of mvcPath
         const action: string = tokens.splice(-1, 1)[0];
+        // route is everything else
         const route: string = tokens.join("/");
+        // get this for instantiation in RequestHandler
         const controllerClass: typeof eta.IHttpController = this.controllers[route];
-        if (this.viewMetadata[req.mvcPath]) {
+        if (this.viewMetadata[req.mvcPath]) { // clone static view metadata into this request's metadata
             res.view = eta.object.clone(this.viewMetadata[req.mvcPath]);
         }
-        // END TODO
         new RequestHandler({
             route, action,
             controllerPrototype: controllerClass ? controllerClass.prototype : undefined,
@@ -254,8 +259,7 @@ export default class WebServer {
         });
     }
 
-    // TODO: Document provider
-    // The whole thing
+    // TODO Document authentication handling
     private setupAuthProvider(): void {
         if (!eta.config.auth.provider) {
             throw new Error("No authentication provider is set.");
@@ -271,7 +275,6 @@ export default class WebServer {
         const overrideRoutes: string[] = tempProvider.getOverrideRoutes();
         const strategy: passport.Strategy = tempProvider.getPassportStrategy();
         passport.use(strategy.name, strategy);
-        // TODO Especially this callback
         const getHandler = (req: express.Request, res: express.Response, next: express.NextFunction): (err: Error, user: any) => void => {
             const provider: eta.IAuthProvider = new (<any>AuthProvider)({ req, res, next });
             return (err: Error, user: any) => {

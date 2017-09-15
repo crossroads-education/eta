@@ -4,6 +4,9 @@ import * as mime from "mime";
 import * as eta from "../eta";
 import WebServer from "./WebServer";
 
+/**
+ * Logic for processing HTTP requests. Instantiated per request.
+ */
 export default class RequestHandler extends eta.IRequestHandler {
     public route: string;
     public action: string;
@@ -20,7 +23,9 @@ export default class RequestHandler extends eta.IRequestHandler {
         }
     }
 
-    // TODO: Document
+    /**
+     * Entry point for a new request. Called by WebServer.
+     */
     public async handle(): Promise<void> {
         if (await this.checkStatic()) return;
         this.transformers = this.server.requestTransformers.map(t => {
@@ -54,7 +59,10 @@ export default class RequestHandler extends eta.IRequestHandler {
         }
     }
 
-    // TODO: Document
+    /**
+     * Loads and calls any controller method applicable to this request.
+     * It is assumed that a controller is defined for this request, if not an action / route.
+     */
     private async callController(): Promise<void> {
         if (this.controllerPrototype.actions[this.action] !== this.req.method) {
             await this.serveView();
@@ -67,23 +75,22 @@ export default class RequestHandler extends eta.IRequestHandler {
         const params: any[] = [];
         const queryParams: {[key: string]: any} = this.req[this.req.method === "GET" ? "query" : "body"];
         let areParametersBad = false;
-        // TODO Explain this logic
+        // checks GET/POST for JSON-encoded values and "bad" JQuery-encoded keys
         Object.keys(queryParams).forEach(k => {
             if (k.includes("[")) {
                 areParametersBad = true;
             }
             try {
                 queryParams[k] = JSON.parse(queryParams[k]);
-            } catch (err) {
-            }
+            } catch (err) { }
         });
         if (areParametersBad) {
             eta.logger.warn("Received bad parameters to " + this.req.mvcPath + "! Make sure your parameters are encoded as JSON.");
         }
         const actionParams: string[] = this.controllerPrototype.params[this.action];
         const useLegacyParams: boolean = actionParams !== undefined;
-        // TODO Document legacy params
         if (useLegacyParams) { // TODO Remove deprecated @eta.mvc.params() support
+            // support for old @eta.mvc.params(string[]) action definitions
             actionParams.forEach(p => {
                 params.push(queryParams[p]);
             });
@@ -100,8 +107,9 @@ export default class RequestHandler extends eta.IRequestHandler {
             this.renderError(eta.constants.http.InternalError);
             return;
         }
-        // TODO Explain this if tree
         if (this.res.finished) {
+            // methods like IRequestHandler.redirect() mark res.finished as true,
+            // and Express handles it poorly (usually by sending headers multiple times)
             if (this.req.method === "GET") {
                 this.req.session.lastPage = this.req.mvcFullPath;
                 await this.saveSession();
@@ -151,13 +159,15 @@ export default class RequestHandler extends eta.IRequestHandler {
         this.res.send(html);
     }
 
-    // TODO Explain and document
-    // The whole thing
-    // QUESTION What exactly is this for?
+
+    /**
+     * Checks if this request is for a static file, and if so, responds with the contents of the file.
+     * Returns true if the request is for a static file, false otherwise.
+     */
     private async checkStatic(): Promise<boolean> {
         const staticPath: string = this.server.staticFiles[this.req.mvcPath];
         if (!staticPath) return false;
-        if (!await eta.fs.exists(staticPath)) {
+        if (!await eta.fs.exists(staticPath)) { // since static file list is cached
             eta.logger.trace("A static file was deleted after the server started. " + staticPath);
             this.renderError(eta.constants.http.NotFound);
             return true;
@@ -171,7 +181,7 @@ export default class RequestHandler extends eta.IRequestHandler {
             return true;
         }
         const mimeType = mime.lookup(this.req.mvcPath, "text/plain");
-        if (eta.config.dev.enable) {
+        if (eta.config.dev.enable) { // don't cache in dev mode
             this.res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
             this.res.setHeader("Pragma", "no-cache");
             this.res.setHeader("Expires", "0");
@@ -210,11 +220,10 @@ export default class RequestHandler extends eta.IRequestHandler {
         return !this.req.mvcPath.includes("/auth/") && this.req.method === "GET" && this.req.mvcPath !== "/home/login" && this.req.mvcPath !== "/home/logout";
     }
 
-    // TODO Explain transform events
+    // TODO Document transform events
     private async fireTransformEvent(name: string, ...args: any[]): Promise<boolean> {
         let result = true;
-        // TODO Explain callback
-        await eta.array.forEachAsync(this.transformers, async t => {
+        for (const t of this.transformers) {
             const method: () => Promise<void> = (<any>t)[name];
             if (method) {
                 try {
@@ -227,7 +236,7 @@ export default class RequestHandler extends eta.IRequestHandler {
                     result = false;
                 }
             }
-        });
+        }
         return result;
     }
 

@@ -3,3 +3,8 @@ os: linux
 files:
   - source: /
     destination: /usr/src/app
+hooks:
+  ApplicationStop:
+    - location: scripts/aws/stop.sh
+  ApplicationStart:
+    - location: scripts/aws/start.sh

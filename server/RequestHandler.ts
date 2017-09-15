@@ -67,6 +67,7 @@ export default class RequestHandler extends eta.IRequestHandler {
         const params: any[] = [];
         const queryParams: {[key: string]: any} = this.req[this.req.method === "GET" ? "query" : "body"];
         let areParametersBad = false;
+        // TODO Explain this logic
         Object.keys(queryParams).forEach(k => {
             if (k.includes("[")) {
                 areParametersBad = true;
@@ -99,6 +100,7 @@ export default class RequestHandler extends eta.IRequestHandler {
             this.renderError(eta.constants.http.InternalError);
             return;
         }
+        // TODO Explain this if tree
         if (this.res.finished) {
             if (this.req.method === "GET") {
                 this.req.session.lastPage = this.req.mvcFullPath;
@@ -150,6 +152,8 @@ export default class RequestHandler extends eta.IRequestHandler {
     }
 
     // TODO Explain and document
+    // The whole thing
+    // QUESTION What exactly is this for?
     private async checkStatic(): Promise<boolean> {
         const staticPath: string = this.server.staticFiles[this.req.mvcPath];
         if (!staticPath) return false;
@@ -209,6 +213,7 @@ export default class RequestHandler extends eta.IRequestHandler {
     // TODO Explain transform events
     private async fireTransformEvent(name: string, ...args: any[]): Promise<boolean> {
         let result = true;
+        // TODO Explain callback
         await eta.array.forEachAsync(this.transformers, async t => {
             const method: () => Promise<void> = (<any>t)[name];
             if (method) {

@@ -120,6 +120,7 @@ export default class WebServer {
             return this.moduleLoaders[moduleName].loadAll();
         });
         let lifecycleHandlerTypes: (typeof eta.ILifecycleHandler)[] = [];
+        //TODO Explain this mapping
         Object.keys(this.moduleLoaders).sort().forEach(k => {
             const moduleLoader: ModuleLoader = this.moduleLoaders[k];
             this.controllers = eta.object.merge(moduleLoader.controllers, this.controllers);
@@ -165,7 +166,7 @@ export default class WebServer {
             saveUninitialized: false,
             secret: eta.config.http.session.secret
         }));
-
+        //QUESTION What doees this actually do?
         this.app.use(multer({
             storage: multer.memoryStorage()
         }).any());
@@ -206,6 +207,7 @@ export default class WebServer {
             req.mvcFullPath += "?" + req.originalUrl.split("?").slice(-1)[0];
         }
         res.view = {};
+        // TODO Explain this methodology
         const tokens: string[] = req.mvcPath.split("/");
         const action: string = tokens.splice(-1, 1)[0];
         const route: string = tokens.join("/");
@@ -213,6 +215,7 @@ export default class WebServer {
         if (this.viewMetadata[req.mvcPath]) {
             res.view = eta.object.clone(this.viewMetadata[req.mvcPath]);
         }
+        // END TODO
         new RequestHandler({
             route, action,
             controllerPrototype: controllerClass ? controllerClass.prototype : undefined,
@@ -252,6 +255,7 @@ export default class WebServer {
     }
 
     // TODO: Document provider
+    // The whole thing
     private setupAuthProvider(): void {
         if (!eta.config.auth.provider) {
             throw new Error("No authentication provider is set.");
@@ -267,6 +271,7 @@ export default class WebServer {
         const overrideRoutes: string[] = tempProvider.getOverrideRoutes();
         const strategy: passport.Strategy = tempProvider.getPassportStrategy();
         passport.use(strategy.name, strategy);
+        // TODO Especially this callback
         const getHandler = (req: express.Request, res: express.Response, next: express.NextFunction): (err: Error, user: any) => void => {
             const provider: eta.IAuthProvider = new (<any>AuthProvider)({ req, res, next });
             return (err: Error, user: any) => {

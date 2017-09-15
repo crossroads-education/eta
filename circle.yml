@@ -31,4 +31,4 @@ deployment:
     branch: master
     codedeploy:
       eta-v22-app:
-        deployment_group: my-deployment-group
+        deployment_group: eta-v22-deployment-group

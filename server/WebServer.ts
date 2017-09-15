@@ -48,6 +48,7 @@ export default class WebServer {
 
     public connection: orm.Connection;
 
+    // TODO: Probably should provide a little documentation on the server init
     public async init(): Promise<boolean> {
         await this.loadModules();
         await this.fireLifecycleEvent("onAppStart");
@@ -106,7 +107,7 @@ export default class WebServer {
             });
         }
     }
-
+    // TODO: Document actual methodology
     private async loadModules(): Promise<void> {
         eta.config.modules = {};
         eta.constants.controllerPaths = [];
@@ -154,7 +155,7 @@ export default class WebServer {
             this.app.disable("view cache"); // pull Pug views from filesystem on request
         }
     }
-
+    // TODO: Document
     private setupMiddleware(): void {
         this.app.use(expressSession({
             store: new (redisSession(expressSession))({
@@ -180,6 +181,7 @@ export default class WebServer {
     private onRequest(req: express.Request, res: express.Response, next: Function): void {
         // initialize custom express properties
         req.mvcPath = decodeURIComponent(req.path);
+        // TODO: Document if tree
         if (req.mvcPath === "/") {
             req.mvcPath = "/home/index";
         } else if (req.mvcPath.endsWith("/")) {
@@ -249,6 +251,7 @@ export default class WebServer {
         });
     }
 
+    // TODO: Document provider
     private setupAuthProvider(): void {
         if (!eta.config.auth.provider) {
             throw new Error("No authentication provider is set.");

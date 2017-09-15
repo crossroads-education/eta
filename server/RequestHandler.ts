@@ -20,6 +20,7 @@ export default class RequestHandler extends eta.IRequestHandler {
         }
     }
 
+    // TODO: Document
     public async handle(): Promise<void> {
         if (await this.checkStatic()) return;
         this.transformers = this.server.requestTransformers.map(t => {
@@ -53,6 +54,7 @@ export default class RequestHandler extends eta.IRequestHandler {
         }
     }
 
+    // TODO: Document
     private async callController(): Promise<void> {
         if (this.controllerPrototype.actions[this.action] !== this.req.method) {
             await this.serveView();
@@ -79,6 +81,7 @@ export default class RequestHandler extends eta.IRequestHandler {
         }
         const actionParams: string[] = this.controllerPrototype.params[this.action];
         const useLegacyParams: boolean = actionParams !== undefined;
+        // TODO Document legacy params
         if (useLegacyParams) { // TODO Remove deprecated @eta.mvc.params() support
             actionParams.forEach(p => {
                 params.push(queryParams[p]);
@@ -146,6 +149,7 @@ export default class RequestHandler extends eta.IRequestHandler {
         this.res.send(html);
     }
 
+    // TODO Explain and document
     private async checkStatic(): Promise<boolean> {
         const staticPath: string = this.server.staticFiles[this.req.mvcPath];
         if (!staticPath) return false;
@@ -202,6 +206,7 @@ export default class RequestHandler extends eta.IRequestHandler {
         return !this.req.mvcPath.includes("/auth/") && this.req.method === "GET" && this.req.mvcPath !== "/home/login" && this.req.mvcPath !== "/home/logout";
     }
 
+    // TODO Explain transform events
     private async fireTransformEvent(name: string, ...args: any[]): Promise<boolean> {
         let result = true;
         await eta.array.forEachAsync(this.transformers, async t => {

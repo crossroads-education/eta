@@ -3,6 +3,7 @@ import * as recursiveReaddir from "recursive-readdir";
 
 export default class HelperFS {
     /**
+     * DEPRECATED: use `fs-extra`.pathExists()
      * Provides functionality of deprecated fs.exists()
      * See https://github.com/nodejs/node/issues/1592
      */
@@ -16,6 +17,7 @@ export default class HelperFS {
     }
 
     /**
+     * DEPRECATED: use `fs-extra`.pathExistsSync()
      * Provides functionality of deprecated fs.existsSync()
      * See https://github.com/nodejs/node/issues/1592
      */

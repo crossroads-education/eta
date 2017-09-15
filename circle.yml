@@ -38,5 +38,5 @@ deployment:
         revision_location:
           revision_type: S3
           s3_location:
-            bucket: eta-builds
+            bucket: eta-deploy
             key_pattern: apps/eta-{SHORT_COMMIT}-{BUILD_NUM}

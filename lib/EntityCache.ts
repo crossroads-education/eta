@@ -81,18 +81,23 @@ export default class EntityCache<T extends { toCacheObject: () => any }> {
     private async insertMany(objects: T[]): Promise<void> {
         const tableName = eta.db().driver.escape(this.repository.metadata.tableName);
         let sql = "INSERT INTO " + tableName + " ";
-        const columns: string[] = [...new Set(this.repository.metadata.columns
+        const columns: string[] = eta.array.uniquePrimitive(this.repository.metadata.columns
             .filter(c => !c.isGenerated)
-            .map(c => c.databaseName))];
+            .map(c => c.databaseName));
         sql += "(" + columns.map(c => eta.db().driver.escape(c)).join(",") + ") VALUES ";
         const sqlTokens: string[] = [];
         const params: any[] = [];
         let count = 0;
-        try {
-            objects = objects.map(o => o.toCacheObject());
-        } catch (err) {
-            eta.logger.error(err);
-            return; // no need to continue, there are invalid objects
+        objects = objects.map(o => {
+            try {
+                return o.toCacheObject();
+            } catch (err) {
+                eta.logger.error(err);
+                return undefined;
+            }
+        }).filter(o => o !== undefined);
+        if (objects.length === 0) {
+            return;
         }
         objects.forEach((obj: any) => {
             const objectTokens: string[] = [];

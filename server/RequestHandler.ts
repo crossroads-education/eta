@@ -63,20 +63,34 @@ export default class RequestHandler extends eta.IRequestHandler {
         this.controller.next = this.next;
         this.controller.server = this.server;
         const params: any[] = [];
+        const queryParams: {[key: string]: any} = this.req[this.req.method === "GET" ? "query" : "body"];
+        let areParametersBad = false;
+        Object.keys(queryParams).forEach(k => {
+            if (k.includes("[")) {
+                areParametersBad = true;
+            }
+            try {
+                queryParams[k] = JSON.parse(queryParams[k]);
+            } catch (err) {
+            }
+        });
+        if (areParametersBad) {
+            eta.logger.warn("Received bad parameters to " + this.req.mvcPath + "! Make sure your parameters are encoded as JSON.");
+        }
         const actionParams: string[] = this.controllerPrototype.params[this.action];
-        if (actionParams) {
-            const queryParams: any = this.req[this.req.method === "GET" ? "query" : "body"];
+        const useLegacyParams: boolean = actionParams !== undefined;
+        if (useLegacyParams) { // TODO Remove deprecated @eta.mvc.params() support
             actionParams.forEach(p => {
-                const param: any = queryParams[p];
-                try {
-                    params.push(JSON.parse(param));
-                } catch (ex) {
-                    params.push(param);
-                }
+                params.push(queryParams[p]);
             });
         }
         try {
-            await (<any>this.controller)[this.action].apply(this.controller, params);
+            if (useLegacyParams) {
+                // TODO Remove deprecated @eta.mvc.params() support
+                await (<any>this.controller)[this.action].apply(this.controller, params);
+            } else {
+                await (<any>this.controller)[this.action].apply(this.controller, [queryParams]);
+            }
         } catch (err) {
             eta.logger.error(err);
             this.renderError(eta.constants.http.InternalError);
@@ -148,11 +162,12 @@ export default class RequestHandler extends eta.IRequestHandler {
             this.renderError(eta.constants.http.InternalError);
             return true;
         }
+        const mimeType = mime.lookup(this.req.mvcPath, "text/plain");
         if (eta.config.dev.enable) {
             this.res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
             this.res.setHeader("Pragma", "no-cache");
             this.res.setHeader("Expires", "0");
-        } else {
+        } else if (mimeType !== "application/javascript" && mimeType !== "text/css") { // don't cache JS and CSS
             const hash: string = eta.crypto.getUnique(data);
             this.res.setHeader("Cache-Control", "max-age=" + 60 * 60 * 24 * 30); // 30 days
             this.res.setHeader("ETag", hash);
@@ -161,7 +176,7 @@ export default class RequestHandler extends eta.IRequestHandler {
                 return true;
             }
         }
-        this.res.setHeader("Content-Type", mime.lookup(this.req.mvcPath, "text/plain"));
+        this.res.setHeader("Content-Type", mimeType);
         this.res.setHeader("Content-Length", data.byteLength.toString());
         this.res.send(data);
         return true;
@@ -192,9 +207,14 @@ export default class RequestHandler extends eta.IRequestHandler {
         await eta.array.forEachAsync(this.transformers, async t => {
             const method: () => Promise<void> = (<any>t)[name];
             if (method) {
-                const value: boolean | void = await method.apply(t, args);
-                if (typeof(value) === "boolean") {
-                    if (!value) result = false;
+                try {
+                    const value: boolean | void = await method.apply(t, args);
+                    if (typeof(value) === "boolean") {
+                        if (!value) result = false;
+                    }
+                } catch (err) {
+                    eta.logger.error(err);
+                    result = false;
                 }
             }
         });

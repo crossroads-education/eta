@@ -1,2 +1,2 @@
 #!/bin/sh
-forever stop eta
+forever start eta

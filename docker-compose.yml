@@ -21,4 +21,4 @@ services:
       - .:/usr/src/app
     depends_on:
       - postgres
-    command: npm start
+    command: node server

@@ -1,6 +1,6 @@
 machine:
   node:
-    version: 8.2.0
+    version: 8.4.0
   environment:
     ETA_AUTH_PROVIDER: local
     ETA_DB_PROVIDER: postgres
@@ -19,8 +19,8 @@ checkout:
     - cp config/logger.sample.json config/logger.json
 compile:
   override:
-    - npm run generate-ci
-    - npm run compile
+    - npm run eta -- generate indexes
+    - npm run eta -- compile server
 test:
   override:
     - npm run test:

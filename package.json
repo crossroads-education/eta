@@ -1,7 +1,7 @@
 {
-  "name": "eta",
+  "name": "@xroadsed/eta",
   "version": "2.3.0",
-  "description": "Server for Crossroads products.",
+  "description": "A Node.JS webserver, designed to provide a speedy MVC interface with little effort.",
   "homepage": "http://github.com/crossroads-education/eta/",
   "repository": "git://github.com:crossroads-education/eta.git",
   "license": "MIT",

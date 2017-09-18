@@ -8,7 +8,6 @@
 *.js.map
 __pycache__
 npm-debug.log
-package-lock.json
 /db.ts
 /db-init.ts
 /ssl

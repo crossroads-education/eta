@@ -48,6 +48,7 @@ export default class WebServer {
 
     public connection: orm.Connection;
 
+    // TODO: Document WebServer.init()
     public async init(): Promise<boolean> {
         await this.loadModules();
         await this.fireLifecycleEvent("onAppStart");
@@ -106,7 +107,7 @@ export default class WebServer {
             });
         }
     }
-
+    // TODO: Document actual methodology
     private async loadModules(): Promise<void> {
         eta.config.modules = {};
         eta.constants.controllerPaths = [];
@@ -119,6 +120,7 @@ export default class WebServer {
             return this.moduleLoaders[moduleName].loadAll();
         });
         let lifecycleHandlerTypes: (typeof eta.ILifecycleHandler)[] = [];
+        // map all modules' objects into webserver's global arrays
         Object.keys(this.moduleLoaders).sort().forEach(k => {
             const moduleLoader: ModuleLoader = this.moduleLoaders[k];
             this.controllers = eta.object.merge(moduleLoader.controllers, this.controllers);
@@ -155,8 +157,11 @@ export default class WebServer {
         }
     }
 
+    /**
+     * Initializes ExpressJS middleware
+     */
     private setupMiddleware(): void {
-        this.app.use(expressSession({
+        this.app.use(expressSession({ // sets up req.session provider
             store: new (redisSession(expressSession))({
                 client: eta.redis
             }),
@@ -165,14 +170,15 @@ export default class WebServer {
             secret: eta.config.http.session.secret
         }));
 
-        this.app.use(multer({
+        this.app.use(multer({ // sets up support for file uploads
             storage: multer.memoryStorage()
         }).any());
 
-        this.app.use(bodyParser.urlencoded({
+        this.app.use(bodyParser.urlencoded({ // sets up support for standard POST bodies
             extended: false
         }));
 
+        // sets up auth provider
         this.app.use(passport.initialize());
         this.app.use(passport.session());
     }
@@ -180,6 +186,7 @@ export default class WebServer {
     private onRequest(req: express.Request, res: express.Response, next: Function): void {
         // initialize custom express properties
         req.mvcPath = decodeURIComponent(req.path);
+        // ensure that mvcPath always has a route and action (/route.../action)
         if (req.mvcPath === "/") {
             req.mvcPath = "/home/index";
         } else if (req.mvcPath.endsWith("/")) {
@@ -199,12 +206,19 @@ export default class WebServer {
         }
         req.baseUrl = req.protocol + "://" + host + "/";
         req.fullUrl = req.baseUrl + req.mvcPath.substring(1);
+        req.mvcFullPath = req.mvcPath;
+        if (req.originalUrl.includes("?")) {
+            req.mvcFullPath += "?" + req.originalUrl.split("?").slice(-1)[0];
+        }
         res.view = {};
         const tokens: string[] = req.mvcPath.split("/");
+        // action is the last token of mvcPath
         const action: string = tokens.splice(-1, 1)[0];
+        // route is everything else
         const route: string = tokens.join("/");
+        // get this for instantiation in RequestHandler
         const controllerClass: typeof eta.IHttpController = this.controllers[route];
-        if (this.viewMetadata[req.mvcPath]) {
+        if (this.viewMetadata[req.mvcPath]) { // clone static view metadata into this request's metadata
             res.view = eta.object.clone(this.viewMetadata[req.mvcPath]);
         }
         new RequestHandler({
@@ -245,6 +259,7 @@ export default class WebServer {
         });
     }
 
+    // TODO Document authentication handling
     private setupAuthProvider(): void {
         if (!eta.config.auth.provider) {
             throw new Error("No authentication provider is set.");

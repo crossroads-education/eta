@@ -3,6 +3,7 @@ declare namespace Express {
         baseUrl: string;
         fullUrl: string;
         mvcPath: string;
+        mvcFullPath: string;
     }
 
     export interface Response {

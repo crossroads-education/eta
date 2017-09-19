@@ -1,2 +1,3 @@
 #!/bin/sh
-npm run eta -- setup
+cd /usr/src/app
+/root/.nvm/versions/node/v8.4.0/bin/eta setup

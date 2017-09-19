@@ -1,2 +1,2 @@
 #!/bin/sh
-eta setup
+npm run eta -- setup

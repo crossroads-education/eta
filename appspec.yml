@@ -4,5 +4,7 @@ files:
   - source: /
     destination: /usr/src/app
 hooks:
+  AfterInstall:
+    - location: scripts/aws/setup.sh
   ApplicationStart:
     - location: scripts/aws/restart.sh

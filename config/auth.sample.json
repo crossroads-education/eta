@@ -1,7 +1,3 @@
 {
-  "cas": {
-    "url": "https://cas.iu.edu/cas/",
-    "svc": "IU"
-  },
-  "provider": "cas"
+  "provider": "cre-auth-local"
 }

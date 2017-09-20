@@ -4,7 +4,7 @@ files:
   - source: /
     destination: /usr/src/app
 hooks:
-  ApplicationStop:
-    - location: scripts/aws/restart.sh
   ApplicationStart:
+    - location: scripts/aws/pull-all.sh
+    - location: scripts/aws/setup-config.sh
     - location: scripts/aws/restart.sh

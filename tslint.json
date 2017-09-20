@@ -1,12 +1,15 @@
 {
   "rules": {
     "class-name": true,
-    "comment-format": [true, "check-space"],
-    "curly":[true, "ignore-same-line"],
-    "indent": [true, "spaces"],
+    "comment-format": [true,
+      "check-space"
+    ],
+    "curly": [true, "ignore-same-line"],
+    "indent": [true,
+      "spaces"
+    ],
     "jsdoc-format": true,
-    "linebreak-style": [true, "CRLF"],
-    "no-for-in-array": true,
+    "linebreak-style": [true, "LF"],
     "no-inferrable-types": true,
     "no-internal-module": true,
     "no-null-keyword": true,
@@ -28,7 +31,8 @@
       "ignore-bound-class-methods"
     ],
     "triple-equals": true,
-    "typedef-whitespace": [true,
+    "typedef-whitespace": [
+      true,
       {
         "call-signature": "nospace",
         "index-signature": "nospace",

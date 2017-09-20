@@ -8,15 +8,6 @@ machine:
     ETA_DB_PORT: 5432
     ETA_DB_USERNAME: ubuntu
     ETA_DB_DATABASE: circle_test
-checkout:
-  post:
-    - cp config/auth.sample.json config/auth.json
-    - cp config/aws.sample.json config/aws.json
-    - cp config/db.sample.json config/db.json
-    - cp config/dev.sample.json config/dev.json
-    - cp config/http.sample.json config/http.json
-    - cp config/https.sample.json config/https.json
-    - cp config/logger.sample.json config/logger.json
 compile:
   override:
     - npm run eta -- generate indexes

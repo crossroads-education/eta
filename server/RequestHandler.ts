@@ -165,8 +165,15 @@ export default class RequestHandler extends eta.IRequestHandler {
      * Returns true if the request is for a static file, false otherwise.
      */
     private async checkStatic(): Promise<boolean> {
-        const staticPath: string = this.server.staticFiles[this.req.mvcPath];
-        if (!staticPath) return false;
+        let staticPath: string = this.server.staticFiles[this.req.mvcPath];
+        if (!staticPath) {
+            if (!eta.config.dev.enable) return false;
+            if (await this.server.verifyStaticFile(this.req.mvcPath)) {
+                staticPath = this.server.staticFiles[this.req.mvcPath];
+            } else {
+                return false;
+            }
+        }
         if (!await eta.fs.exists(staticPath)) { // since static file list is cached
             eta.logger.trace("A static file was deleted after the server started. " + staticPath);
             this.renderError(eta.constants.http.NotFound);

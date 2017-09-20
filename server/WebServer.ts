@@ -111,8 +111,22 @@ export default class WebServer extends events.EventEmitter {
 
     public async verifyStaticFile(mvcPath: string): Promise<boolean> {
         if (this.staticFiles[mvcPath]) {
-            // TODO Implement
+            const exists: boolean = await fs.pathExists(this.staticFiles[mvcPath]);
+            if (!exists) {
+                delete this.staticFiles[mvcPath];
+            }
+            return exists;
         }
+        const staticDirs: string[] = Object.keys(eta.config.modules)
+            .map(k => eta.config.modules[k].dirs.staticFiles)
+            .reduce((p, a) => p.concat(a));
+        for (const staticDir of staticDirs) {
+            if (await fs.pathExists(staticDir + mvcPath)) {
+                this.staticFiles[mvcPath] = staticDir + mvcPath;
+                return true;
+            }
+        }
+        return false;
     }
 
     // TODO: Document actual methodology

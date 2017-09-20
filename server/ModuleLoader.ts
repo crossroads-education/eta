@@ -1,11 +1,13 @@
+import * as chokidar from "chokidar";
 import * as eta from "../eta";
+import * as events from "events";
 import { IModuleConfiguration } from "./api/config";
 import * as fs from "fs-extra";
 import * as path from "path";
 
 const requireReload: (path: string) => any = require("require-reload")(require);
 
-export default class ModuleLoader {
+export default class ModuleLoader extends events.EventEmitter {
     public authProvider: typeof eta.IAuthProvider;
     public controllers: {[key: string]: typeof eta.IHttpController};
     public lifecycleHandlers: (typeof eta.ILifecycleHandler)[];
@@ -21,6 +23,7 @@ export default class ModuleLoader {
     public isInitialized = false;
 
     public constructor(moduleName: string) {
+        super();
         this.moduleName = moduleName;
     }
 
@@ -78,25 +81,38 @@ export default class ModuleLoader {
         this.controllers = {};
         const controllerFiles: string[] = (await this.getFiles(this.config.dirs.controllers))
             .filter(f => f.endsWith(".js"));
+        if (eta.config.dev.enable) {
+            const watcher: fs.FSWatcher = chokidar.watch(this.config.dirs.controllers, {
+                "persistent": false
+            });
+            watcher.on("change", this.loadController.bind(this));
+        }
+        controllerFiles.forEach(this.loadController.bind(this));
+    }
+
+    private loadController(path: string): typeof eta.IHttpController {
+        path = path.replace(/\\/g, "/");
+        if (!path.endsWith(".js")) {
+            return undefined;
+        }
         const requireTemp = this.isInitialized ? requireReload : require;
-        controllerFiles.forEach(cf => {
-            try {
-                const controllerType: typeof eta.IHttpController = requireTemp(cf).default;
-                if (!controllerType.prototype.routes) {
-                    eta.logger.warn("Couldn't load controller: " + cf + ". Please ensure all decorators are properly applied.");
-                    return;
-                }
-                Object.keys(controllerType.prototype.params).forEach(k => {
-                    eta.logger.warn(`@mvc.params() is deprecated: ${controllerType.name}.${k}()`);
-                });
-                controllerType.prototype.routes.forEach(r => {
-                    this.controllers[r] = controllerType;
-                });
-            } catch (err) {
-                eta.logger.warn("Couldn't load controller: " + cf);
-                eta.logger.error(err);
-            }
+        let controllerType: typeof eta.IHttpController;
+        try {
+            controllerType = requireTemp(path).default;
+        } catch (err) {
+            eta.logger.warn("Couldn't load controller: " + path);
+            eta.logger.error(err);
+            return undefined;
+        }
+        if (!controllerType.prototype.routes) {
+            eta.logger.warn("Couldn't load controller: " + path + ". Please ensure all decorators are properly applied.");
+            return undefined;
+        }
+        Object.keys(controllerType.prototype.params).forEach(k => {
+            eta.logger.warn(`@mvc.params() is deprecated: ${controllerType.name}.${k}()`);
         });
+        this.emit("controller-load", controllerType);
+        return controllerType;
     }
 
     public async loadStatic(): Promise<void> {

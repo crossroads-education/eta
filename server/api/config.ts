@@ -51,7 +51,8 @@ export interface IConfiguration {
 }
 
 export interface IAuthConfiguration {
-    [key: string]: any;
+    // TODO Replace this with a module using DB for per-client API tokens
+    apiToken: string;
     provider: string;
 }
 

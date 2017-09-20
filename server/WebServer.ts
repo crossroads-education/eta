@@ -1,6 +1,7 @@
 /// <reference path="../def/express.d.ts"/>
 import * as bodyParser from "body-parser";
 import * as redisSession from "connect-redis";
+import * as events from "events";
 import * as express from "express";
 import * as expressSession from "express-session";
 import * as fs from "fs-extra";
@@ -17,7 +18,7 @@ import { connect as connectRedis } from "./api/redis";
 import ModuleLoader from "./ModuleLoader";
 import RequestHandler from "./RequestHandler";
 
-export default class WebServer {
+export default class WebServer extends events.EventEmitter {
     /**
      * Express application powering the web server
      */
@@ -107,6 +108,13 @@ export default class WebServer {
             });
         }
     }
+
+    public async verifyStaticFile(mvcPath: string): Promise<boolean> {
+        if (this.staticFiles[mvcPath]) {
+            // TODO Implement
+        }
+    }
+
     // TODO: Document actual methodology
     private async loadModules(): Promise<void> {
         eta.config.modules = {};
@@ -115,15 +123,19 @@ export default class WebServer {
         eta.constants.viewPaths = [];
         const moduleDirs: string[] = await fs.readdir(eta.constants.modulesPath);
         eta.logger.info(`Found ${moduleDirs.length} modules: ${moduleDirs.join(", ")}`);
-        await eta.array.forEachAsync(moduleDirs, moduleName => {
+        for (const moduleName of moduleDirs) {
             this.moduleLoaders[moduleName] = new ModuleLoader(moduleName);
-            return this.moduleLoaders[moduleName].loadAll();
-        });
+            this.moduleLoaders[moduleName].on("controller-load", (controllerType: typeof eta.IHttpController) => {
+                for (const route of controllerType.prototype.routes) {
+                    this.controllers[route] = controllerType;
+                }
+            });
+            await this.moduleLoaders[moduleName].loadAll();
+        }
         let lifecycleHandlerTypes: (typeof eta.ILifecycleHandler)[] = [];
         // map all modules' objects into webserver's global arrays
         Object.keys(this.moduleLoaders).sort().forEach(k => {
             const moduleLoader: ModuleLoader = this.moduleLoaders[k];
-            this.controllers = eta.object.merge(moduleLoader.controllers, this.controllers);
             lifecycleHandlerTypes = lifecycleHandlerTypes.concat(moduleLoader.lifecycleHandlers);
             this.requestTransformers = this.requestTransformers.concat(moduleLoader.requestTransformers);
             this.staticFiles = eta.object.merge(moduleLoader.staticFiles, this.staticFiles);

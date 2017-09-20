@@ -19,10 +19,23 @@ export default class EntityCache<T extends { toCacheObject: () => any }> {
     public cache: T[] = [];
     public shouldUpdateOnDuplicate = false;
     public duplicateConstraints = "";
+    public columns: EntityColumn[];
+    public tableName: string;
     private timer: number;
 
     public constructor(options: Partial<EntityCache<T>>) {
         Object.assign(this, options);
+        if (this.repository !== undefined) {
+            this.columns = this.repository.metadata.columns.map(c => {
+                return {
+                    isGenerated: c.isGenerated,
+                    isRelation: c.relationMetadata !== undefined,
+                    databaseName: c.databaseName,
+                    propertyName: c.propertyName
+                };
+            });
+            this.tableName = this.repository.metadata.tableName;
+        }
         this.start();
     }
 
@@ -34,7 +47,7 @@ export default class EntityCache<T extends { toCacheObject: () => any }> {
     public dump(): void {
         if (this.cache.length === 0) {
             // don't bother if cache is empty
-        } else if (this.cache.length === 1) {
+        } else if (this.cache.length === 1 && this.repository !== undefined) {
             // just dump the single object normally, not worth generating SQL
             this.repository.save(this.cache);
             this.cache = [];
@@ -59,14 +72,12 @@ export default class EntityCache<T extends { toCacheObject: () => any }> {
     }
 
     public async getAllRaw(): Promise<any[]> {
-        const tableName = eta.db().driver.escape(this.repository.metadata.tableName);
-        const columns: string = [...new Set(this.repository.metadata.columns
-            .map(c => {
-                const dbName: string = eta.db().driver.escape(c.databaseName);
-                const name: string = eta.db().driver.escape(c.relationMetadata === undefined ? c.propertyName : c.databaseName);
-                return `${dbName} AS ${name}`;
-            })
-        )].join(", ");
+        const tableName = eta.db().driver.escape(this.tableName);
+        const columns: string = eta.array.uniquePrimitive(this.columns.map(c => {
+            const dbName: string = eta.db().driver.escape(c.databaseName);
+            const name: string = eta.db().driver.escape(c.isRelation ? c.databaseName : c.propertyName);
+            return `${dbName} AS ${name}`;
+        })).join(", ");
         return await eta.db().query(`SELECT ${columns} FROM ${tableName}`);
     }
 
@@ -79,9 +90,9 @@ export default class EntityCache<T extends { toCacheObject: () => any }> {
     }
 
     private async insertMany(objects: T[]): Promise<void> {
-        const tableName = eta.db().driver.escape(this.repository.metadata.tableName);
+        const tableName = eta.db().driver.escape(this.tableName);
         let sql = "INSERT INTO " + tableName + " ";
-        const columns: string[] = eta.array.uniquePrimitive(this.repository.metadata.columns
+        const columns: string[] = eta.array.uniquePrimitive(this.columns
             .filter(c => !c.isGenerated)
             .map(c => c.databaseName));
         sql += "(" + columns.map(c => eta.db().driver.escape(c)).join(",") + ") VALUES ";
@@ -115,4 +126,11 @@ export default class EntityCache<T extends { toCacheObject: () => any }> {
         }
         await eta.db().query(sql, params);
     }
+}
+
+interface EntityColumn {
+    isGenerated: boolean;
+    isRelation: boolean;
+    propertyName: string;
+    databaseName: string;
 }

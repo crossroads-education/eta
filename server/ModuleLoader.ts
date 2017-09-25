@@ -86,9 +86,11 @@ export default class ModuleLoader {
                     eta.logger.warn("Couldn't load controller: " + cf + ". Please ensure all decorators are properly applied.");
                     return;
                 }
-                Object.keys(controllerType.prototype.params).forEach(k => {
-                    eta.logger.warn(`@mvc.params() is deprecated: ${controllerType.name}.${k}()`);
-                });
+                if (eta.config.dev.enable) {
+                    Object.keys(controllerType.prototype.params).forEach(k => {
+                        eta.logger.warn(`@mvc.params() is deprecated: ${controllerType.name}.${k}()`);
+                    });
+                }
                 controllerType.prototype.routes.forEach(r => {
                     this.controllers[r] = controllerType;
                 });

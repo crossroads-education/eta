@@ -84,7 +84,7 @@ export default class RequestHandler extends eta.IRequestHandler {
                 queryParams[k] = JSON.parse(queryParams[k]);
             } catch (err) { }
         });
-        if (areParametersBad) {
+        if (areParametersBad && eta.config.dev.enable) { // only show this in dev mode
             eta.logger.warn("Received bad parameters to " + this.req.mvcPath + "! Make sure your parameters are encoded as JSON.");
         }
         const actionParams: string[] = this.controllerPrototype.params[this.action];

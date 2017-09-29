@@ -73,15 +73,16 @@ export default class RequestHandler extends eta.IRequestHandler {
         this.controller.next = this.next;
         this.controller.server = this.server;
         const params: any[] = [];
-        const queryParams: {[key: string]: any} = this.req[this.req.method === "GET" ? "query" : "body"];
+        const queryParams: {[key: string]: any} = {};
+        const rawQueryParams: {[key: string]: any} = this.req[this.req.method === "GET" ? "query" : "body"];
         let areParametersBad = false;
         // checks GET/POST for JSON-encoded values and "bad" JQuery-encoded keys
-        Object.keys(queryParams).forEach(k => {
+        Object.keys(rawQueryParams).forEach(k => {
             if (k.includes("[")) {
                 areParametersBad = true;
             }
             try {
-                queryParams[k] = JSON.parse(queryParams[k]);
+                queryParams[k] = JSON.parse(rawQueryParams[k]);
             } catch (err) { }
         });
         if (areParametersBad && eta.config.dev.enable) { // only show this in dev mode

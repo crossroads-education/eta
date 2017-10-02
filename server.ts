@@ -13,7 +13,7 @@ export default async function main(): Promise<void> {
         console.warn("You should run this server with docker-compose: `docker-compose up`");
     }
     process.on("uncaughtException", (err: Error) => {
-        console.log("An uncaught error occurred: " + err.message);
+        console.error("An uncaught error occurred: " + err.message);
         console.log(err.stack);
     });
     let server: WebServer;

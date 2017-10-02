@@ -9,8 +9,9 @@ export function connect(): redis.RedisClient {
     tempClient.on("connect", () => {
         eta.logger.info("Successfully connected to the Redis server.");
     });
-    tempClient.on("error", (err: Error) => {
+    tempClient.on("error", err => {
         eta.logger.error(err);
+        if (err.code === "ECONNREFUSED") process.exit(1);
     });
     return tempClient;
 }

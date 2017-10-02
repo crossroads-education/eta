@@ -1,3 +1,4 @@
 {
-  "provider": "cre-auth-local"
+  "provider": "cre-auth-local",
+  "apiToken": "make this random"
 }

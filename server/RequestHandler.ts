@@ -72,34 +72,42 @@ export default class RequestHandler extends eta.IRequestHandler {
         this.controller.res = this.res;
         this.controller.next = this.next;
         this.controller.server = this.server;
-        const params: any[] = [];
+        const legacyParams: any[] = [];
         const queryParams: {[key: string]: any} = {};
         const rawQueryParams: {[key: string]: any} = this.req[this.req.method === "GET" ? "query" : "body"];
-        let areParametersBad = false;
         // checks GET/POST for JSON-encoded values and "bad" JQuery-encoded keys
-        Object.keys(rawQueryParams).forEach(k => {
-            if (k.includes("[")) {
-                areParametersBad = true;
-            }
+        const rawQueryKeys: string[] = Object.keys(rawQueryParams);
+        rawQueryKeys.filter(k => !k.includes("[")).forEach(k => {
             try {
                 queryParams[k] = JSON.parse(rawQueryParams[k]);
-            } catch (err) { }
+            } catch (err) {
+                queryParams[k] = rawQueryParams[k];
+            }
         });
-        if (areParametersBad && eta.config.dev.enable) { // only show this in dev mode
-            eta.logger.warn("Received bad parameters to " + this.req.mvcPath + "! Make sure your parameters are encoded as JSON.");
-        }
+        rawQueryKeys.filter(k => k.includes("[")).forEach(k => {
+            const tokens: string[] = k.split("[");
+            const keys: string[] = [tokens.splice(0, 1)[0]].concat(tokens.map(t => t.slice(0, -1)));
+            let lastItem: any = queryParams;
+            keys.slice(0, -1).forEach(qk => {
+                if (!lastItem[qk]) {
+                    lastItem[qk] = {};
+                }
+                lastItem = lastItem[qk];
+            });
+            lastItem[keys.slice(-1)[0]] = rawQueryParams[k];
+        });
         const actionParams: string[] = this.controllerPrototype.params[this.action];
         const useLegacyParams: boolean = actionParams !== undefined;
         if (useLegacyParams) { // TODO Remove deprecated @eta.mvc.params() support
             // support for old @eta.mvc.params(string[]) action definitions
             actionParams.forEach(p => {
-                params.push(queryParams[p]);
+                legacyParams.push(queryParams[p]);
             });
         }
         try {
             if (useLegacyParams) {
                 // TODO Remove deprecated @eta.mvc.params() support
-                await (<any>this.controller)[this.action].apply(this.controller, params);
+                await (<any>this.controller)[this.action].apply(this.controller, legacyParams);
             } else {
                 await (<any>this.controller)[this.action].apply(this.controller, [queryParams]);
             }

@@ -16,14 +16,13 @@ export async function connect(): Promise<orm.Connection> {
         .map(m => m.dirs.models)
         .reduce((prev, next) => prev.concat(next)))
         .map(d => d + "*.js");
-    // eta.object.clone(modelDirs).forEach(d => modelDirs.push(d.replace("/**/!(enums)/", "/")));
+    let logOptions: string[] = [];
+    if (eta.config.logger.logDatabaseQueries) {
+        logOptions = ["error", "query"];
+    }
     return await orm.createConnection(eta.object.merge({
         entities: modelDirs,
         autoSchemaSync: true,
-        logging: {
-            logger: (l: string, m: any) => { logger.log(l, "[" + logger.getCalling(4) + "] " + m); },
-            logOnlyFailedQueries: !eta.config.logger.logDatabaseQueries,
-            logQueries: eta.config.logger.logDatabaseQueries
-        }
+        logging: logOptions
     }, eta.config.db));
 }

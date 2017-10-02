@@ -85,7 +85,12 @@ export default class ModuleLoader extends events.EventEmitter {
             const watcher: fs.FSWatcher = chokidar.watch(this.config.dirs.controllers, {
                 "persistent": false
             });
-            watcher.on("change", this.loadController.bind(this));
+            watcher.on("change", (path: string) => {
+                const controllerType: typeof eta.IHttpController = this.loadController(path);
+                if (controllerType !== undefined) {
+                    eta.logger.trace(`Reloaded controller ${controllerType.name} (${controllerType.prototype.routes.join(", ")})`);
+                }
+            });
         }
         controllerFiles.forEach(this.loadController.bind(this));
     }

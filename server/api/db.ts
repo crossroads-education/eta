@@ -22,7 +22,7 @@ export async function connect(): Promise<orm.Connection> {
     }
     return await orm.createConnection(eta.object.merge({
         entities: modelDirs,
-        autoSchemaSync: true,
+        synchronize: true,
         logging: logOptions
     }, eta.config.db));
 }

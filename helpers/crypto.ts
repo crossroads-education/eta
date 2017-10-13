@@ -30,4 +30,28 @@ export default class HelperCrypto {
     public static getUnique(data: Buffer): string {
         return crypto.createHash("md5").update(data).digest("hex");
     }
+
+    /**
+     * Encrypts data given a key (using AES 256)
+     * @param data The data to encrypt
+     * @param key The key to encrypt the data against
+     * @return The encrypted data
+     */
+    public static encrypt(data: string, key: string): string {
+        const cipher: crypto.Cipher = crypto.createCipher("aes-256-ctr", key);
+        const encrypted = cipher.update(data, "utf8", "hex");
+        return encrypted + cipher.final("hex");
+    }
+
+    /**
+     * Decrypts AES 256 data given a key
+     * @param data The data to decrypt
+     * @param key The key to decrypt the data against
+     * @return The decrypted data
+     */
+    public static decrypt(data: string, key: string): string {
+        const decipher: crypto.Decipher = crypto.createDecipher("aes-256-ctr", key);
+        const decrypted: string = decipher.update(data, "hex", "utf8");
+        return decrypted + decipher.final("utf8");
+    }
 }

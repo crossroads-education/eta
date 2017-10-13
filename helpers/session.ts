@@ -27,7 +27,7 @@ export default class HelperSession {
         });
     }
 
-    public static async save(session: Express.SessionData): Promise<void> {
+    public static async save(session: Express.Session): Promise<void> {
         return new Promise<void>((resolve, reject) => {
             session.save((err: Error) => {
                 if (err) {

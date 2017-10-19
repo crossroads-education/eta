@@ -71,7 +71,7 @@ export default class EntityCache<T extends { toCacheObject: () => any }> {
         }
     }
 
-    public async getAllRaw(): Promise<any[]> {
+    public async getAllRaw(): Promise<{[key: string]: any}[]> {
         const tableName = eta.db().driver.escape(this.tableName);
         const columns: string = eta.array.uniquePrimitive(this.columns.map(c => {
             const dbName: string = eta.db().driver.escape(c.databaseName);
@@ -99,14 +99,7 @@ export default class EntityCache<T extends { toCacheObject: () => any }> {
         const sqlTokens: string[] = [];
         const params: any[] = [];
         let count = 0;
-        objects = objects.map(o => {
-            try {
-                return o.toCacheObject();
-            } catch (err) {
-                eta.logger.error(err);
-                return undefined;
-            }
-        }).filter(o => o !== undefined);
+        objects = objects.map(o => o.toCacheObject()).filter(o => o !== undefined);
         if (objects.length === 0) {
             return;
         }

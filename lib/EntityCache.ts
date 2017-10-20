@@ -21,7 +21,7 @@ export default class EntityCache<T extends { toCacheObject: () => any }> {
     public duplicateConstraints = "";
     public columns: EntityColumn[];
     public tableName: string;
-    private timer: number;
+    private timer: NodeJS.Timer;
 
     public constructor(options: Partial<EntityCache<T>>) {
         Object.assign(this, options);
@@ -82,11 +82,12 @@ export default class EntityCache<T extends { toCacheObject: () => any }> {
     }
 
     public start(): void {
-        this.timer = setInterval(this.dump.bind(this), this.interval);
+        this.timer = setInterval(() => this.dump(), this.interval);
     }
 
     public stop(): void {
         clearInterval(this.timer);
+        this.timer = undefined;
     }
 
     private async insertMany(objects: T[]): Promise<void> {

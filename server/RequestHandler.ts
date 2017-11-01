@@ -96,6 +96,16 @@ export default class RequestHandler extends eta.IRequestHandler {
             });
             lastItem[keys.slice(-1)[0]] = rawQueryParams[k];
         });
+        const nonArrayKeys: string[] = rawQueryKeys.filter(k => !k.includes("["));
+        Object.keys(queryParams).filter(k => !nonArrayKeys.includes(k)).forEach(k => {
+            // convert JQuery-encoded arrays from number-keyed objects to arrays in-memory
+            const itemKeys: string[] = Object.keys(queryParams[k]);
+            if (!(queryParams[k] instanceof Array) && itemKeys.every(k => !isNaN(Number(k)))) {
+                const arr: any[] = [];
+                itemKeys.forEach(key => arr[Number(key)] = queryParams[k][key]);
+                queryParams[k] = arr;
+            }
+        });
         const actionParams: string[] = this.controllerPrototype.params[this.action];
         const useLegacyParams: boolean = actionParams !== undefined;
         if (useLegacyParams) { // TODO Remove deprecated @eta.mvc.params() support

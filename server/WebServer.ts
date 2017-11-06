@@ -145,6 +145,9 @@ export default class WebServer extends events.EventEmitter {
                 }
             });
             await this.moduleLoaders[moduleName].loadAll();
+            if (!this.moduleLoaders[moduleName].isInitialized) {
+                delete this.moduleLoaders[moduleName];
+            }
         }
         let lifecycleHandlerTypes: (typeof eta.ILifecycleHandler)[] = [];
         // map all modules' objects into webserver's global arrays

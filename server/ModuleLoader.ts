@@ -29,6 +29,9 @@ export default class ModuleLoader extends events.EventEmitter {
 
     public async loadAll(): Promise<void> {
         await this.loadConfig();
+        if (this.config.disable) {
+            return;
+        }
         await Promise.all([
             this.loadControllers(),
             this.loadStatic(),

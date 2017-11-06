@@ -92,6 +92,10 @@ export interface IModuleConfiguration {
      * Only Github repositories are supported.
      */
     dependencies: string[];
+    /**
+     * Whether the module should be loaded or not.
+     */
+    disable?: boolean;
     hooks: {[key: string]: {cwd: string, exec: string}[]};
     [key: string]: any;
 }

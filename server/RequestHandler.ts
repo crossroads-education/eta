@@ -13,6 +13,12 @@ export default class RequestHandler extends eta.IRequestHandler {
     public controller: eta.IHttpController;
     public controllerPrototype: eta.IHttpController;
     public server: WebServer;
+    private actionItem: {
+        method: "GET" | "POST";
+        useView: boolean;
+        isAuthRequired: boolean;
+        permissionsRequired: string[];
+    };
     private transformers: eta.IRequestTransformer[];
 
     public constructor(init: Partial<RequestHandler>) {
@@ -20,6 +26,7 @@ export default class RequestHandler extends eta.IRequestHandler {
         Object.assign(this, init);
         if (this.controllerPrototype) {
             this.controller = new (<any>this.controllerPrototype.constructor)();
+            this.actionItem = this.controllerPrototype.actions[this.action];
         }
     }
 
@@ -38,15 +45,13 @@ export default class RequestHandler extends eta.IRequestHandler {
         await this.fireTransformEvent("onRequest");
         if (this.res.finished) return;
         if (this.controller) {
-            const permsRequired: any[] = this.controllerPrototype.permsRequired[this.action];
-            if (this.controllerPrototype.authRequired.indexOf(this.action) !== -1
-                && !this.isLoggedIn()) { // requires login but is not logged in
+            if (this.actionItem.isAuthRequired && !this.isLoggedIn()) { // requires login but is not logged in
                 this.req.session.authFrom = this.req.mvcFullPath;
                 if (this.shouldSaveLastPage) this.req.session.lastPage = this.req.mvcFullPath;
                 await this.saveSession();
                 this.redirect("/login");
-            } else if (permsRequired !== undefined) {
-                if ((await this.fireTransformEvent("isRequestAuthorized", permsRequired)) !== false) {
+            } else if (this.actionItem.permissionsRequired.length > 0) {
+                if ((await this.fireTransformEvent("isRequestAuthorized", this.actionItem.permissionsRequired)) !== false) {
                     this.callController();
                 } else {
                     this.renderError(eta.constants.http.AccessDenied);
@@ -64,7 +69,7 @@ export default class RequestHandler extends eta.IRequestHandler {
      * It is assumed that a controller is defined for this request, if not an action / route.
      */
     private async callController(): Promise<void> {
-        if (this.controllerPrototype.actions[this.action] !== this.req.method) {
+        if (this.actionItem.method !== this.req.method) {
             await this.serveView();
             return;
         }
@@ -72,7 +77,6 @@ export default class RequestHandler extends eta.IRequestHandler {
         this.controller.res = this.res;
         this.controller.next = this.next;
         this.controller.server = this.server;
-        const legacyParams: any[] = [];
         const queryParams: {[key: string]: any} = {};
         const rawQueryParams: {[key: string]: any} = this.req[this.req.method === "GET" ? "query" : "body"];
         // checks GET/POST for JSON-encoded values and "bad" JQuery-encoded keys
@@ -106,21 +110,8 @@ export default class RequestHandler extends eta.IRequestHandler {
                 queryParams[k] = arr;
             }
         });
-        const actionParams: string[] = this.controllerPrototype.params[this.action];
-        const useLegacyParams: boolean = actionParams !== undefined;
-        if (useLegacyParams) { // TODO Remove deprecated @eta.mvc.params() support
-            // support for old @eta.mvc.params(string[]) action definitions
-            actionParams.forEach(p => {
-                legacyParams.push(queryParams[p]);
-            });
-        }
         try {
-            if (useLegacyParams) {
-                // TODO Remove deprecated @eta.mvc.params() support
-                await (<any>this.controller)[this.action].apply(this.controller, legacyParams);
-            } else {
-                await (<any>this.controller)[this.action].apply(this.controller, [queryParams]);
-            }
+            await (<any>this.controller)[this.action].apply(this.controller, [queryParams]);
         } catch (err) {
             eta.logger.error(err);
             this.renderError(eta.constants.http.InternalError);
@@ -139,7 +130,7 @@ export default class RequestHandler extends eta.IRequestHandler {
             this.renderError(this.res.statusCode);
             return;
         }
-        if (this.controllerPrototype.raw.indexOf(this.action) !== -1) {
+        if (!this.actionItem.useView) {
             let val: string | Buffer = undefined;
             if (typeof(this.res.raw) === "string" || this.res.raw instanceof Buffer) {
                 val = this.res.raw;

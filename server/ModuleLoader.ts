@@ -116,9 +116,6 @@ export default class ModuleLoader extends events.EventEmitter {
             eta.logger.warn("Couldn't load controller: " + path + ". Please ensure all decorators are properly applied.");
             return undefined;
         }
-        Object.keys(controllerType.prototype.params).forEach(k => {
-            eta.logger.warn(`@mvc.params() is deprecated: ${controllerType.name}.${k}()`);
-        });
         this.emit("controller-load", controllerType);
         return controllerType;
     }

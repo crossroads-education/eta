@@ -3,13 +3,13 @@ import IRequestHandler from "./IRequestHandler";
 import WebServer from "../../WebServer";
 
 abstract class IHttpController extends IRequestHandler {
-    public actions: {[key: string]: string} = {};
-    public authRequired: string[] = [];
-    public params?: {[key: string]: string[]} = {};
-    public permsRequired: {[key: string]: any[]} = {};
-    public raw: string[] = [];
     public routes: string[] = [];
-
+    public actions: {[key: string]: {
+        method: "GET" | "POST";
+        useView: boolean;
+        isAuthRequired: boolean;
+        permissionsRequired: string[];
+    }} = {};
     public server: WebServer;
 }
 

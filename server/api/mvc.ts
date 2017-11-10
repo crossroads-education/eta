@@ -38,7 +38,7 @@ export default class MVC {
 
     public static params(names: string[]): any {
         return function(target: IHttpController, propertyKey: string, descriptor: PropertyDescriptor): any {
-            console.error(`@eta.mvc.params() is deprecated, will not work, and should not be used. (${target.routes.join(",")} :: ${propertyKey}())`);
+            console.error(`@eta.mvc.params() is deprecated, will not work, and should not be used. (${target.toString()} :: ${propertyKey}())`);
         };
     }
 

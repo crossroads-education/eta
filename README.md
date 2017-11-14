@@ -9,7 +9,6 @@ web applications. Project Eta has evolved significantly from its previous iterat
 built at both [@MAC-IUPUI](https://github.com/MAC-IUPUI) (https://mac.iupui.edu) and
 [@crossroads-education](https://github.com/crossroads-education) (https://crossroadseducation.org).
 
-## Setup
+## Documentation
 
-Please see [SETUP.md](https://github.com/crossroads-education/eta/blob/master/docs/SETUP.md)
-for instructions on how to set Project Eta up.
+Please see the [project's wiki](https://github.com/crossroads-education/eta/wiki) for documentation.

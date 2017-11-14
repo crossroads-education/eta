@@ -80,6 +80,6 @@
     "@xroadsed/eta-cli": "^1.0.10"
   },
   "engines": {
-    "node": ">=8.2.0"
+    "node": ">=8.4.0"
   }
 }

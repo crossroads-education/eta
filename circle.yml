@@ -17,17 +17,3 @@ test:
     - npm run test:
         environment:
           MOCHA_FILE: $CIRCLE_TEST_REPORTS/junit/test-results.xml
-deployment:
-  staging:
-    branch: master
-    codedeploy:
-      eta-v22-app:
-        deployment_group: eta-v22-deployment-group
-        deployment_config: CodeDeployDefault.OneAtATime
-        application_root: /
-        region: us-east-1
-        revision_location:
-          revision_type: S3
-          s3_location:
-            bucket: eta-deploy
-            key_pattern: apps/eta-{SHORT_COMMIT}-{BUILD_NUM}

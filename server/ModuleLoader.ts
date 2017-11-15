@@ -157,7 +157,7 @@ export default class ModuleLoader extends events.EventEmitter {
             return undefined;
         }
         if (metadata.include !== undefined) {
-            eta.array.forEachAsync(metadata.include, async (p: string) => {
+            await eta.array.forEachAsync(metadata.include, async (p: string) => {
                 p = p.startsWith("/") ? p.substring(1) : p;
                 const more: {[key: string]: any} = await this.loadSingleViewMetadata(viewDir + p, viewDir);
                 if (more !== undefined) {

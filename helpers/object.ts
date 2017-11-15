@@ -20,6 +20,10 @@ export default class HelperObject {
         return temp;
     }
 
+    /**
+     * DEPRECATED: Use eta._.extend()
+     * @deprecated
+     */
     public static merge<T>(from: T, to: T, reverseArrays = false): T {
         for (const i in from) {
             if (from[i] instanceof Array && to[i] instanceof Array) {
@@ -31,6 +35,10 @@ export default class HelperObject {
         return to;
     }
 
+    /**
+     * DEPRECATED: Use eta._.extend()
+     * @deprecated
+     */
     public static extend<T extends any>(obj: T, template: any): T {
         Object.keys(template).filter(k => obj[k] === undefined).forEach(k => {
             obj[k] = this.clone(template[k]);

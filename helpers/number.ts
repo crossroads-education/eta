@@ -1,8 +1,10 @@
 export default class HelperNumber {
     /**
+     * DEPRECATED: Use eta._.random()
      * Returns a random integer between `min` and `max`.
      * If exclusive is true, the result will never be `max`.
      * Borrowed (with modifications) from https://mzl.la/2qChqI1
+     * @deprecated
      */
     public static getRandomInt(min: number, max: number, exclusive = false): number {
         min = Math.ceil(min);
@@ -11,8 +13,10 @@ export default class HelperNumber {
     }
 
     /**
+     * DEPRECATED: Use String.padStart()
      * Pads a `value` with `char` at the beginning, returning a string `count` length.
      * Borrowed (with modifications) from https://stackoverflow.com/a/10073788
+     * @deprecated
      */
     public static pad(value: number, count: number, char = " "): string {
         const str = value.toString();

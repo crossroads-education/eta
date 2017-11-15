@@ -1,5 +1,6 @@
 import * as fs from "fs-extra";
 import * as recursiveReaddir from "recursive-readdir";
+import * as util from "util";
 
 export default class HelperFS {
     /**
@@ -30,18 +31,5 @@ export default class HelperFS {
         }
     }
 
-    /**
-     * Maps the recursive-readdir module to a Promise interface.
-     */
-    public static recursiveReaddir(path: string): Promise<string[]> {
-        return new Promise<string[]>((resolve, reject) => {
-            recursiveReaddir(path, (err: Error, files: string[]) => {
-                if (err) {
-                    reject(err);
-                } else {
-                    resolve(files);
-                }
-            });
-        });
-    }
+    public static recursiveReaddir: (path: string) => Promise<string[]> = <any>util.promisify(recursiveReaddir);
 }

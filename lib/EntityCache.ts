@@ -120,6 +120,18 @@ export default class EntityCache<T extends { toCacheObject: () => any }> {
         }
         await eta.db().query(sql, params);
     }
+
+    public static dumpRaw<T extends { toCacheObject: () => any }>(repository: orm.Repository<T>, duplicateConstraints: string, objects: T[]): Promise<void> {
+        const cache: EntityCache<T> = new EntityCache({
+            repository, duplicateConstraints,
+            interval: 50,
+            count: 250,
+            shouldUpdateOnDuplicate: true
+        });
+        cache.stop();
+        cache.add(objects);
+        return cache.dumpAll();
+    }
 }
 
 interface EntityColumn {

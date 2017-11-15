@@ -9,4 +9,14 @@ export default class HelperNumber {
         max = Math.floor(max);
         return Math.floor(Math.random() * (max - min + (exclusive ? 0 : 1))) + min;
     }
+
+    /**
+     * Pads a `value` with `char` at the beginning, returning a string `count` length.
+     * Borrowed (with modifications) from https://stackoverflow.com/a/10073788
+     */
+    public static pad(value: number, count: number, char = " "): string {
+        const str = value.toString();
+        if (str.length >= count) return str;
+        return new Array(count - str.length + 1).join(char) + str;
+    }
 }

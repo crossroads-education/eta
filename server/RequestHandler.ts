@@ -44,7 +44,7 @@ export default class RequestHandler extends eta.IRequestHandler {
         });
         await this.fireTransformEvent("onRequest");
         if (this.res.finished) return;
-        if (this.controller) {
+        if (this.controller && this.actionItem) {
             if (this.actionItem.isAuthRequired && !this.isLoggedIn()) { // requires login but is not logged in
                 this.req.session.authFrom = this.req.mvcFullPath;
                 if (this.shouldSaveLastPage) this.req.session.lastPage = this.req.mvcFullPath;

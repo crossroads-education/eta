@@ -48,6 +48,7 @@ export interface IConfiguration {
     https: IHttpsConfiguration;
     logger: ILoggerConfiguration;
     modules: {[key: string]: IModuleConfiguration};
+    server: IServerConfiguration;
 }
 
 export interface IAuthConfiguration {
@@ -113,6 +114,11 @@ export interface IHttpConfiguration {
      * Port to listen on
      */
     port: number;
+    /**
+     * External URL used to access this server.
+     * Example: http://google.com/eta
+     */
+    baseUrl: string;
     session: {
         /**
          * Hostname to connect Redis to
@@ -140,4 +146,8 @@ export interface IHttpsConfiguration {
 
 export interface ILoggerConfiguration {
     logDatabaseQueries: boolean;
+}
+
+export interface IServerConfiguration {
+    timezone: string;
 }

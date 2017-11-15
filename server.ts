@@ -9,9 +9,6 @@ import { connect } from "./server/api/db";
  * Sets the webserver up and starts it. Called once on app start.
  */
 export default async function main(): Promise<void> {
-    if (process.env.ETA_ENVIRONMENT !== "docker-compose") {
-        console.warn("You should run this server with docker-compose: `docker-compose up`");
-    }
     process.on("uncaughtException", (err: Error) => {
         console.error("An uncaught error occurred: " + err.message);
         console.log(err.stack);

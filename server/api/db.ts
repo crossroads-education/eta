@@ -11,7 +11,7 @@ function getConnection(): orm.Connection {
 export default getConnection;
 
 export async function connect(): Promise<orm.Connection> {
-    const modelDirs: string[] = eta.object.clone(Object.keys(eta.config.modules)
+    const modelDirs: string[] = eta._.cloneDeep(Object.keys(eta.config.modules)
         .map(k => eta.config.modules[k])
         .map(m => m.dirs.models)
         .reduce((prev, next) => prev.concat(next)))

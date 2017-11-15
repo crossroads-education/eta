@@ -64,7 +64,7 @@ export default class ModuleLoader extends events.EventEmitter {
         });
         const configPath: string = eta.constants.basePath + "config/modules/" + this.moduleName + ".json";
         if ((await fs.pathExists(configPath)) === true) {
-            this.config = eta._.extend(JSON.parse(await fs.readFile(configPath, "utf-8")), this.config);
+            this.config = eta._.defaults(JSON.parse(await fs.readFile(configPath, "utf-8")), this.config);
         }
         eta.config.modules[this.moduleName] = this.config;
     }
@@ -161,6 +161,7 @@ export default class ModuleLoader extends events.EventEmitter {
                 p = p.startsWith("/") ? p.substring(1) : p;
                 const more: {[key: string]: any} = await this.loadSingleViewMetadata(viewDir + p, viewDir);
                 if (more !== undefined) {
+                    // TODO: Fix deprecated usage
                     metadata = eta.object.merge(more, metadata, true);
                 }
             }

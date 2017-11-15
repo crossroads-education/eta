@@ -155,9 +155,9 @@ export default class WebServer extends events.EventEmitter {
             const moduleLoader: ModuleLoader = this.moduleLoaders[k];
             lifecycleHandlerTypes = lifecycleHandlerTypes.concat(moduleLoader.lifecycleHandlers);
             this.requestTransformers = this.requestTransformers.concat(moduleLoader.requestTransformers);
-            this.staticFiles = eta._.extend(moduleLoader.staticFiles, this.staticFiles);
-            this.viewFiles = eta._.extend(moduleLoader.viewFiles, this.viewFiles);
-            this.viewMetadata = eta._.extend(moduleLoader.viewMetadata, this.viewMetadata);
+            this.staticFiles = eta._.defaults(moduleLoader.staticFiles, this.staticFiles);
+            this.viewFiles = eta._.defaults(moduleLoader.viewFiles, this.viewFiles);
+            this.viewMetadata = eta._.defaults(moduleLoader.viewMetadata, this.viewMetadata);
         });
         this.lifecycleHandlers = lifecycleHandlerTypes.map((LifecycleHandler: any) => new LifecycleHandler({ server: this }));
     }
@@ -248,7 +248,7 @@ export default class WebServer extends events.EventEmitter {
         // get this for instantiation in RequestHandler
         const controllerClass: typeof eta.IHttpController = this.controllers[route];
         if (this.viewMetadata[req.mvcPath]) { // clone static view metadata into this request's metadata
-            res.view = eta.object.clone(this.viewMetadata[req.mvcPath]);
+            res.view = eta._.cloneDeep(this.viewMetadata[req.mvcPath]);
         }
         new RequestHandler({
             route, action,

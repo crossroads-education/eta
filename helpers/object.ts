@@ -1,8 +1,10 @@
 export default class HelperObject {
     /**
+     * DEPRECATED: Use eta._.cloneDeep()
      * Creates an in-memory copy of an object.
      * @param obj The object to clone
      * @return The cloned object
+     * @deprecated
      */
     public static clone<T extends any>(obj: T): T {
         // We need to check strict null

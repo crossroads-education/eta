@@ -63,15 +63,15 @@ export default class ModuleLoader extends events.EventEmitter {
             });
         });
         const configPath: string = eta.constants.basePath + "config/modules/" + this.moduleName + ".json";
-        if ((await eta.fs.exists(configPath)) === true) {
-            this.config = eta.object.merge(JSON.parse(await fs.readFile(configPath, "utf-8")), this.config);
+        if ((await fs.pathExists(configPath)) === true) {
+            this.config = eta._.extend(JSON.parse(await fs.readFile(configPath, "utf-8")), this.config);
         }
         eta.config.modules[this.moduleName] = this.config;
     }
 
     public async loadAuthProvider(): Promise<void> {
         const authPath: string = this.config.rootDir + "auth.js";
-        if (!await eta.fs.exists(authPath)) return;
+        if (!await fs.pathExists(authPath)) return;
         try {
             this.authProvider = require(authPath).default;
         } catch (err) {
@@ -120,26 +120,26 @@ export default class ModuleLoader extends events.EventEmitter {
         return controllerType;
     }
 
-    public async loadStatic(): Promise<void> {
+    public loadStatic(): Promise<void> {
         this.staticFiles = {};
-        await eta.array.forEachAsync(this.config.dirs.staticFiles, async d => {
+        return <any>Promise.all(this.config.dirs.staticFiles.map(async d => {
             const files: string[] = await this.getFiles([d]);
             files.forEach(f => {
                 const webPath: string = f.substring(d.length - 1);
                 this.staticFiles[webPath] = f;
             });
-        });
+        }));
     }
 
-    public async loadViewMetadata(): Promise<void> {
+    public loadViewMetadata(): Promise<void> {
         this.viewMetadata = {};
-        await eta.array.forEachAsync(this.config.dirs.views, async viewDir => {
+        return <any>Promise.all(this.config.dirs.views.map(async viewDir => {
             const files: string[] = (await this.getFiles([viewDir]))
                 .filter(f => f.endsWith(".json"));
-            await eta.array.forEachAsync(files, path => {
-                return <Promise<any>>this.loadSingleViewMetadata(path, viewDir);
-            }, true);
-        });
+            for (const path of files) {
+                await this.loadSingleViewMetadata(path, viewDir);
+            }
+        }));
     }
 
     private async loadSingleViewMetadata(path: string, viewDir: string): Promise<{[key: string]: any}> {
@@ -157,27 +157,27 @@ export default class ModuleLoader extends events.EventEmitter {
             return undefined;
         }
         if (metadata.include !== undefined) {
-            await eta.array.forEachAsync(metadata.include, async (p: string) => {
+            for (let p of metadata.include) {
                 p = p.startsWith("/") ? p.substring(1) : p;
                 const more: {[key: string]: any} = await this.loadSingleViewMetadata(viewDir + p, viewDir);
                 if (more !== undefined) {
                     metadata = eta.object.merge(more, metadata, true);
                 }
-            }, true);
+            }
         }
         this.viewMetadata[mvcPath] = metadata;
         return metadata;
     }
 
-    public async loadViews(): Promise<void> {
+    public loadViews(): Promise<void> {
         this.viewFiles = {};
-        await eta.array.forEachAsync(this.config.dirs.views, async d => {
+        return <any>Promise.all(this.config.dirs.views.map(async d => {
             const files: string[] = await this.getFiles([d]);
             files.filter(f => f.endsWith(".pug")).forEach(f => {
                 const webPath: string = f.substring(d.length - 1);
                 this.viewFiles[webPath.substring(0, webPath.length - 4)] = f;
             });
-        });
+        }));
     }
 
     public async loadLifecycleHandlers(): Promise<void> {
@@ -212,10 +212,10 @@ export default class ModuleLoader extends events.EventEmitter {
 
     private async getFiles(rootDirectories: string[]): Promise<string[]> {
         let files: string[] = [];
-        await eta.array.forEachAsync(rootDirectories, async dir => {
+        for (const dir of rootDirectories) {
             files = files.concat((await eta.fs.recursiveReaddir(dir)).sort()
                 .map(f => f.replace(/\\/g, "/")));
-        }, true);
+        }
         return files;
     }
 }

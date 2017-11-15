@@ -73,7 +73,7 @@ export default class EntityCache<T extends { toCacheObject: () => any }> {
 
     public async getAllRaw(): Promise<{[key: string]: any}[]> {
         const tableName = eta.db().driver.escape(this.tableName);
-        const columns: string = eta.array.uniquePrimitive(this.columns.map(c => {
+        const columns: string = eta._.uniq(this.columns.map(c => {
             const dbName: string = eta.db().driver.escape(c.databaseName);
             const name: string = eta.db().driver.escape(c.isRelation ? c.databaseName : c.propertyName);
             return `${dbName} AS ${name}`;
@@ -93,7 +93,7 @@ export default class EntityCache<T extends { toCacheObject: () => any }> {
     private async insertMany(objects: T[]): Promise<void> {
         const tableName = eta.db().driver.escape(this.tableName);
         let sql = "INSERT INTO " + tableName + " ";
-        const columns: string[] = eta.array.uniquePrimitive(this.columns
+        const columns: string[] = eta._.uniq(this.columns
             .filter(c => !c.isGenerated)
             .map(c => c.databaseName));
         sql += "(" + columns.map(c => eta.db().driver.escape(c)).join(",") + ") VALUES ";

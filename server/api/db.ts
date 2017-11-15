@@ -20,9 +20,11 @@ export async function connect(): Promise<orm.Connection> {
     if (eta.config.logger.logDatabaseQueries) {
         logOptions = ["error", "query"];
     }
-    return await orm.createConnection(eta.object.merge({
-        entities: modelDirs,
-        synchronize: true,
-        logging: logOptions
-    }, eta.config.db));
+    return await orm.createConnection(
+        eta._.extend({
+            entities: modelDirs,
+            synchronize: true,
+            logging: logOptions
+        }, eta.config.db)
+    );
 }

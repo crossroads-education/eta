@@ -146,7 +146,7 @@ export default class RequestHandler extends eta.IRequestHandler {
 
     private async serveView(): Promise<void> {
         const viewPath: string = this.server.viewFiles[this.req.mvcPath];
-        if (viewPath === undefined || !await eta.fs.exists(viewPath)) {
+        if (viewPath === undefined || !await fs.pathExists(viewPath)) {
             this.renderError(eta.constants.http.NotFound);
             return;
         }
@@ -184,7 +184,7 @@ export default class RequestHandler extends eta.IRequestHandler {
                 return false;
             }
         }
-        if (!await eta.fs.exists(staticPath)) { // since static file list is cached
+        if (!await fs.pathExists(staticPath)) { // since static file list is cached
             eta.logger.trace("A static file was deleted after the server started. " + staticPath);
             this.renderError(eta.constants.http.NotFound);
             return true;
@@ -263,7 +263,7 @@ export default class RequestHandler extends eta.IRequestHandler {
         }
         const errorDir: string = eta.constants.basePath + "server/errors/";
         let errorView: string = errorDir + code.toString();
-        if (!await eta.fs.exists(errorView + ".pug")) {
+        if (!await fs.pathExists(errorView + ".pug")) {
             errorView = errorDir + "layout";
         }
         res.render(errorView, {

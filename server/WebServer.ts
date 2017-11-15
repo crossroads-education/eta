@@ -155,16 +155,16 @@ export default class WebServer extends events.EventEmitter {
             const moduleLoader: ModuleLoader = this.moduleLoaders[k];
             lifecycleHandlerTypes = lifecycleHandlerTypes.concat(moduleLoader.lifecycleHandlers);
             this.requestTransformers = this.requestTransformers.concat(moduleLoader.requestTransformers);
-            this.staticFiles = eta.object.merge(moduleLoader.staticFiles, this.staticFiles);
-            this.viewFiles = eta.object.merge(moduleLoader.viewFiles, this.viewFiles);
-            this.viewMetadata = eta.object.merge(moduleLoader.viewMetadata, this.viewMetadata);
+            this.staticFiles = eta._.extend(moduleLoader.staticFiles, this.staticFiles);
+            this.viewFiles = eta._.extend(moduleLoader.viewFiles, this.viewFiles);
+            this.viewMetadata = eta._.extend(moduleLoader.viewMetadata, this.viewMetadata);
         });
         this.lifecycleHandlers = lifecycleHandlerTypes.map((LifecycleHandler: any) => new LifecycleHandler({ server: this }));
     }
 
-    private fireLifecycleEvent(name: string): Promise<void> {
-        return eta.array.forEachAsync(this.lifecycleHandlers, async (handler: any) => {
-            const method: () => Promise<void> = handler[name];
+    private async fireLifecycleEvent(name: string): Promise<void> {
+        for (const handler of this.lifecycleHandlers) {
+            const method: () => Promise<void> = (<any>handler)[name];
             if (method) {
                 handler.server = this;
                 try {
@@ -174,7 +174,7 @@ export default class WebServer extends events.EventEmitter {
                     eta.logger.error(err);
                 }
             }
-        }, false);
+        }
     }
 
     private configureExpress(): void {

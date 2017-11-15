@@ -15,5 +15,3 @@ npm-debug.log
 /helpers/index.ts
 /lib/index.ts
 /server/api/index.ts
-/docs/generated
-deploy_ec2.py

@@ -1,7 +1,7 @@
 {
   "uid": "eta",
   "script": "server.js",
-  "sourceDir": "/usr/src/app",
-  "workingDir": "/usr/src/app",
+  "sourceDir": "/srv/eta",
+  "workingDir": "/srv/eta",
   "append": true
 }

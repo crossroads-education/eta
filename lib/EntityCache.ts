@@ -35,6 +35,13 @@ export default class EntityCache<T extends { toCacheObject: () => any }> {
                 };
             });
             this.tableName = this.repository.metadata.tableName;
+            if (this.duplicateConstraints === undefined) {
+                const indices: string[][] = this.repository.metadata.indices.filter(im => im.isUnique).map(im => im.columns.map(c => c.databaseName));
+                if (indices.length !== 1) {
+                    throw new Error(`Cannot guess index to use for ${this.tableName}: ${indices.length} are defined.`);
+                }
+                this.duplicateConstraints = indices[0].map(c => `"${c}"`).join(", ");
+            }
         }
         this.start();
     }
@@ -121,7 +128,7 @@ export default class EntityCache<T extends { toCacheObject: () => any }> {
         await eta.db().query(sql, params);
     }
 
-    public static dumpRaw<T extends { toCacheObject: () => any }>(repository: orm.Repository<T>, duplicateConstraints: string, objects: T[]): Promise<void> {
+    public static async dumpRaw<T extends { toCacheObject: () => any }>(repository: orm.Repository<T>, duplicateConstraints: string, objects: T[], getAllRaw = false): Promise<T[]> {
         const cache: EntityCache<T> = new EntityCache({
             repository, duplicateConstraints,
             interval: 50,
@@ -130,7 +137,8 @@ export default class EntityCache<T extends { toCacheObject: () => any }> {
         });
         cache.stop();
         cache.add(objects);
-        return cache.dumpAll();
+        await cache.dumpAll();
+        return getAllRaw ? (await cache.getAllRaw()).map((e: Partial<T>) => repository.create(e)) : [];
     }
 }
 

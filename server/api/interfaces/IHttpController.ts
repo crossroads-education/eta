@@ -5,6 +5,7 @@ import WebServer from "../../WebServer";
 abstract class IHttpController extends IRequestHandler {
     public routes: string[] = [];
     public actions: {[key: string]: {
+        flags: string[];
         method: "GET" | "POST";
         useView: boolean;
         isAuthRequired: boolean;

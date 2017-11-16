@@ -24,6 +24,12 @@ export default class MVC {
         };
     }
 
+    public static flags(flags: string[]): any {
+        return function(target: IHttpController, propertyKey: string, descriptor: PropertyDescriptor): any {
+            MVC.init(target, propertyKey, action => action.flags = flags);
+        };
+    }
+
     public static get(): any {
         return function(target: IHttpController, propertyKey: string, descriptor: PropertyDescriptor): any {
             MVC.init(target, propertyKey, action => action.method = "GET");
@@ -56,6 +62,7 @@ export default class MVC {
     }
 
     private static init(target: IHttpController, action?: string, worker: (action: {
+        flags: string[];
         method: "GET" | "POST";
         useView: boolean;
         isAuthRequired: boolean;
@@ -65,6 +72,7 @@ export default class MVC {
         if (!target.actions) target.actions = {};
         if (action && !target.actions[action]) {
             target.actions[action] = {
+                flags: [],
                 method: "GET",
                 isAuthRequired: false,
                 useView: true,

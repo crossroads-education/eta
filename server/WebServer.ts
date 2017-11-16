@@ -129,6 +129,24 @@ export default class WebServer extends events.EventEmitter {
         return false;
     }
 
+    public getActionsWithFlag(flag: string, context: eta.IHttpController): ((...args: any[]) => Promise<void>)[] {
+        const actions = eta._.values(this.controllers).map(c => {
+            const flaggedActionKeys: string[] = Object.keys(c.prototype.actions).filter(k => c.prototype.actions[k].flags.includes(flag));
+            if (flaggedActionKeys.length === 0) return [];
+            return flaggedActionKeys.map(k => {
+                return async (...args: any[]) => {
+                    const instance: eta.IHttpController = new (<any>c.prototype.constructor)({
+                        req: context.req,
+                        res: context.res,
+                        next: context.next,
+                        server: context.server
+                    });
+                };
+            });
+        }).filter(a => a.length > 0);
+        return actions.length > 0 ? actions.reduce((p, v) => p.concat(v)) : [];
+    }
+
     // TODO: Document actual methodology
     private async loadModules(): Promise<void> {
         eta.config.modules = {};

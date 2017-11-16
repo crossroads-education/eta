@@ -134,13 +134,14 @@ export default class WebServer extends events.EventEmitter {
             const flaggedActionKeys: string[] = Object.keys(c.prototype.actions).filter(k => c.prototype.actions[k].flags.includes(flag));
             if (flaggedActionKeys.length === 0) return [];
             return flaggedActionKeys.map(k => {
-                return async (...args: any[]) => {
+                return (...args: any[]) => {
                     const instance: eta.IHttpController = new (<any>c.prototype.constructor)({
                         req: context.req,
                         res: context.res,
                         next: context.next,
                         server: context.server
                     });
+                    return (<any>instance)[k].bind(instance)(...args);
                 };
             });
         }).filter(a => a.length > 0);

@@ -78,14 +78,25 @@ export default class EntityCache<T extends { toCacheObject: () => any }> {
         }
     }
 
-    public async getAllRaw(): Promise<{[key: string]: any}[]> {
+    public async getAllRaw(mapRelations = false): Promise<{[key: string]: any}[]> {
         const tableName = eta.db().driver.escape(this.tableName);
         const columns: string = eta._.uniq(this.columns.map(c => {
             const dbName: string = eta.db().driver.escape(c.databaseName);
             const name: string = eta.db().driver.escape(c.isRelation ? c.databaseName : c.propertyName);
             return `${dbName} AS ${name}`;
         })).join(", ");
-        return await eta.db().query(`SELECT ${columns} FROM ${tableName}`);
+        const rows: any[] = await eta.db().query(`SELECT ${columns} FROM ${tableName}`);
+        if (mapRelations) {
+            for (let i = 0; i < rows.length; i++) {
+                Object.keys(rows[i]).forEach(k => {
+                    if (k.endsWith("Id")) {
+                        const mappedKey: string = k.slice(0, -2);
+                        if (!rows[i][mappedKey]) rows[i][mappedKey] = { id: rows[i][k] };
+                    }
+                });
+            }
+        }
+        return rows;
     }
 
     public start(): void {
@@ -128,7 +139,7 @@ export default class EntityCache<T extends { toCacheObject: () => any }> {
         await eta.db().query(sql, params);
     }
 
-    public static async dumpRaw<T extends { toCacheObject: () => any }>(repository: orm.Repository<T>, duplicateConstraints: string, objects: T[], getAllRaw = false): Promise<T[]> {
+    public static async dumpRaw<T extends { toCacheObject: () => any }>(repository: orm.Repository<T>, duplicateConstraints: string, objects: T[], getAllRaw = false, rawMapper: (entity: any) => Partial<T> = e => e): Promise<T[]> {
         const cache: EntityCache<T> = new EntityCache({
             repository, duplicateConstraints,
             interval: 50,
@@ -138,7 +149,7 @@ export default class EntityCache<T extends { toCacheObject: () => any }> {
         cache.stop();
         cache.add(objects);
         await cache.dumpAll();
-        return getAllRaw ? (await cache.getAllRaw()).map((e: Partial<T>) => repository.create(e)) : [];
+        return getAllRaw ? (await cache.getAllRaw(true)).map((e: Partial<T>) => repository.create(rawMapper(e))) : [];
     }
 }
 

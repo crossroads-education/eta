@@ -46,6 +46,8 @@ export default class EntityCache<T extends { toCacheObject: () => any }> {
         this.start();
     }
 
+    private get rawColumns() { return this.repository.metadata.columns; }
+
     public add(objects: T[]): void {
         this.cache = this.cache.concat(objects);
         this.archive = this.archive.concat(objects);
@@ -110,7 +112,7 @@ export default class EntityCache<T extends { toCacheObject: () => any }> {
 
     private async insertMany(objects: T[]): Promise<void> {
         const tableName = eta.db().driver.escape(this.tableName);
-        let sql = "INSERT INTO " + tableName + " ";
+        let sql = `INSERT INTO ${tableName} `;
         const columns: string[] = eta._.uniq(this.columns
             .filter(c => !c.isGenerated)
             .map(c => c.databaseName));
@@ -150,6 +152,22 @@ export default class EntityCache<T extends { toCacheObject: () => any }> {
         cache.add(objects);
         await cache.dumpAll();
         return getAllRaw ? (await cache.getAllRaw(true)).map((e: Partial<T>) => repository.create(rawMapper(e))) : [];
+    }
+
+    public static async dumpManyToMany(tableName: string, entities: {[key: string]: any}[]): Promise<void> {
+        if (entities.length === 0) return;
+        tableName = eta.db().driver.escape(tableName);
+        const columnNames: string[] = Object.keys(entities[0]);
+        const params: any[] = [];
+        let count = 0;
+        const sql = `
+            INSERT INTO ${tableName} (${columnNames.map(c => eta.db().driver.escape(c)).join(", ")})
+            VALUES ${entities.map(entity => `(${columnNames.map(c => {
+                params.push(entity[c]);
+                return "$" + ++count;
+            }).join(", ")})` )}
+            ON CONFLICT DO NOTHING`;
+        await eta.db().query(sql, params);
     }
 }
 

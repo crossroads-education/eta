@@ -76,4 +76,20 @@ describe("HelperDate", function() {
             }
         });
     });
+
+    describe("#getFromTime()", function(): void {
+        let now: Date, result: Date;
+        beforeEach(function(): void {
+            now = new Date();
+            now.setSeconds(0);
+            now.setMilliseconds(0);
+            result = HelperDate.getFromTime(now.getHours() + ":" + now.getMinutes());
+        });
+        it("should return a full Date object", function(): void {
+            assert.ok(result instanceof Date);
+        });
+        it("should return a Date object for today", function(): void {
+            assert.equal(now.getTime(), result.getTime());
+        });
+    });
 });

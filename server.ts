@@ -5,14 +5,20 @@ import logger from "./server/api/logger"; // Required to setup logger
 import WebServer from "./server/WebServer";
 import { connect } from "./server/api/db";
 
+function onUncaughtError(err: Error | string, extra?: any) {
+    if (err instanceof Error) {
+        console.error("An uncaught error occurred:", err.message, err.stack);
+    } else {
+        console.error("An uncaught error occurred:", err);
+    }
+}
+
 /**
  * Sets the webserver up and starts it. Called once on app start.
  */
 export default async function main(): Promise<void> {
-    process.on("uncaughtException", (err: Error) => {
-        console.error("An uncaught error occurred: " + err.message);
-        console.log(err.stack);
-    });
+    process.on("uncaughtException", onUncaughtError);
+    process.on("unhandledRejection", onUncaughtError);
     let server: WebServer;
     process.on("SIGINT", async () => { // gracefully close server on CTRL+C
         if (!server) {

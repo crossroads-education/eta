@@ -16,7 +16,7 @@ function onUncaughtError(err: Error | string, extra?: any) {
 /**
  * Sets the webserver up and starts it. Called once on app start.
  */
-export default async function main(): Promise<void> {
+export default async function main(): Promise<WebServer> {
     process.on("uncaughtException", onUncaughtError);
     process.on("unhandledRejection", onUncaughtError);
     let server: WebServer;
@@ -36,9 +36,10 @@ export default async function main(): Promise<void> {
     server = new WebServer();
     if (!await server.init()) {
         server.close();
-        return;
+        return undefined;
     }
     server.start();
+    return server;
 }
 
 if (!module.parent) {

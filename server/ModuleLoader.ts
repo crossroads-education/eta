@@ -29,7 +29,7 @@ export default class ModuleLoader extends events.EventEmitter {
 
     public async loadAll(): Promise<void> {
         await this.loadConfig();
-        if (this.config.disable) {
+        if (this.config.disable || (process.env.ETA_TESTING === "true" && this.config.name !== eta.config.server.testModule)) {
             return;
         }
         await Promise.all([

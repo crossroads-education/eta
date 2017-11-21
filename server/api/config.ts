@@ -150,5 +150,6 @@ export interface ILoggerConfiguration {
 }
 
 export interface IServerConfiguration {
+    testModule: string;
     timezone: string;
 }

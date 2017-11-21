@@ -1,3 +1,4 @@
 {
-  "logDatabaseQueries": false
+  "logDatabaseQueries": false,
+  "outputToConsole": true
 }

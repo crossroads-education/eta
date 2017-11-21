@@ -1,6 +1,7 @@
 import * as fs from "fs";
 import * as moment from "moment";
 import * as stackTrace from "stack-trace";
+import config from "./config";
 import constants from "./constants";
 
 class Logger {
@@ -24,13 +25,15 @@ class Logger {
         const now: Date = new Date();
         const filename: string = constants.basePath + "/logs/" + moment(now).format("YYYY-MM-DD") + ".log";
         let msg = `(${now.toLocaleTimeString()}) [${this.getCalling()}] ${data}`;
-        if (args.length > 0) {
-            args = args[0] instanceof Array ? args[0] : args;
-            args.splice(0, 0, msg);
-            console.log.apply(console, args);
-            args.splice(0, 1);
-        } else {
-            console.log(msg);
+        if (config.logger.outputToConsole === undefined || config.logger.outputToConsole === true) {
+            if (args.length > 0) {
+                args = args[0] instanceof Array ? args[0] : args;
+                args.splice(0, 0, msg);
+                console.log.apply(console, args);
+                args.splice(0, 1);
+            } else {
+                console.log(msg);
+            }
         }
         for (let i = 0; i < args.length; i++) {
             let value: any = args[i];

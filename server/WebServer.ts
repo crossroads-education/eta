@@ -40,7 +40,7 @@ export default class WebServer extends events.EventEmitter {
     public moduleLoaders: {[key: string]: ModuleLoader} = {};
 
     /** key: route */
-    public controllers: {[key: string]: typeof eta.IHttpController} = {};
+    public controllers: (typeof eta.IHttpController)[] = [];
     public lifecycleHandlers: eta.ILifecycleHandler[] = [];
     public requestTransformers: (typeof eta.IRequestTransformer)[] = [];
     public staticFiles: {[key: string]: string} = {};
@@ -159,9 +159,11 @@ export default class WebServer extends events.EventEmitter {
         for (const moduleName of moduleDirs) {
             this.moduleLoaders[moduleName] = new ModuleLoader(moduleName);
             this.moduleLoaders[moduleName].on("controller-load", (controllerType: typeof eta.IHttpController) => {
-                for (const route of controllerType.prototype.routes) {
-                    this.controllers[route] = controllerType;
-                }
+                const realRoutes: string = controllerType.prototype.getRoutes().join(", ");
+                this.controllers = this.controllers.filter(c => {
+                    return c.prototype.getRoutes().join(", ") !== realRoutes;
+                });
+                this.controllers.push(controllerType);
             });
             await this.moduleLoaders[moduleName].loadAll();
             if (!this.moduleLoaders[moduleName].isInitialized) {
@@ -265,12 +267,26 @@ export default class WebServer extends events.EventEmitter {
         // route is everything else
         const route: string = tokens.join("/");
         // get this for instantiation in RequestHandler
-        const controllerClass: typeof eta.IHttpController = this.controllers[route];
+        const routeParams: {[key: string]: string} = {};
+        const controllerClass: typeof eta.IHttpController = this.controllers.find(controllerType => {
+            return controllerType.prototype.routes.find(r => {
+                if (typeof(r) === "string") {
+                    return r === route;
+                }
+                const isMatch = r.regex.test(route);
+                if (isMatch) {
+                    route.match(r.regex).slice(1).forEach((param, i) => {
+                        routeParams[r.map[i]] = param;
+                    });
+                }
+                return isMatch;
+            }) !== undefined;
+        });
         if (this.viewMetadata[req.mvcPath]) { // clone static view metadata into this request's metadata
             res.view = eta._.cloneDeep(this.viewMetadata[req.mvcPath]);
         }
         new RequestHandler({
-            route, action,
+            route, action, routeParams,
             controllerPrototype: controllerClass ? controllerClass.prototype : undefined,
             req, res, next,
             server: this

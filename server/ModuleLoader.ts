@@ -91,7 +91,7 @@ export default class ModuleLoader extends events.EventEmitter {
             watcher.on("change", (path: string) => {
                 const controllerType: typeof eta.IHttpController = this.loadController(path);
                 if (controllerType !== undefined) {
-                    eta.logger.trace(`Reloaded controller ${controllerType.name} (${controllerType.prototype.routes.join(", ")})`);
+                    eta.logger.trace(`Reloaded controller ${controllerType.name} (${controllerType.prototype.getRoutes().join(", ")})`);
                 }
             });
         }

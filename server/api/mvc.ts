@@ -1,4 +1,5 @@
 import IHttpController from "./interfaces/IHttpController";
+import * as _ from "lodash";
 
 export default class MVC {
     public static action(method: "GET" | "POST"): any {
@@ -57,7 +58,23 @@ export default class MVC {
     public static route(route: string): any {
         return function(target: typeof IHttpController, propertyKey: string, descriptor: PropertyDescriptor): any {
             MVC.init(target.prototype);
-            target.prototype.routes.push(route);
+            if (route.includes(":")) {
+                const rawRoute = route;
+                const map: string[] = route.match(/\:([A-z]+)/g);
+                if (_.uniq(map).length !== map.length) {
+                    throw new Error("All route parameters must be unique.");
+                }
+                map.forEach((m, i) => {
+                    route = route.replace(new RegExp(m), `([A-z0-9]+)`);
+                });
+                target.prototype.routes.push({
+                    regex: new RegExp(`^${route}$`),
+                    map: map.map(m => m.substr(1)),
+                    raw: rawRoute
+                });
+            } else {
+                target.prototype.routes.push(route);
+            }
         };
     }
 

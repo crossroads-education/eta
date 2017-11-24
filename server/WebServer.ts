@@ -255,17 +255,12 @@ export default class WebServer extends events.EventEmitter {
             host = host.replace(":" + eta.config.https.port, realPort);
         }
         req.baseUrl = req.protocol + "://" + host + "/";
-        req.fullUrl = req.baseUrl + req.mvcPath.substring(1);
-        req.mvcFullPath = req.mvcPath;
-        if (req.originalUrl.includes("?")) {
-            req.mvcFullPath += "?" + req.originalUrl.split("?").slice(-1)[0];
-        }
         res.view = {};
         const tokens: string[] = req.mvcPath.split("/");
         // action is the last token of mvcPath
         const action: string = tokens.splice(-1, 1)[0];
         // route is everything else
-        const route: string = tokens.join("/");
+        let route: string = tokens.join("/");
         // get this for instantiation in RequestHandler
         const routeParams: {[key: string]: string} = {};
         const controllerClass: typeof eta.IHttpController = this.controllers.find(controllerType => {
@@ -278,10 +273,18 @@ export default class WebServer extends events.EventEmitter {
                     route.match(r.regex).slice(1).forEach((param, i) => {
                         routeParams[r.map[i]] = param;
                     });
+                    // properly set variables
+                    route = r.raw.replace(/\:/g, "");
+                    req.mvcPath = route + "/" + action;
                 }
                 return isMatch;
             }) !== undefined;
         });
+        req.fullUrl = req.baseUrl + req.mvcPath.substring(1);
+        req.mvcFullPath = req.mvcPath;
+        if (req.originalUrl.includes("?")) {
+            req.mvcFullPath += "?" + req.originalUrl.split("?").slice(-1)[0];
+        }
         if (this.viewMetadata[req.mvcPath]) { // clone static view metadata into this request's metadata
             res.view = eta._.cloneDeep(this.viewMetadata[req.mvcPath]);
         }

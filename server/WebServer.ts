@@ -245,6 +245,7 @@ export default class WebServer extends events.EventEmitter {
         if (req.mvcPath.split("/").length === 2) {
             req.mvcPath = "/home" + req.mvcPath;
         }
+        req.mvcFullPath = req.mvcPath;
         const hostTokens: string[] = req.get("host").split(":");
         let host: string = eta.config.http.host + ":" + hostTokens[1];
         if (eta.config.https.realPort !== undefined) {
@@ -281,7 +282,6 @@ export default class WebServer extends events.EventEmitter {
             }) !== undefined;
         });
         req.fullUrl = req.baseUrl + req.mvcPath.substring(1);
-        req.mvcFullPath = req.mvcPath;
         if (req.originalUrl.includes("?")) {
             req.mvcFullPath += "?" + req.originalUrl.split("?").slice(-1)[0];
         }

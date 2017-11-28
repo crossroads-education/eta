@@ -29,7 +29,7 @@ export default class ModuleLoader extends events.EventEmitter {
 
     public async loadAll(): Promise<void> {
         await this.loadConfig();
-        if (this.config.disable) {
+        if (this.config.disable || (process.env.ETA_TESTING === "true" && this.config.name !== eta.config.server.testModule)) {
             return;
         }
         await Promise.all([
@@ -91,7 +91,7 @@ export default class ModuleLoader extends events.EventEmitter {
             watcher.on("change", (path: string) => {
                 const controllerType: typeof eta.IHttpController = this.loadController(path);
                 if (controllerType !== undefined) {
-                    eta.logger.trace(`Reloaded controller ${controllerType.name} (${controllerType.prototype.routes.join(", ")})`);
+                    eta.logger.trace(`Reloaded controller ${controllerType.name} (${controllerType.prototype.getRoutes().join(", ")})`);
                 }
             });
         }

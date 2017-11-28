@@ -1,6 +1,6 @@
 {
   "name": "@xroadsed/eta",
-  "version": "2.3.5",
+  "version": "2.3.6",
   "description": "A Node.JS webserver, designed to provide a speedy MVC interface with little effort.",
   "homepage": "http://github.com/crossroads-education/eta/",
   "repository": "git://github.com:crossroads-education/eta.git",
@@ -33,6 +33,7 @@
     "passport-cas2": "0.0.8",
     "passport-local": "^1.0.0",
     "passport-saml": "^0.15.0",
+    "passport-strategy": "^1.0.0",
     "pg": "^7.3.0",
     "pug": "^2.0.0-rc.4",
     "randomstring": "^1.1.5",
@@ -73,6 +74,7 @@
     "@types/passport-local": "^1.0.31",
     "@types/passport-oauth2": "^1.4.3",
     "@types/passport-saml": "^0.15.2",
+    "@types/passport-strategy": "^0.2.32",
     "@types/pg": "^7.1.0",
     "@types/randomstring": "^1.1.5",
     "@types/recursive-readdir": "^1.2.29",
@@ -82,9 +84,11 @@
     "@types/socket.io": "^1.4.30",
     "@types/source-map-support": "^0.4.0",
     "@types/stack-trace": "0.0.28",
+    "@types/supertest": "^2.0.3",
     "@types/useragent": "^2.1.1",
     "@types/uuid": "^3.4.2",
-    "@xroadsed/eta-cli": "^1.0.10"
+    "@xroadsed/eta-cli": "^1.0.10",
+    "supertest": "^3.0.0"
   },
   "engines": {
     "node": ">=8.4.0"

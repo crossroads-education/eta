@@ -10,6 +10,7 @@ import WebServer from "./WebServer";
 export default class RequestHandler extends eta.IRequestHandler {
     public route: string;
     public action: string;
+    public routeParams: {[key: string]: string};
     public controller: eta.IHttpController;
     public controllerPrototype: eta.IHttpController;
     public server: WebServer;
@@ -25,7 +26,13 @@ export default class RequestHandler extends eta.IRequestHandler {
         super(init);
         Object.assign(this, init);
         if (this.controllerPrototype) {
-            this.controller = new (<any>this.controllerPrototype.constructor)();
+            this.controller = new (<any>this.controllerPrototype.constructor)({
+                req: this.req,
+                res: this.res,
+                next: this.next,
+                server: this.server,
+                params: this.routeParams
+            });
             this.actionItem = this.controllerPrototype.actions[this.action];
         }
     }
@@ -73,10 +80,6 @@ export default class RequestHandler extends eta.IRequestHandler {
             await this.serveView();
             return;
         }
-        this.controller.req = this.req;
-        this.controller.res = this.res;
-        this.controller.next = this.next;
-        this.controller.server = this.server;
         const queryParams: {[key: string]: any} = {};
         const rawQueryParams: {[key: string]: any} = this.req[this.req.method === "GET" ? "query" : "body"];
         // checks GET/POST for JSON-encoded values and "bad" JQuery-encoded keys

@@ -146,8 +146,10 @@ export interface IHttpsConfiguration {
 
 export interface ILoggerConfiguration {
     logDatabaseQueries: boolean;
+    outputToConsole: boolean;
 }
 
 export interface IServerConfiguration {
+    testModule: string;
     timezone: string;
 }

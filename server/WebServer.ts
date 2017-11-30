@@ -129,19 +129,31 @@ export default class WebServer extends events.EventEmitter {
         return false;
     }
 
-    public getActionsWithFlag(flag: string, context: eta.IHttpController): ((...args: any[]) => Promise<void>)[] {
+    public getActionsWithFlag(flag: string, context: eta.IHttpController, flagValue?: string | boolean | number): {
+        flagValue: string | boolean | number | RegExp;
+        action: (...args: any[]) => Promise<void>;
+    }[] {
         const actions = eta._.values(this.controllers).map(c => {
-            const flaggedActionKeys: string[] = Object.keys(c.prototype.actions).filter(k => c.prototype.actions[k].flags.includes(flag));
+            let flaggedActionKeys: string[] = Object.keys(c.prototype.actions).filter(k => !!c.prototype.actions[k].flags[flag]);
+            if (flagValue !== undefined) {
+                flaggedActionKeys = flaggedActionKeys.filter(k => c.prototype.actions[k].flags[flag] === flagValue);
+            }
             if (flaggedActionKeys.length === 0) return [];
             return flaggedActionKeys.map(k => {
-                return (...args: any[]) => {
-                    const instance: eta.IHttpController = new (<any>c.prototype.constructor)({
-                        req: context.req,
-                        res: context.res,
-                        next: context.next,
-                        server: context.server
-                    });
+                const action = (...args: any[]) => {
+                    let params = { server: this };
+                    if (context !== undefined) {
+                        params = eta._.extend(params, {
+                            req: context.req,
+                            res: context.res,
+                            next: context.next
+                        });
+                    }
+                    const instance: eta.IHttpController = new (<any>c.prototype.constructor)(params);
                     return (<any>instance)[k].bind(instance)(...args);
+                };
+                return {
+                    action, flagValue: c.prototype.actions[k].flags[flag]
                 };
             });
         }).filter(a => a.length > 0);
@@ -164,6 +176,7 @@ export default class WebServer extends events.EventEmitter {
                     return c.prototype.getRoutes().join(", ") !== realRoutes;
                 });
                 this.controllers.push(controllerType);
+                this.emit("controller-load", controllerType);
             });
             await this.moduleLoaders[moduleName].loadAll();
             if (!this.moduleLoaders[moduleName].isInitialized) {

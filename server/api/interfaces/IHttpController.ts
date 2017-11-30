@@ -9,7 +9,7 @@ abstract class IHttpController extends IRequestHandler {
         raw: string;
     } | string)[] = [];
     public actions: {[key: string]: {
-        flags: string[];
+        flags: {[key: string]: string | number | boolean | RegExp};
         method: "GET" | "POST";
         useView: boolean;
         isAuthRequired: boolean;

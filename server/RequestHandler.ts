@@ -15,6 +15,7 @@ export default class RequestHandler extends eta.IRequestHandler {
     public controllerPrototype: eta.IHttpController;
     public server: WebServer;
     private actionItem: {
+        flags: {[key: string]: string | number | boolean | RegExp};
         method: "GET" | "POST";
         useView: boolean;
         isAuthRequired: boolean;
@@ -114,7 +115,15 @@ export default class RequestHandler extends eta.IRequestHandler {
             }
         });
         try {
-            await (<any>this.controller)[this.action].apply(this.controller, [queryParams]);
+            const scriptFilename: string = <string>this.actionItem.flags["script"];
+            if (!scriptFilename) {
+                await (<any>this.controller)[this.action].apply(this.controller, [queryParams]);
+            } else if (scriptFilename.endsWith(".py")) {
+                this.actionItem.useView = false;
+                this.res.raw = (await eta.PythonLoader.load(scriptFilename)(queryParams))[0];
+            } else {
+                throw new Error("Script " + scriptFilename + " cannot be handled.");
+            }
         } catch (err) {
             eta.logger.error(err);
             this.renderError(eta.constants.http.InternalError);

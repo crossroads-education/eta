@@ -116,6 +116,23 @@ export default class ModuleLoader extends events.EventEmitter {
             eta.logger.warn("Couldn't load controller: " + path + ". Please ensure all decorators are properly applied.");
             return undefined;
         }
+        const actions = controllerType.prototype.actions;
+        for (const k in actions) {
+            const flags = actions[k].flags;
+            if (flags.script) {
+                let foundScriptFile = false;
+                for (const dir of this.config.dirs.controllers) {
+                    if (fs.pathExistsSync(dir + flags.script)) {
+                        flags.script = dir + flags.script;
+                        foundScriptFile = true;
+                        break;
+                    }
+                }
+                if (!foundScriptFile) {
+                    eta.logger.warn("Couldn't find script file " + flags.script + " for controller " + path);
+                }
+            }
+        }
         this.emit("controller-load", controllerType);
         return controllerType;
     }

@@ -39,6 +39,8 @@ export default class WebServer extends events.EventEmitter {
      */
     public moduleLoaders: {[key: string]: ModuleLoader} = {};
 
+    public middleware: {[key: string]: express.Handler} = <any>{};
+
     /** key: route */
     public controllers: (typeof eta.IHttpController)[] = [];
     public lifecycleHandlers: eta.ILifecycleHandler[] = [];
@@ -224,26 +226,27 @@ export default class WebServer extends events.EventEmitter {
      * Initializes ExpressJS middleware
      */
     private setupMiddleware(): void {
-        this.app.use(expressSession({ // sets up req.session provider
-            store: new (redisSession(expressSession))({
-                client: eta.redis
+        this.middleware = {
+            session: expressSession({ // sets up req.session provider
+                store: new (redisSession(expressSession))({
+                    client: eta.redis
+                }),
+                resave: true,
+                saveUninitialized: false,
+                secret: eta.config.http.session.secret
             }),
-            resave: true,
-            saveUninitialized: false,
-            secret: eta.config.http.session.secret
-        }));
-
-        this.app.use(multer({ // sets up support for file uploads
-            storage: multer.memoryStorage()
-        }).any());
-
-        this.app.use(bodyParser.urlencoded({ // sets up support for standard POST bodies
-            extended: false
-        }));
-
-        // sets up auth provider
-        this.app.use(passport.initialize());
-        this.app.use(passport.session());
+            multer: multer({ // sets up support for file uploads
+                storage: multer.memoryStorage()
+            }).any(),
+            bodyParser: bodyParser.urlencoded({ // sets up support for standard POST bodies
+                extended: false
+            }),
+            passport: passport.initialize(),
+            passportSession: passport.session()
+        };
+        ["session", "multer", "bodyParser", "passport", "passportSession"].forEach(m => {
+            this.app.use(this.middleware[m]);
+        });
     }
 
     private onRequest(req: express.Request, res: express.Response, next: Function): void {

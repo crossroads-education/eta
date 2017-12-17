@@ -393,6 +393,27 @@ export default class WebServer extends events.EventEmitter {
             }
             passport.authenticate(strategy.name, getHandler(req, res, next))(req, res, next);
         });
+        this.app.all("/logout", (req, res, next) => {
+            const newSession: {[key: string]: any} = {
+                authFrom: req.session.authFrom,
+                lastPage: req.session.lastPage
+            };
+            req.session.regenerate(err => {
+                if (err) {
+                    eta.logger.error(err);
+                    res.statusCode = eta.constants.http.InternalError;
+                    res.send("Internal error");
+                    return;
+                }
+                Object.keys(newSession).forEach(k => req.session[k] = newSession[k]);
+                if (!req.session.authFrom) req.session.authFrom = "/home/index";
+                req.session.save(err => {
+                    if (err) eta.logger.error(err);
+                    res.redirect(303, req.session.authFrom);
+                    res.end();
+                });
+            });
+        });
         overrideRoutes.forEach(r => {
             this.app.post(r, (req, res, next) => {
                 passport.authenticate(strategy.name, getHandler(req, res, next))(req, res, next);

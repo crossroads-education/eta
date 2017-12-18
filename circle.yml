@@ -8,13 +8,11 @@ machine:
     ETA_DB_PORT: 5432
     ETA_DB_USERNAME: ubuntu
     ETA_DB_DATABASE: circle_test
+    MOCHA_FILE: $CIRCLE_TEST_REPORTS/junit/test-results.xml
 compile:
   override:
     - npm run eta -- generate indexes
     - npm run eta -- compile server
 test:
-  override:
-    - npm run test:
-        environment:
-          MOCHA_FILE: $CIRCLE_TEST_REPORTS/junit/test-results.xml
-  after_script: NODE_ENV=test istanbul cover ./node_modules/mocha/bin/_mocha --report lcovonly -- -R spec && cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js && rm -rf ./coverage
+    - npm run test
+after_script: NODE_ENV=test istanbul cover ./node_modules/mocha/bin/_mocha --report lcovonly -- -R spec && cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js && rm -rf ./coverage

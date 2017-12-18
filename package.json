@@ -10,7 +10,7 @@
   "main": "./server.js",
   "scripts": {
     "eta": "node node_modules/@xroadsed/eta-cli/dist/bin/eta.js",
-    "test": "mocha",
+    "post_test": "NODE_ENV=test istanbul cover ./node_modules/mocha/bin/_mocha --report lcovonly -- -R spec && cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js && rm -rf ./coverage",
     "generate-docs": "node ./node_modules/typedoc/bin/typedoc --out ./docs/generated/ --excludeExternals --excludePrivate --module commonjs --target ES2017 --ignoreCompilerErrors ."
   },
   "dependencies": {

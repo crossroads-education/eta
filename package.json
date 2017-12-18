@@ -6,7 +6,7 @@
   "repository": "git://github.com:crossroads-education/eta.git",
   "license": "MIT",
   "author": "Alex Hicks <alex@crossroadseducation.org> (https://alexhicks.net)",
-  "contributors": [],
+  "contributors": "Matthew Neal <mneal@crossroadseducation.org>",
   "main": "./server.js",
   "scripts": {
     "eta": "node node_modules/@xroadsed/eta-cli/dist/bin/eta.js",

@@ -12,12 +12,9 @@ compile:
   override:
     - npm run eta -- generate indexes
     - npm run eta -- compile server
-script:
-  - npm run coveralls
-after_success:
-  - codeclimate-test-reporter < coverage/lcov.info
 test:
   override:
+    - npm run coveralls
     - npm run test:
         environment:
           MOCHA_FILE: $CIRCLE_TEST_REPORTS/junit/test-results.xml

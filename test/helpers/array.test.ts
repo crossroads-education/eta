@@ -1,6 +1,6 @@
-import * as assert from "assert";
-import * as mocha from "mocha";
-import HelperArray from "../../helpers/array";
+const assert = require("assert");
+const mocha = require("mocha");
+const HelperArray = require("../../helpers/array");
 
 describe("HelperArray", function(): void {
     let numbers: number[];

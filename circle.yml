@@ -13,8 +13,7 @@ compile:
     - npm run eta -- generate indexes
     - npm run eta -- compile server
 test:
-  override:
-    - npm run test:
-        environment:
-          MOCHA_FILE: $CIRCLE_TEST_REPORTS/junit/test-results.xml
+  environment:
+    MOCHA_FILE: $CIRCLE_TEST_REPORTS/junit/test-results.xml
+  - npm run test
   post: NODE_ENV=test istanbul cover ./node_modules/mocha/bin/_mocha --report lcovonly -- -R spec && cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js && rm -rf ./coverage

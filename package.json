@@ -10,8 +10,10 @@
   "main": "./server.js",
   "scripts": {
     "eta": "node node_modules/@xroadsed/eta-cli/dist/bin/eta.js",
-    "post_test": "NODE_ENV=test istanbul cover ./node_modules/mocha/bin/_mocha --report lcovonly -- -R spec && cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js && rm -rf ./coverage",
-    "generate-docs": "node ./node_modules/typedoc/bin/typedoc --out ./docs/generated/ --excludeExternals --excludePrivate --module commonjs --target ES2017 --ignoreCompilerErrors ."
+    "generate-docs": "node ./node_modules/typedoc/bin/typedoc --out ./docs/generated/ --excludeExternals --excludePrivate --module commonjs --target ES2017 --ignoreCompilerErrors .",
+    "test": "cross-env NODE_ENV=test mocha --recursive test/**/*.test.ts",
+    "coveralls": "cross-env NODE_ENV=test istanbul cover _mocha --report lcovonly -- --recursive test/**/*.test.js && cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js ",
+    "codeclimate-test-reporter": "codeclimate-test-reporter < ./coverage/lcov.info"
   },
   "dependencies": {
     "aws-sdk": "^2.114.0",

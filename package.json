@@ -11,7 +11,7 @@
   "scripts": {
     "eta": "node node_modules/@xroadsed/eta-cli/dist/bin/eta.js",
     "generate-docs": "node ./node_modules/typedoc/bin/typedoc --out ./docs/generated/ --excludeExternals --excludePrivate --module commonjs --target ES2017 --ignoreCompilerErrors .",
-    "coveralls": "cross-env NODE_ENV=test istanbul cover _mocha --report lcovonly -- --recursive test/**/*.test.js && cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js",
+    "coveralls": "cross-env NODE_ENV=test istanbul cover _mocha --report lcovonly -- --recursive test/**/*.test.js && cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js"
   },
   "dependencies": {
     "aws-sdk": "^2.114.0",

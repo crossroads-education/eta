@@ -9,6 +9,7 @@
   "contributors": "Matthew Neal <mneal@crossroadseducation.org>",
   "main": "./server.js",
   "scripts": {
+    "test": "cross-env NODE_ENV=test mocha --recursive test/**/*.test.ts",
     "eta": "node node_modules/@xroadsed/eta-cli/dist/bin/eta.js",
     "generate-docs": "node ./node_modules/typedoc/bin/typedoc --out ./docs/generated/ --excludeExternals --excludePrivate --module commonjs --target ES2017 --ignoreCompilerErrors .",
     "coveralls": "cross-env NODE_ENV=test istanbul cover _mocha --report lcovonly -- --recursive test/**/*.test.ts && cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js",

@@ -22,6 +22,8 @@ export default class ModuleLoader extends events.EventEmitter {
     public config: IModuleConfiguration;
     public isInitialized = false;
 
+    private requireFunc: (path: string) => any = require;
+
     public constructor(moduleName: string) {
         super();
         this.moduleName = moduleName;
@@ -41,6 +43,7 @@ export default class ModuleLoader extends events.EventEmitter {
             this.loadRequestTransformers(),
             this.loadAuthProvider()
         ]);
+        this.requireFunc = requireReload;
         this.isInitialized = true;
     }
 
@@ -82,7 +85,7 @@ export default class ModuleLoader extends events.EventEmitter {
 
     public async loadControllers(): Promise<void> {
         this.controllers = {};
-        const controllerFiles: string[] = (await this.getFiles(this.config.dirs.controllers))
+        const controllerFiles: string[] = (await eta.fs.recursiveReaddirs(this.config.dirs.controllers))
             .filter(f => f.endsWith(".js"));
         if (eta.config.dev.enable) {
             const watcher: fs.FSWatcher = chokidar.watch(this.config.dirs.controllers, {
@@ -103,10 +106,9 @@ export default class ModuleLoader extends events.EventEmitter {
         if (!path.endsWith(".js")) {
             return undefined;
         }
-        const requireTemp = this.isInitialized ? requireReload : require;
         let controllerType: typeof eta.IHttpController;
         try {
-            controllerType = requireTemp(path).default;
+            controllerType = this.requireFunc(path).default;
         } catch (err) {
             eta.logger.warn("Couldn't load controller: " + path);
             eta.logger.error(err);
@@ -140,7 +142,7 @@ export default class ModuleLoader extends events.EventEmitter {
     public loadStatic(): Promise<void> {
         this.staticFiles = {};
         return <any>Promise.all(this.config.dirs.staticFiles.map(async d => {
-            const files: string[] = await this.getFiles([d]);
+            const files: string[] = await eta.fs.recursiveReaddirs([d]);
             files.forEach(f => {
                 const webPath: string = f.substring(d.length - 1);
                 this.staticFiles[webPath] = f;
@@ -151,7 +153,7 @@ export default class ModuleLoader extends events.EventEmitter {
     public loadViewMetadata(): Promise<void> {
         this.viewMetadata = {};
         return <any>Promise.all(this.config.dirs.views.map(async viewDir => {
-            const files: string[] = (await this.getFiles([viewDir]))
+            const files: string[] = (await eta.fs.recursiveReaddirs([viewDir]))
                 .filter(f => f.endsWith(".json"));
             for (const path of files) {
                 await this.loadSingleViewMetadata(path, viewDir);
@@ -190,7 +192,7 @@ export default class ModuleLoader extends events.EventEmitter {
     public loadViews(): Promise<void> {
         this.viewFiles = {};
         return <any>Promise.all(this.config.dirs.views.map(async d => {
-            const files: string[] = await this.getFiles([d]);
+            const files: string[] = await eta.fs.recursiveReaddirs([d]);
             files.filter(f => f.endsWith(".pug")).forEach(f => {
                 const webPath: string = f.substring(d.length - 1);
                 this.viewFiles[webPath.substring(0, webPath.length - 4)] = f;
@@ -199,41 +201,14 @@ export default class ModuleLoader extends events.EventEmitter {
     }
 
     public async loadLifecycleHandlers(): Promise<void> {
-        const lifecycleFiles: string[] = (await this.getFiles(this.config.dirs.lifecycleHandlers))
-            .filter(f => f.endsWith(".js"));
-        const requireTemp = this.isInitialized ? requireReload : require;
-        this.lifecycleHandlers = lifecycleFiles.map(filename => {
-            try {
-                return <typeof eta.ILifecycleHandler>requireTemp(filename).default;
-            } catch (err) {
-                eta.logger.warn(`Couldn't load lifecycle handler ${filename}`);
-                eta.logger.error(err);
-            }
-            return undefined;
-        });
+        const loadResult = await eta.misc.loadModules(this.config.dirs.lifecycleHandlers, this.requireFunc);
+        loadResult.errors.forEach(err => eta.logger.error(err));
+        this.lifecycleHandlers = loadResult.modules.map(m => m.default);
     }
 
     public async loadRequestTransformers(): Promise<void> {
-        const transformerFiles: string[] = (await this.getFiles(this.config.dirs.requestTransformers))
-            .filter(f => f.endsWith(".js"));
-        const requireTemp = this.isInitialized ? requireReload : require;
-        this.requestTransformers = transformerFiles.map(filename => {
-            try {
-                return <typeof eta.IRequestTransformer>requireTemp(filename).default;
-            } catch (err) {
-                eta.logger.warn(`Couldn't load request transformer ${filename}`);
-                eta.logger.error(err);
-            }
-            return undefined;
-        });
-    }
-
-    private async getFiles(rootDirectories: string[]): Promise<string[]> {
-        let files: string[] = [];
-        for (const dir of rootDirectories) {
-            files = files.concat((await eta.fs.recursiveReaddir(dir)).sort()
-                .map(f => f.replace(/\\/g, "/")));
-        }
-        return files;
+        const loadResult = await eta.misc.loadModules(this.config.dirs.requestTransformers, this.requireFunc);
+        loadResult.errors.forEach(err => eta.logger.error(err));
+        this.requestTransformers = loadResult.modules.map(m => m.default);
     }
 }

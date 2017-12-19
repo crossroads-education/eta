@@ -1,4 +1,5 @@
 import IHttpController from "./interfaces/IHttpController";
+import IHttpControllerAction from "./interfaces/IHttpControllerAction";
 import * as _ from "lodash";
 
 export default class MVC {
@@ -83,13 +84,7 @@ export default class MVC {
         };
     }
 
-    private static init(target: IHttpController, action?: string, worker: (action: {
-        flags: {[key: string]: string | number | boolean | RegExp};
-        method: "GET" | "POST";
-        useView: boolean;
-        isAuthRequired: boolean;
-        permissionsRequired: string[];
-    }) => void = action => { }): void {
+    private static init(target: IHttpController, action?: string, worker: (action: IHttpControllerAction) => void = action => { }): void {
         if (!target.routes) target.routes = [];
         if (!target.actions) target.actions = {};
         if (action && !target.actions[action]) {

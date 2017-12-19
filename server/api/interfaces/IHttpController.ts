@@ -1,4 +1,5 @@
 import * as express from "express";
+import IHttpControllerAction from "./IHttpControllerAction";
 import IRequestHandler from "./IRequestHandler";
 import WebServer from "../../WebServer";
 
@@ -8,13 +9,7 @@ abstract class IHttpController extends IRequestHandler {
         map: string[];
         raw: string;
     } | string)[] = [];
-    public actions: {[key: string]: {
-        flags: {[key: string]: string | number | boolean | RegExp};
-        method: "GET" | "POST";
-        useView: boolean;
-        isAuthRequired: boolean;
-        permissionsRequired: string[];
-    }} = {};
+    public actions: {[key: string]: IHttpControllerAction} = {};
     public server: WebServer;
     public params: {[key: string]: string} = {};
 

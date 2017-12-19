@@ -14,13 +14,7 @@ export default class RequestHandler extends eta.IRequestHandler {
     public controller: eta.IHttpController;
     public controllerPrototype: eta.IHttpController;
     public server: WebServer;
-    private actionItem: {
-        flags: {[key: string]: string | number | boolean | RegExp};
-        method: "GET" | "POST";
-        useView: boolean;
-        isAuthRequired: boolean;
-        permissionsRequired: string[];
-    };
+    private actionItem: eta.IHttpControllerAction;
     private transformers: eta.IRequestTransformer[];
 
     public constructor(init: Partial<RequestHandler>) {

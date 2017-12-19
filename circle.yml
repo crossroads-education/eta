@@ -9,7 +9,6 @@ machine:
     ETA_DB_USERNAME: ubuntu
     ETA_DB_DATABASE: circle_test
     COVERALLS_PARALLEL: true
-    COVERALLS_REPO_TOKEN: 61lk9EDTJ2mWHZ7si4UtAWxtidLZ6LxXm
 compile:
   override:
     - npm run eta -- generate indexes
@@ -22,6 +21,3 @@ test:
     - npm run coveralls
     - after_success:
       - codeclimate-test-reporter < coverage/lcov.info
-notify:
-  webhooks:
-    - url: https://coveralls.io/webhook?repo_token=61lk9EDTJ2mWHZ7si4UtAWxtidLZ6LxXm

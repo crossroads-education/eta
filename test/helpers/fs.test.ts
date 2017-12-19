@@ -5,7 +5,7 @@ import HelperFS from "../../helpers/fs";
 describe("HelperFS", function(): void {
     describe("#exists", function(): void {
         it("should show this file as existing", function(done: MochaDone): void {
-            HelperFS.exists(process.cwd() + "/test/helpers/fs.js").then(function(exists: boolean) {
+            HelperFS.exists(process.cwd() + "/test/helpers/fs.test.js").then(function(exists: boolean) {
                 assert.ok(exists);
                 done();
             });
@@ -20,7 +20,7 @@ describe("HelperFS", function(): void {
 
     describe("#existsSync", function(): void {
         it("should show this file as existing", function(): void {
-            const result: boolean = HelperFS.existsSync(process.cwd() + "/test/helpers/fs.js");
+            const result: boolean = HelperFS.existsSync(process.cwd() + "/test/helpers/fs.test.js");
             assert.ok(result);
         });
         it("should show a gibberish file as not existing", function(): void {

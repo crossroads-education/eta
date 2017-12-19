@@ -201,15 +201,32 @@ export default class RequestHandler extends eta.IRequestHandler {
             this.renderError(eta.constants.http.NotFound);
             return true;
         }
-        let data: Buffer;
-        try {
-            data = await fs.readFile(staticPath);
-        } catch (err) {
-            eta.logger.warn(`Error reading ${staticPath}`);
-            this.renderError(eta.constants.http.InternalError);
-            return true;
-        }
         const mimeType = mime.lookup(this.req.mvcPath, "text/plain");
+        const stats: fs.Stats = await fs.stat(staticPath);
+        let data: Buffer;
+        if (mimeType === "video/mp4" && this.req.headers.range) {
+            const range: string = <string>this.req.headers.range;
+            const parts = range.replace(/bytes=/, "").split("-");
+            const start: number = Number(parts[0]);
+            const end: number = parts[1] ? Number(parts[1]) : stats.size - 1;
+            const chunkSize: number = (end - start) + 1;
+            this.res.writeHead(206, {
+                "Accept-Range": "bytes",
+                "Content-Length": chunkSize,
+                "Content-Range": `bytes ${start}-${end}/${stats.size}`,
+                "Content-Type": mimeType
+            });
+            fs.createReadStream(staticPath, { start, end }).pipe(this.res);
+            return true;
+        } else {
+            try {
+                data = await fs.readFile(staticPath);
+            } catch (err) {
+                eta.logger.warn(`Error reading ${staticPath}`);
+                this.renderError(eta.constants.http.InternalError);
+                return true;
+            }
+        }
         if (eta.config.dev.enable) { // don't cache in dev mode
             this.res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
             this.res.setHeader("Pragma", "no-cache");

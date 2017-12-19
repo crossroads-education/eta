@@ -36,6 +36,7 @@
     "passport-saml": "^0.15.0",
     "passport-strategy": "^1.0.0",
     "pg": "^7.3.0",
+    "promise-events": "^0.1.4",
     "pug": "^2.0.0-rc.4",
     "python-shell": "^0.4.0",
     "randomstring": "^1.1.5",

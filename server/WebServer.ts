@@ -17,8 +17,9 @@ import { connect as connectDatabase } from "./api/db";
 import { connect as connectRedis } from "./api/redis";
 import ModuleLoader from "./ModuleLoader";
 import RequestHandler from "./RequestHandler";
+const EventEmitter: typeof events.EventEmitter = require("promise-events");
 
-export default class WebServer extends events.EventEmitter {
+export default class WebServer extends EventEmitter {
     /**
      * Express application powering the web server
      */
@@ -43,7 +44,6 @@ export default class WebServer extends events.EventEmitter {
 
     /** key: route */
     public controllers: (typeof eta.IHttpController)[] = [];
-    public lifecycleHandlers: eta.ILifecycleHandler[] = [];
     public requestTransformers: (typeof eta.IRequestTransformer)[] = [];
     public staticFiles: {[key: string]: string} = {};
     public viewFiles: {[key: string]: string} = {};
@@ -54,13 +54,13 @@ export default class WebServer extends events.EventEmitter {
     // TODO: Document WebServer.init()
     public async init(): Promise<boolean> {
         await this.loadModules();
-        await this.fireLifecycleEvent("onAppStart");
+        await this.emit("app-start");
 
         this.app = express();
         this.connection = await connectDatabase();
         (<any>eta).redis = connectRedis();
         eta.logger.info("Successfully connected to the database.");
-        await this.fireLifecycleEvent("onDatabaseConnect");
+        await this.emit("database-connect");
 
         this.configureExpress();
         this.setupMiddleware();
@@ -72,12 +72,12 @@ export default class WebServer extends events.EventEmitter {
         }
         this.app.all("/*", this.onRequest.bind(this));
         this.setupHttpServer();
-        await this.fireLifecycleEvent("beforeServerStart");
+        await this.emit("pre-server-start");
         return true;
     }
 
     public async close(): Promise<void> {
-        await this.fireLifecycleEvent("onServerStop");
+        await this.emit("server-stop");
         if (this.server) {
             this.server.close();
         }
@@ -87,7 +87,7 @@ export default class WebServer extends events.EventEmitter {
     }
 
     public start(): void {
-        const onHttpServerError: (err: Error) => void = (err: Error) => {
+        const onHttpServerError = (err: Error) => {
             eta.logger.error("Web server error occurred: " + err.message);
         };
         this.server.on("error", onHttpServerError);
@@ -99,7 +99,7 @@ export default class WebServer extends events.EventEmitter {
 
         this.server.listen(port, () => {
             eta.logger.info("Web server (main) started on port " + port);
-            this.fireLifecycleEvent("onServerStart").catch(err => {
+            (<Promise<void>><any>this.emit("server-start")).catch(err => {
                 eta.logger.error(err);
             });
         });
@@ -185,32 +185,17 @@ export default class WebServer extends events.EventEmitter {
                 delete this.moduleLoaders[moduleName];
             }
         }
-        let lifecycleHandlerTypes: (typeof eta.ILifecycleHandler)[] = [];
         // map all modules' objects into webserver's global arrays
         Object.keys(this.moduleLoaders).sort().forEach(k => {
             const moduleLoader: ModuleLoader = this.moduleLoaders[k];
-            lifecycleHandlerTypes = lifecycleHandlerTypes.concat(moduleLoader.lifecycleHandlers);
+            moduleLoader.lifecycleHandlers.forEach(LifecycleHandler => {
+                new (<any>LifecycleHandler)().register(this);
+            });
             this.requestTransformers = this.requestTransformers.concat(moduleLoader.requestTransformers);
             this.staticFiles = eta._.defaults(moduleLoader.staticFiles, this.staticFiles);
             this.viewFiles = eta._.defaults(moduleLoader.viewFiles, this.viewFiles);
             this.viewMetadata = eta._.defaults(moduleLoader.viewMetadata, this.viewMetadata);
         });
-        this.lifecycleHandlers = lifecycleHandlerTypes.map((LifecycleHandler: any) => new LifecycleHandler({ server: this }));
-    }
-
-    private async fireLifecycleEvent(name: string): Promise<void> {
-        for (const handler of this.lifecycleHandlers) {
-            const method: () => Promise<void> = (<any>handler)[name];
-            if (method) {
-                handler.server = this;
-                try {
-                    await method.apply(handler);
-                } catch (err) {
-                    eta.logger.warn("Error while firing lifecycle event " + name + " on " + handler.constructor.name);
-                    eta.logger.error(err);
-                }
-            }
-        }
     }
 
     private configureExpress(): void {

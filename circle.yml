@@ -8,6 +8,7 @@ machine:
     ETA_DB_PORT: 5432
     ETA_DB_USERNAME: ubuntu
     ETA_DB_DATABASE: circle_test
+    COVERALLS_PARALLEL: true
 compile:
   override:
     - npm run eta -- generate indexes

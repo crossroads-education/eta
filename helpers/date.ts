@@ -1,5 +1,4 @@
 import * as moment from "moment";
-import HelperObject from "./object";
 
 export default class HelperDate {
     public static Week: Week;

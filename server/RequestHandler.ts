@@ -2,7 +2,7 @@ import * as express from "express";
 import * as fs from "fs-extra";
 import * as mime from "mime";
 import * as eta from "../eta";
-import WebServer from "./WebServer";
+import Application from "./Application";
 
 /**
  * Logic for processing HTTP requests. Instantiated per request.
@@ -13,234 +13,106 @@ export default class RequestHandler extends eta.IRequestHandler {
     public routeParams: {[key: string]: string};
     public controller: eta.IHttpController;
     public controllerPrototype: eta.IHttpController;
-    public server: WebServer;
-    private actionItem: eta.IHttpControllerAction;
-    private transformers: eta.IRequestTransformer[];
+    public app: Application;
+    protected actionItem: eta.IHttpControllerAction;
+    protected transformers: eta.IRequestTransformer[];
 
     public constructor(init: Partial<RequestHandler>) {
         super(init);
         Object.assign(this, init);
-        if (this.controllerPrototype) {
-            this.controller = new (<any>this.controllerPrototype.constructor)({
-                req: this.req,
-                res: this.res,
-                next: this.next,
-                server: this.server,
-                params: this.routeParams
-            });
-            this.actionItem = this.controllerPrototype.actions[this.action];
-        }
     }
 
     /**
      * Entry point for a new request. Called by WebServer.
      */
-    public async handle(): Promise<void> {
-        if (await this.checkStatic()) return;
-        this.transformers = this.server.requestTransformers.map(t => {
-            return new (<any>t)({
+    public async handleRequest(): Promise<void> {
+        // initialize custom express properties
+        this.transformExpressObjects();
+        const staticPath: string = await this.isStaticFile();
+        if (staticPath !== undefined) {
+            const staticHandler = new StaticRequestHandler({
                 req: this.req,
-                res: this.res,
-                next: this.next
+                res: this.res
             });
-        });
-        await this.fireTransformEvent("onRequest");
-        if (this.res.finished) return;
-        if (this.controller && this.actionItem) {
-            if (this.actionItem.isAuthRequired && !this.isLoggedIn()) { // requires login but is not logged in
-                this.req.session.authFrom = this.req.mvcFullPath;
-                if (this.shouldSaveLastPage) this.req.session.lastPage = this.req.mvcFullPath;
-                await this.saveSession();
-                this.redirect("/login");
-            } else if (this.actionItem.permissionsRequired.length > 0) {
-                if ((await this.fireTransformEvent("isRequestAuthorized", this.actionItem.permissionsRequired)) !== false) {
-                    this.callController();
-                } else {
-                    this.renderError(eta.constants.http.AccessDenied);
-                }
-            } else {
-                this.callController();
-            }
-        } else {
-            await this.serveView();
+            staticHandler.staticPath = staticPath;
+            return await staticHandler.handle();
         }
+        await new DynamicRequestHandler(this).handle();
+    }
+
+    private transformExpressObjects(): void {
+        this.req.mvcPath = decodeURIComponent(this.req.path);
+        // ensure that mvcPath always has a route and action (/route.../action)
+        if (this.req.mvcPath === "/") {
+            this.req.mvcPath = "/home/index";
+        } else if (this.req.mvcPath.endsWith("/")) {
+            this.req.mvcPath += "index";
+        }
+        if (this.req.mvcPath.split("/").length === 2) {
+            this.req.mvcPath = "/home" + this.req.mvcPath;
+        }
+        this.req.mvcFullPath = this.req.mvcPath;
+        const hostTokens: string[] = this.req.get("host").split(":");
+        let host: string = eta.config.http.host + ":" + hostTokens[1];
+        if (eta.config.https.realPort !== undefined) {
+            let realPort = "";
+            if (<any>eta.config.https.realPort !== false) {
+                realPort = ":" + eta.config.https.realPort.toString();
+            }
+            host = host.replace(":" + eta.config.https.port, realPort);
+        }
+        this.req.baseUrl = this.req.protocol + "://" + host + "/";
+        this.res.view = {};
+        const tokens: string[] = this.req.mvcPath.split("/");
+        // action is the last token of mvcPath
+        const action: string = tokens.splice(-1, 1)[0];
+        // route is everything else
+        let route: string = tokens.join("/");
+        // get this for instantiation in RequestHandler
+        const routeParams: {[key: string]: string} = {};
+        const controllerClass: typeof eta.IHttpController = this.app.controllers.find(controllerType => {
+            return controllerType.prototype.routes.find(r => {
+                // check route parameterization
+                if (typeof(r) === "string") return r === route;
+                const isMatch = r.regex.test(route);
+                if (!isMatch) return false;
+                route.match(r.regex).slice(1).forEach((param, i) => {
+                    routeParams[r.map[i]] = param;
+                });
+                // properly set previously set variables
+                route = r.raw.replace(/\:/g, "");
+                this.req.mvcPath = route + "/" + action;
+                return true;
+            }) !== undefined;
+        });
+        this.req.fullUrl = this.req.baseUrl + this.req.mvcPath.substring(1);
+        if (this.req.originalUrl.includes("?")) {
+            this.req.mvcFullPath += "?" + this.req.originalUrl.split("?").slice(-1)[0];
+        }
+        if (this.app.viewMetadata[this.req.mvcPath]) { // clone static view metadata into this request's metadata
+            this.res.view = eta._.cloneDeep(this.app.viewMetadata[this.req.mvcPath]);
+        }
+        this.route = route;
+        this.action = action;
+        this.routeParams = routeParams;
+        this.controllerPrototype = controllerClass ? controllerClass.prototype : undefined;
     }
 
     /**
-     * Loads and calls any controller method applicable to this request.
-     * It is assumed that a controller is defined for this request, if not an action / route.
+     * Checks if this request is for a static file.
+     * Returns the static file's path if the request is for a static file, undefined otherwise.
      */
-    private async callController(): Promise<void> {
-        if (this.actionItem.method !== this.req.method) {
-            await this.serveView();
-            return;
+    private async isStaticFile(): Promise<string> {
+        const staticPath: string = this.app.staticFiles[this.req.mvcPath];
+        if (staticPath) return staticPath;
+        if (!eta.config.dev.enable) return undefined; // no live-reloading without dev mode
+        if (await this.app.verifyStaticFile(this.req.mvcPath)) {
+            return this.app.staticFiles[this.req.mvcPath]; // changed by verifyStaticFile()
         }
-        const queryParams: {[key: string]: any} = {};
-        const rawQueryParams: {[key: string]: any} = this.req[this.req.method === "GET" ? "query" : "body"];
-        // checks GET/POST for JSON-encoded values and "bad" JQuery-encoded keys
-        const rawQueryKeys: string[] = Object.keys(rawQueryParams);
-        rawQueryKeys.filter(k => !k.includes("[")).forEach(k => {
-            try {
-                queryParams[k] = JSON.parse(rawQueryParams[k]);
-            } catch (err) {
-                queryParams[k] = rawQueryParams[k];
-            }
-        });
-        rawQueryKeys.filter(k => k.includes("[")).forEach(k => {
-            const tokens: string[] = k.split("[");
-            const keys: string[] = [tokens.splice(0, 1)[0]].concat(tokens.map(t => t.slice(0, -1)));
-            let lastItem: any = queryParams;
-            keys.slice(0, -1).forEach(qk => {
-                if (!lastItem[qk]) {
-                    lastItem[qk] = {};
-                }
-                lastItem = lastItem[qk];
-            });
-            lastItem[keys.slice(-1)[0]] = rawQueryParams[k];
-        });
-        const nonArrayKeys: string[] = rawQueryKeys.filter(k => !k.includes("["));
-        Object.keys(queryParams).filter(k => !nonArrayKeys.includes(k)).forEach(k => {
-            // convert JQuery-encoded arrays from number-keyed objects to arrays in-memory
-            const itemKeys: string[] = Object.keys(queryParams[k]);
-            if (!(queryParams[k] instanceof Array) && itemKeys.every(k => !isNaN(Number(k)))) {
-                const arr: any[] = [];
-                itemKeys.forEach(key => arr[Number(key)] = queryParams[k][key]);
-                queryParams[k] = arr;
-            }
-        });
-        try {
-            const scriptFilename: string = <string>this.actionItem.flags["script"];
-            if (!scriptFilename) {
-                await (<any>this.controller)[this.action].apply(this.controller, [queryParams]);
-            } else if (scriptFilename.endsWith(".py")) {
-                this.actionItem.useView = false;
-                this.res.raw = (await eta.PythonLoader.load(scriptFilename)(queryParams))[0];
-            } else {
-                throw new Error("Script " + scriptFilename + " cannot be handled.");
-            }
-        } catch (err) {
-            eta.logger.error(err);
-            this.renderError(eta.constants.http.InternalError);
-            return;
-        }
-        if (this.res.finished) {
-            // methods like IRequestHandler.redirect() mark res.finished as true,
-            // and Express handles it poorly (usually by sending headers multiple times)
-            if (this.req.method === "GET") {
-                this.req.session.lastPage = this.req.mvcFullPath;
-                await this.saveSession();
-            }
-            return;
-        }
-        if (this.res.statusCode !== 200) {
-            this.renderError(this.res.statusCode);
-            return;
-        }
-        if (!this.actionItem.useView) {
-            let val: string | Buffer = undefined;
-            if (typeof(this.res.raw) === "string" || this.res.raw instanceof Buffer) {
-                val = this.res.raw;
-            } else {
-                val = JSON.stringify(this.res.raw);
-                this.res.set("Content-Type", "application/json");
-            }
-            this.res.send(val);
-        } else {
-            await this.serveView();
-        }
+        return undefined;
     }
 
-    private async serveView(): Promise<void> {
-        const viewPath: string = this.server.viewFiles[this.req.mvcPath];
-        if (viewPath === undefined || !await fs.pathExists(viewPath)) {
-            this.renderError(eta.constants.http.NotFound);
-            return;
-        }
-        await this.fireTransformEvent("beforeResponse");
-        if (this.res.finished) return;
-        if (eta.config.dev.enable) {
-            this.res.view["compileDebug"] = true;
-        }
-        let html: string;
-        try {
-            html = await this.renderView(viewPath);
-        } catch (err) {
-            eta.logger.error(`Rendering ${viewPath} failed: ${err.message}`);
-            this.renderError(eta.constants.http.InternalError);
-            return;
-        }
-        if (this.shouldSaveLastPage()) {
-            this.req.session.lastPage = this.req.mvcFullPath;
-        }
-        this.res.send(html);
-    }
-
-
-    /**
-     * Checks if this request is for a static file, and if so, responds with the contents of the file.
-     * Returns true if the request is for a static file, false otherwise.
-     */
-    private async checkStatic(): Promise<boolean> {
-        let staticPath: string = this.server.staticFiles[this.req.mvcPath];
-        if (!staticPath) {
-            if (!eta.config.dev.enable) return false;
-            if (await this.server.verifyStaticFile(this.req.mvcPath)) {
-                staticPath = this.server.staticFiles[this.req.mvcPath];
-            } else {
-                return false;
-            }
-        }
-        if (!await fs.pathExists(staticPath)) { // since static file list is cached
-            eta.logger.trace("A static file was deleted after the server started. " + staticPath);
-            this.renderError(eta.constants.http.NotFound);
-            return true;
-        }
-        const mimeType = mime.lookup(this.req.mvcPath, "text/plain");
-        const stats: fs.Stats = await fs.stat(staticPath);
-        let data: Buffer;
-        if (mimeType === "video/mp4" && this.req.headers.range) {
-            const range: string = <string>this.req.headers.range;
-            const parts = range.replace(/bytes=/, "").split("-");
-            const start: number = Number(parts[0]);
-            const end: number = parts[1] ? Number(parts[1]) : stats.size - 1;
-            const chunkSize: number = (end - start) + 1;
-            this.res.writeHead(206, {
-                "Accept-Range": "bytes",
-                "Content-Length": chunkSize,
-                "Content-Range": `bytes ${start}-${end}/${stats.size}`,
-                "Content-Type": mimeType
-            });
-            fs.createReadStream(staticPath, { start, end }).pipe(this.res);
-            return true;
-        } else {
-            try {
-                data = await fs.readFile(staticPath);
-            } catch (err) {
-                eta.logger.warn(`Error reading ${staticPath}`);
-                this.renderError(eta.constants.http.InternalError);
-                return true;
-            }
-        }
-        if (eta.config.dev.enable) { // don't cache in dev mode
-            this.res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
-            this.res.setHeader("Pragma", "no-cache");
-            this.res.setHeader("Expires", "0");
-        } else if (mimeType !== "application/javascript" && mimeType !== "text/css") { // don't cache JS and CSS
-            const hash: string = eta.crypto.getUnique(data);
-            this.res.setHeader("Cache-Control", "max-age=" + 60 * 60 * 24 * 30); // 30 days
-            this.res.setHeader("ETag", hash);
-            if (this.req.header("If-None-Match") === hash) {
-                this.res.sendStatus(eta.constants.http.NotModified);
-                return true;
-            }
-        }
-        this.res.setHeader("Content-Type", mimeType);
-        this.res.setHeader("Content-Length", data.byteLength.toString());
-        this.res.send(data);
-        return true;
-    }
-
-    private async renderView(viewPath: string): Promise<string> {
+    protected async renderView(viewPath: string): Promise<string> {
         return new Promise<string>((resolve, reject) => {
             this.res.render(viewPath, this.res.view, (err: Error, html: string) => {
                 if (err) {
@@ -252,16 +124,16 @@ export default class RequestHandler extends eta.IRequestHandler {
         });
     }
 
-    private renderError(code: number): Promise<void> {
+    protected renderError(code: number): Promise<void> {
         return RequestHandler.renderError(this.res, code);
     }
 
-    private shouldSaveLastPage(): boolean {
+    protected shouldSaveLastPage(): boolean {
         return !this.req.mvcPath.includes("/auth/") && this.req.method === "GET" && this.req.mvcPath !== "/home/login" && this.req.mvcPath !== "/home/logout";
     }
 
     // TODO Document transform events
-    private async fireTransformEvent(name: string, ...args: any[]): Promise<boolean> {
+    protected async fireTransformEvent(name: string, ...args: any[]): Promise<boolean> {
         let result = true;
         for (const t of this.transformers) {
             const method: () => Promise<void> = (<any>t)[name];
@@ -295,3 +167,6 @@ export default class RequestHandler extends eta.IRequestHandler {
         });
     }
 }
+
+import DynamicRequestHandler from "./request-handlers/DynamicRequestHandler";
+import StaticRequestHandler from "./request-handlers/StaticRequestHandler";

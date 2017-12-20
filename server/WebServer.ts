@@ -13,17 +13,18 @@ import * as passport from "passport";
 import * as pg from "pg";
 import * as redis from "redis";
 import * as eta from "../eta";
-import { connect as connectDatabase } from "./api/db";
-import { connect as connectRedis } from "./api/redis";
+import Application from "./Application";
+import Authenticator from "./Authenticator";
 import ModuleLoader from "./ModuleLoader";
 import RequestHandler from "./RequestHandler";
 const EventEmitter: typeof events.EventEmitter = require("promise-events");
 
 export default class WebServer extends EventEmitter {
+    public app: Application;
     /**
      * Express application powering the web server
      */
-    public app: express.Application;
+    public express: express.Application;
 
     /**
      * Main HTTP(S) web server
@@ -35,49 +36,27 @@ export default class WebServer extends EventEmitter {
      */
     public redirectServer?: http.Server = undefined;
 
-    /**
-     * Load module files
-     */
-    public moduleLoaders: {[key: string]: ModuleLoader} = {};
-
     public middleware: {[key: string]: express.Handler} = <any>{};
-
-    /** key: route */
-    public controllers: (typeof eta.IHttpController)[] = [];
-    public requestTransformers: (typeof eta.IRequestTransformer)[] = [];
-    public staticFiles: {[key: string]: string} = {};
-    public viewFiles: {[key: string]: string} = {};
-    public viewMetadata: {[key: string]: {[key: string]: any}} = {};
-
-    public connection: orm.Connection;
 
     // TODO: Document WebServer.init()
     public async init(): Promise<boolean> {
-        await this.loadModules();
-        await this.emit("app-start");
-
-        this.app = express();
-        this.connection = await connectDatabase();
-        (<any>eta).redis = connectRedis();
-        eta.logger.info("Successfully connected to the database.");
-        await this.emit("database-connect");
-
+        this.express = express();
         this.configureExpress();
         this.setupMiddleware();
         try {
-            this.setupAuthProvider();
+            Authenticator.setup(this.app);
         } catch (err) {
-            eta.logger.error(err.message);
+            eta.logger.error(err);
             return false;
         }
-        this.app.all("/*", this.onRequest.bind(this));
+        this.express.all("/*", this.onRequest.bind(this));
         this.setupHttpServer();
-        await this.emit("pre-server-start");
+        await this.emit("pre-start");
         return true;
     }
 
     public async close(): Promise<void> {
-        await this.emit("server-stop");
+        await this.emit("stop");
         if (this.server) {
             this.server.close();
         }
@@ -99,7 +78,7 @@ export default class WebServer extends EventEmitter {
 
         this.server.listen(port, () => {
             eta.logger.info("Web server (main) started on port " + port);
-            (<Promise<void>><any>this.emit("server-start")).catch(err => {
+            (<Promise<void>><any>this.emit("start")).catch(err => {
                 eta.logger.error(err);
             });
         });
@@ -111,99 +90,12 @@ export default class WebServer extends EventEmitter {
         }
     }
 
-    public async verifyStaticFile(mvcPath: string): Promise<boolean> {
-        if (this.staticFiles[mvcPath]) {
-            const exists: boolean = await fs.pathExists(this.staticFiles[mvcPath]);
-            if (!exists) {
-                delete this.staticFiles[mvcPath];
-            }
-            return exists;
-        }
-        const staticDirs: string[] = Object.keys(eta.config.modules)
-            .map(k => eta.config.modules[k].dirs.staticFiles)
-            .reduce((p, a) => p.concat(a));
-        for (const staticDir of staticDirs) {
-            if (await fs.pathExists(staticDir + mvcPath)) {
-                this.staticFiles[mvcPath] = staticDir + mvcPath;
-                return true;
-            }
-        }
-        return false;
-    }
-
-    public getActionsWithFlag(flag: string, context: eta.IHttpController, flagValue?: string | boolean | number): {
-        flagValue: string | boolean | number | RegExp;
-        action: (...args: any[]) => Promise<void>;
-    }[] {
-        const actions = eta._.values(this.controllers).map(c => {
-            let flaggedActionKeys: string[] = Object.keys(c.prototype.actions).filter(k => !!c.prototype.actions[k].flags[flag]);
-            if (flagValue !== undefined) {
-                flaggedActionKeys = flaggedActionKeys.filter(k => c.prototype.actions[k].flags[flag] === flagValue);
-            }
-            if (flaggedActionKeys.length === 0) return [];
-            return flaggedActionKeys.map(k => {
-                const action = (...args: any[]) => {
-                    let params = { server: this };
-                    if (context !== undefined) {
-                        params = eta._.extend(params, {
-                            req: context.req,
-                            res: context.res,
-                            next: context.next
-                        });
-                    }
-                    const instance: eta.IHttpController = new (<any>c.prototype.constructor)(params);
-                    return (<any>instance)[k].bind(instance)(...args);
-                };
-                return {
-                    action, flagValue: c.prototype.actions[k].flags[flag]
-                };
-            });
-        }).filter(a => a.length > 0);
-        return actions.length > 0 ? actions.reduce((p, v) => p.concat(v)) : [];
-    }
-
-    // TODO: Document actual methodology
-    private async loadModules(): Promise<void> {
-        eta.config.modules = {};
-        eta.constants.controllerPaths = [];
-        eta.constants.staticPaths = [];
-        eta.constants.viewPaths = [];
-        const moduleDirs: string[] = await fs.readdir(eta.constants.modulesPath);
-        eta.logger.info(`Found ${moduleDirs.length} modules: ${moduleDirs.join(", ")}`);
-        for (const moduleName of moduleDirs) {
-            this.moduleLoaders[moduleName] = new ModuleLoader(moduleName);
-            this.moduleLoaders[moduleName].on("controller-load", (controllerType: typeof eta.IHttpController) => {
-                const realRoutes: string = controllerType.prototype.getRoutes().join(", ");
-                this.controllers = this.controllers.filter(c => {
-                    return c.prototype.getRoutes().join(", ") !== realRoutes;
-                });
-                this.controllers.push(controllerType);
-                this.emit("controller-load", controllerType);
-            });
-            await this.moduleLoaders[moduleName].loadAll();
-            if (!this.moduleLoaders[moduleName].isInitialized) {
-                delete this.moduleLoaders[moduleName];
-            }
-        }
-        // map all modules' objects into webserver's global arrays
-        Object.keys(this.moduleLoaders).sort().forEach(k => {
-            const moduleLoader: ModuleLoader = this.moduleLoaders[k];
-            moduleLoader.lifecycleHandlers.forEach(LifecycleHandler => {
-                new (<any>LifecycleHandler)().register(this);
-            });
-            this.requestTransformers = this.requestTransformers.concat(moduleLoader.requestTransformers);
-            this.staticFiles = eta._.defaults(moduleLoader.staticFiles, this.staticFiles);
-            this.viewFiles = eta._.defaults(moduleLoader.viewFiles, this.viewFiles);
-            this.viewMetadata = eta._.defaults(moduleLoader.viewMetadata, this.viewMetadata);
-        });
-    }
-
     private configureExpress(): void {
-        this.app.set("view engine", "pug");
+        this.express.set("view engine", "pug");
 
         if (eta.config.dev.enable) {
-            this.app.locals.pretty = true; // render Pug as readable HTML
-            this.app.disable("view cache"); // pull Pug views from filesystem on request
+            this.express.locals.pretty = true; // render Pug as readable HTML
+            this.express.disable("view cache"); // pull Pug views from filesystem on request
         }
     }
 
@@ -230,71 +122,15 @@ export default class WebServer extends EventEmitter {
             passportSession: passport.session()
         };
         ["session", "multer", "bodyParser", "passport", "passportSession"].forEach(m => {
-            this.app.use(this.middleware[m]);
+            this.express.use(this.middleware[m]);
         });
     }
 
     private onRequest(req: express.Request, res: express.Response, next: Function): void {
-        // initialize custom express properties
-        req.mvcPath = decodeURIComponent(req.path);
-        // ensure that mvcPath always has a route and action (/route.../action)
-        if (req.mvcPath === "/") {
-            req.mvcPath = "/home/index";
-        } else if (req.mvcPath.endsWith("/")) {
-            req.mvcPath += "index";
-        }
-        if (req.mvcPath.split("/").length === 2) {
-            req.mvcPath = "/home" + req.mvcPath;
-        }
-        req.mvcFullPath = req.mvcPath;
-        const hostTokens: string[] = req.get("host").split(":");
-        let host: string = eta.config.http.host + ":" + hostTokens[1];
-        if (eta.config.https.realPort !== undefined) {
-            let realPort = "";
-            if (<any>eta.config.https.realPort !== false) {
-                realPort = ":" + eta.config.https.realPort.toString();
-            }
-            host = host.replace(":" + eta.config.https.port, realPort);
-        }
-        req.baseUrl = req.protocol + "://" + host + "/";
-        res.view = {};
-        const tokens: string[] = req.mvcPath.split("/");
-        // action is the last token of mvcPath
-        const action: string = tokens.splice(-1, 1)[0];
-        // route is everything else
-        let route: string = tokens.join("/");
-        // get this for instantiation in RequestHandler
-        const routeParams: {[key: string]: string} = {};
-        const controllerClass: typeof eta.IHttpController = this.controllers.find(controllerType => {
-            return controllerType.prototype.routes.find(r => {
-                if (typeof(r) === "string") {
-                    return r === route;
-                }
-                const isMatch = r.regex.test(route);
-                if (isMatch) {
-                    route.match(r.regex).slice(1).forEach((param, i) => {
-                        routeParams[r.map[i]] = param;
-                    });
-                    // properly set variables
-                    route = r.raw.replace(/\:/g, "");
-                    req.mvcPath = route + "/" + action;
-                }
-                return isMatch;
-            }) !== undefined;
-        });
-        req.fullUrl = req.baseUrl + req.mvcPath.substring(1);
-        if (req.originalUrl.includes("?")) {
-            req.mvcFullPath += "?" + req.originalUrl.split("?").slice(-1)[0];
-        }
-        if (this.viewMetadata[req.mvcPath]) { // clone static view metadata into this request's metadata
-            res.view = eta._.cloneDeep(this.viewMetadata[req.mvcPath]);
-        }
         new RequestHandler({
-            route, action, routeParams,
-            controllerPrototype: controllerClass ? controllerClass.prototype : undefined,
             req, res, next,
-            server: this
-        }).handle().then(() => { })
+            app: this.app
+        }).handleRequest().then(() => { })
         .catch(err => {
             eta.logger.error(err);
         });
@@ -302,107 +138,24 @@ export default class WebServer extends EventEmitter {
 
     private setupHttpServer(): void {
         if (!eta.config.https.enable) { // only http
-            this.server = http.createServer(this.app);
+            this.server = http.createServer(this.express);
             return;
         }
-
         // HTTPS (and redirect server)
         const sslOptions: any = {
             "key": fs.readFileSync(eta.config.https.key),
             "cert": fs.readFileSync(eta.config.https.cert),
             "secureProtocol": "TLSv1_2_method"
         };
-
         if (eta.config.https.ca) {
             sslOptions.ca = fs.readFileSync(eta.config.https.ca);
         }
-
-        this.server = https.createServer(sslOptions, this.app);
-
+        this.server = https.createServer(sslOptions, this.express);
         this.redirectServer = http.createServer((req: http.IncomingMessage, res: http.ServerResponse) => {
             res.writeHead(301, {
                 Location: "https://" + eta.config.http.host + ":" + eta.config.https.realPort + req.url
             });
             res.end();
-        });
-    }
-
-    // TODO Document authentication handling
-    private setupAuthProvider(): void {
-        if (!eta.config.auth.provider) {
-            throw new Error("No authentication provider is set.");
-        }
-        if (!this.moduleLoaders[eta.config.auth.provider]) {
-            throw new Error("The authentication provider specified (" + eta.config.auth.provider + ") is invalid.");
-        }
-        const AuthProvider: typeof eta.IAuthProvider = this.moduleLoaders[eta.config.auth.provider].authProvider;
-        if (!AuthProvider) {
-            throw new Error("The authentication provider specified (" + eta.config.auth.provider + ") + does not expose an IAuthProvider class.");
-        }
-        const tempProvider: eta.IAuthProvider = new (<any>AuthProvider)();
-        const overrideRoutes: string[] = tempProvider.getOverrideRoutes();
-        const strategy: passport.Strategy = tempProvider.getPassportStrategy();
-        passport.use(strategy.name, strategy);
-        const getHandler = (req: express.Request, res: express.Response, next: express.NextFunction): (err: Error, user: any) => void => {
-            const provider: eta.IAuthProvider = new (<any>AuthProvider)({ req, res, next });
-            return (err: Error, user: any) => {
-                if (err) {
-                    eta.logger.error(err);
-                    RequestHandler.renderError(res, eta.constants.http.InternalError);
-                    return;
-                }
-                if (!user) return res.redirect("/login");
-                provider.onPassportLogin(user).then(() => {
-                    if (res.finished) return;
-                    req.session.userid = user.id;
-                    req.session.save(() => {
-                        res.redirect(req.session.lastPage);
-                    });
-                }).catch(err => {
-                    eta.logger.error(err);
-                    RequestHandler.renderError(res, eta.constants.http.InternalError);
-                });
-            };
-        };
-        this.app.all("/login", (req, res, next) => {
-            if (req.method === "GET" && strategy.name === "local") {
-                if (req.session.lastPage) {
-                    req.session.authFrom = req.session.lastPage;
-                    req.session.save(() => {
-                        res.redirect("/auth/local/login");
-                    });
-                } else {
-                    res.redirect("/auth/local/login");
-                }
-                return;
-            }
-            passport.authenticate(strategy.name, getHandler(req, res, next))(req, res, next);
-        });
-        this.app.all("/logout", (req, res, next) => {
-            const newSession: {[key: string]: any} = {
-                authFrom: req.session.authFrom,
-                lastPage: req.session.lastPage
-            };
-            req.session.regenerate(err => {
-                if (err) {
-                    eta.logger.error(err);
-                    res.statusCode = eta.constants.http.InternalError;
-                    res.send("Internal error");
-                    return;
-                }
-                Object.keys(newSession).forEach(k => req.session[k] = newSession[k]);
-                if (!req.session.authFrom) req.session.authFrom = "/home/index";
-                req.session.save(err => {
-                    if (err) eta.logger.error(err);
-                    res.redirect(303, req.session.authFrom);
-                    res.end();
-                });
-            });
-        });
-        overrideRoutes.forEach(r => {
-            this.app.post(r, (req, res, next) => {
-                passport.authenticate(strategy.name, getHandler(req, res, next))(req, res, next);
-            });
         });
     }
 }

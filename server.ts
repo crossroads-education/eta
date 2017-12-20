@@ -2,7 +2,7 @@ require("source-map-support").install();
 import * as dbInit from "./db";
 Object.keys(dbInit); // initializes all database models
 import logger from "./server/api/logger"; // Required to setup logger
-import WebServer from "./server/WebServer";
+import Application from "./server/Application";
 import { connect } from "./server/api/db";
 
 function onUncaughtError(err: Error | string, extra?: any) {
@@ -14,32 +14,32 @@ function onUncaughtError(err: Error | string, extra?: any) {
 }
 
 /**
- * Sets the webserver up and starts it. Called once on app start.
+ * Sets the application up and starts it. Called once on app start.
  */
-export default async function main(): Promise<WebServer> {
+export default async function main(): Promise<Application> {
     process.on("uncaughtException", onUncaughtError);
     process.on("unhandledRejection", onUncaughtError);
-    let server: WebServer;
+    let app: Application;
     process.on("SIGINT", async () => { // gracefully close server on CTRL+C
-        if (!server) {
+        if (!app) {
             return;
         }
         logger.trace("Stopping Eta...");
         try {
-            await server.close();
+            await app.close();
         } catch (err) {
             logger.error(err);
         } finally {
             process.exit();
         }
     });
-    server = new WebServer();
-    if (!await server.init()) {
-        server.close();
+    app = new Application();
+    if (!await app.init()) {
+        await app.close();
         return undefined;
     }
-    server.start();
-    return server;
+    app.start();
+    return app;
 }
 
 if (!module.parent) {

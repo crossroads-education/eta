@@ -1,7 +1,7 @@
-import WebServer from "../../WebServer";
+import Application from "../../Application";
 
 abstract class ILifecycleHandler {
-    public abstract register(server: WebServer): void;
+    public abstract register(server: Application): void;
 }
 
 export default ILifecycleHandler;

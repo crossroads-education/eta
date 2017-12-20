@@ -8,12 +8,13 @@ machine:
     ETA_DB_PORT: 5432
     ETA_DB_USERNAME: ubuntu
     ETA_DB_DATABASE: circle_test
+    COVERALLS_PARALLEL: true
 compile:
   override:
     - npm run eta -- generate indexes
     - npm run eta -- compile server
 test:
   override:
-    - npm run test:
-        environment:
-          MOCHA_FILE: $CIRCLE_TEST_REPORTS/junit/test-results.xml
+    - npm run coveralls:
+      environment:
+        MOCHA_FILE: $CIRCLE_TEST_REPORTS/junit/test-results.xml

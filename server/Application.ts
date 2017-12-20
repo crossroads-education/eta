@@ -25,10 +25,10 @@ export default class Application extends EventEmitter {
     public connection: orm.Connection;
 
     public async init(): Promise<boolean> {
-        await this.loadModules();
-        await this.emit("init");
         this.server = new WebServer();
         this.server.app = this;
+        await this.loadModules();
+        await this.emit("init");
         this.connection = await connectDatabase();
         (<any>eta).redis = connectRedis();
         eta.logger.info("Successfully connected to the database.");

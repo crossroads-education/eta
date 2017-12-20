@@ -20,18 +20,19 @@ function load(): IConfiguration {
     Object.keys(process.env)
         .filter(k => k.startsWith("ETA_"))
         .forEach(k => {
-            const tokens: string[] = k.toLowerCase().split("_").splice(1);
-            const category: string = tokens[0];
-            const name: string = tokens[1];
+            let tokens: string[] = k.split("_").slice(1);
+            if (k.toUpperCase() === k) {
+                tokens = tokens.map(t => t.toLowerCase());
+            }
+            let parent: any = config;
+            for (const token of tokens.slice(0, -1)) {
+                if (parent[token] === undefined) parent[token] = {};
+                parent = parent[token];
+            }
             let value: any;
-            try {
-                value = JSON.parse(process.env[k]);
-            } catch (err) {
-                value = process.env[k];
-            }
-            if ((<any>config)[category]) {
-                (<any>config)[category][name] = value;
-            }
+            try { value = JSON.parse(process.env[k]); }
+            catch (err) { value = process.env[k]; }
+            parent[tokens[tokens.length - 1]] = value;
         });
     return config;
 }

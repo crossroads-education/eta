@@ -16,23 +16,15 @@ export default class StaticRequestHandler extends RequestHandler {
         }
         this.mimeType = mime.lookup(this.req.mvcPath, "text/plain");
         this.stats = await fs.stat(this.staticPath);
-        let data: Buffer;
         if (this.mimeType === "video/mp4" && this.req.headers.range) {
             return this.handleVideo();
-        }
-        try {
-            data = await fs.readFile(this.staticPath);
-        } catch (err) {
-            eta.logger.warn(`Error reading ${this.staticPath}`);
-            this.renderError(eta.constants.http.InternalError);
-            return;
         }
         if (eta.config.dev.enable) { // don't cache anything in dev mode
             this.res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
             this.res.setHeader("Pragma", "no-cache");
             this.res.setHeader("Expires", "0");
         } else if (this.mimeType !== "application/javascript" && this.mimeType !== "text/css") { // don't cache JS and CSS
-            const hash: string = eta.crypto.getUnique(data);
+            const hash: string = eta.crypto.getUnique(new Buffer(this.staticPath + "-" + this.stats.mtime.getTime()));
             this.res.setHeader("Cache-Control", "max-age=" + 60 * 60 * 24 * 30); // 30 days
             this.res.setHeader("ETag", hash);
             if (this.req.header("If-None-Match") === hash) {
@@ -41,8 +33,8 @@ export default class StaticRequestHandler extends RequestHandler {
             }
         }
         this.res.setHeader("Content-Type", this.mimeType);
-        this.res.setHeader("Content-Length", data.byteLength.toString());
-        this.res.send(data);
+        this.res.setHeader("Content-Length", this.stats.size.toString());
+        fs.createReadStream(this.staticPath).pipe(this.res);
     }
 
     private handleVideo(): void {

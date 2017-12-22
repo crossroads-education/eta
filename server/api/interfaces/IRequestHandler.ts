@@ -14,9 +14,13 @@ abstract class IRequestHandler {
     public result(code: number, more?: {[key: string]: any}): void { this.sendRawResponse("result", code, more); }
 
     public redirect(url: string): void {
-        this.res.redirect(303, url);
-        this.res.end();
-        this.res.finished = true;
+        IRequestHandler.redirect(this.res, url);
+    }
+
+    public static redirect(res: express.Response, url: string): void {
+        res.redirect(303, url);
+        res.end();
+        res.finished = true;
     }
 
     public saveSession(): Promise<void> {

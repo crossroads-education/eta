@@ -8,7 +8,6 @@ import * as path from "path";
 const requireReload: (path: string) => any = require("require-reload")(require);
 
 export default class ModuleLoader extends events.EventEmitter {
-    public authProvider: typeof eta.IAuthProvider;
     public controllers: {[key: string]: typeof eta.IHttpController};
     public lifecycleHandlers: (typeof eta.ILifecycleHandler)[];
     public requestTransformers: (typeof eta.IRequestTransformer)[];
@@ -40,8 +39,7 @@ export default class ModuleLoader extends events.EventEmitter {
             this.loadViewMetadata(),
             this.loadViews(),
             this.loadLifecycleHandlers(),
-            this.loadRequestTransformers(),
-            this.loadAuthProvider()
+            this.loadRequestTransformers()
         ]);
         this.requireFunc = requireReload;
         this.isInitialized = true;
@@ -70,17 +68,6 @@ export default class ModuleLoader extends events.EventEmitter {
             this.config = eta._.defaults(JSON.parse(await fs.readFile(configPath, "utf-8")), this.config);
         }
         eta.config.modules[this.moduleName] = this.config;
-    }
-
-    public async loadAuthProvider(): Promise<void> {
-        const authPath: string = this.config.rootDir + "auth.js";
-        if (!await fs.pathExists(authPath)) return;
-        try {
-            this.authProvider = require(authPath).default;
-        } catch (err) {
-            eta.logger.warn("Couldn't load authentication provider: " + authPath);
-            eta.logger.error(err);
-        }
     }
 
     public async loadControllers(): Promise<void> {

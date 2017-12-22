@@ -4,98 +4,56 @@ import * as passport from "passport";
 import Application from "./Application";
 import RequestHandler from "./RequestHandler";
 
-export default class Authenticator extends eta.IRequestHandler {
-    public static AuthProvider: typeof eta.IAuthProvider;
-    public static strategy: passport.Strategy;
-
-    public provider: eta.IAuthProvider;
-
-    public handleAuth(err: Error, user: any): void {
-        if (err) {
-            eta.logger.error(err);
-            RequestHandler.renderError(this.res, eta.constants.http.InternalError);
-            return;
-        }
-        if (!user) return this.res.redirect("/login");
-        this.provider.onPassportLogin(user).then(() => {
-            if (this.res.finished) return;
-            this.req.session.userid = user.id;
-            this.req.session.save(() => {
-                this.res.redirect(this.req.session.lastPage);
-            });
-        }).catch(err => {
-            eta.logger.error(err);
-            RequestHandler.renderError(this.res, eta.constants.http.InternalError);
-        });
-    }
-
-    public handleLocalAuth(): void {
-        if (this.req.session.lastPage) {
-            this.req.session.authFrom = this.req.session.lastPage;
-            this.req.session.save(() => {
-                this.res.redirect("/auth/local/login");
-            });
-        } else {
-            this.res.redirect("/auth/local/login");
-        }
-    }
-
-    public logout(): void {
+export default class Authenticator {
+    private static app: Application;
+    private static onLogout(req: express.Request, res: express.Response): void {
         const newSession: {[key: string]: any} = {
-            authFrom: this.req.session.authFrom,
-            lastPage: this.req.session.lastPage
+            authFrom: req.session.authFrom,
+            lastPage: req.session.lastPage
         };
-        this.req.session.regenerate(err => {
+        req.session.regenerate(err => {
             if (err) {
                 eta.logger.error(err);
-                this.res.statusCode = eta.constants.http.InternalError;
-                this.res.send("Internal error");
+                res.statusCode = eta.constants.http.InternalError;
+                res.send("Internal error");
                 return;
             }
-            Object.keys(newSession).forEach(k => this.req.session[k] = newSession[k]);
-            if (!this.req.session.authFrom) this.req.session.authFrom = "/home/index";
-            this.req.session.save(err => {
+            Object.keys(newSession).forEach(k => req.session[k] = newSession[k]);
+            if (!req.session.authFrom) req.session.authFrom = "/home/index";
+            req.session.save(err => {
                 if (err) eta.logger.error(err);
-                this.res.redirect(303, this.req.session.authFrom);
-                this.res.end();
+                res.redirect(303, req.session.authFrom);
+                res.end();
             });
         });
     }
+
+    private static onLogin(req: express.Request, res: express.Response, next: express.NextFunction): void {
+        (<Promise<void>><any>this.app.server.emit("pre-auth", { req, res, next })).then(() => {
+            if (res.finished) return;
+            passport.authenticate(eta.config.auth.provider, (err: Error, user: any) => {
+                (async () => {
+                    if (err) throw err;
+                    if (user === undefined) return res.redirect("/login");
+                    await this.app.server.emit("auth", { req, res, next }, user);
+                    if (res.finished) return;
+                    req.session.save(() => {
+                        res.redirect(req.session.lastPage);
+                    });
+                })().catch(err => {
+                    eta.logger.error(err);
+                    RequestHandler.renderError(res, eta.constants.http.InternalError);
+                });
+            })(req, res, next);
+        });
+    }
+
     public static setup(app: Application): void {
+        this.app = app;
         if (!eta.config.auth.provider) {
             throw new Error("No authentication provider is set.");
         }
-        if (!app.moduleLoaders[eta.config.auth.provider]) {
-            throw new Error("The authentication provider specified (" + eta.config.auth.provider + ") is invalid.");
-        }
-        this.AuthProvider = app.moduleLoaders[eta.config.auth.provider].authProvider;
-        if (!this.AuthProvider) {
-            throw new Error("The authentication provider specified (" + eta.config.auth.provider + ") + does not expose an IAuthProvider class.");
-        }
-        const tempProvider: eta.IAuthProvider = new (<any>this.AuthProvider)();
-        const overrideRoutes: string[] = tempProvider.getOverrideRoutes();
-        this.strategy = tempProvider.getPassportStrategy();
-        passport.use(this.strategy.name, this.strategy);
-        app.server.express.all("/login", (req, res, next) => {
-            if (req.method === "GET" && this.strategy.name === "local") {
-                new Authenticator({req, res, next}).handleLocalAuth();
-                return;
-            }
-            passport.authenticate(this.strategy.name, this.buildHandler({req, res, next}))(req, res, next);
-        });
-        app.server.express.all("/logout", (req, res, next) => {
-            new Authenticator({req, res, next}).logout();
-        });
-        for (const overrideRoute of overrideRoutes) {
-            app.server.express.post(overrideRoute, (req, res, next) => {
-                passport.authenticate(this.strategy.name, this.buildHandler({req, res, next}))(req, res, next);
-            });
-        }
-    }
-
-    private static buildHandler(init: Partial<eta.IRequestHandler>): (err: Error, user: any) => void {
-        const authenticator = new Authenticator(init);
-        authenticator.provider = new (<any>this.AuthProvider)(init);
-        return authenticator.handleAuth.bind(authenticator);
+        app.server.express.all("/login", this.onLogin.bind(this));
+        app.server.express.all("/logout", this.onLogout.bind(this));
     }
 }

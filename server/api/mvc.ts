@@ -1,5 +1,6 @@
 import IHttpController from "./interfaces/IHttpController";
-import IHttpControllerAction from "./interfaces/IHttpControllerAction";
+import HttpRoute from "./interfaces/HttpRoute";
+import HttpRouteAction from "./interfaces/HttpRouteAction";
 import * as _ from "lodash";
 
 export default class MVC {
@@ -63,32 +64,32 @@ export default class MVC {
 
     public static route(route: string): any {
         return function(target: typeof IHttpController, propertyKey: string, descriptor: PropertyDescriptor): any {
+            if (target.prototype.route.raw !== undefined) throw new Error("Only one route may be specified per controller.");
             MVC.init(target.prototype);
+            const rawRoute: string = route;
+            let paramMap: string[] = [];
             if (route.includes(":")) {
-                const rawRoute = route;
-                const map: string[] = route.match(/\:([A-z]+)/g);
-                if (_.uniq(map).length !== map.length) {
+                paramMap = route.match(/\:([A-z]+)/g);
+                if (_.uniq(paramMap).length !== paramMap.length) {
                     throw new Error("All route parameters must be unique.");
                 }
-                map.forEach((m, i) => {
-                    route = route.replace(new RegExp(m), `([A-z0-9]+)`);
-                });
-                target.prototype.routes.push({
-                    regex: new RegExp(`^${route}$`),
-                    map: map.map(m => m.substr(1)),
-                    raw: rawRoute
-                });
-            } else {
-                target.prototype.routes.push(route);
+                for (const param of paramMap) {
+                    route = route.replace(new RegExp(param), `([A-z0-9]+)`);
+                }
             }
+            target.prototype.route = new HttpRoute({
+                regex: rawRoute.includes(":") ? new RegExp(`^${route}$`) : undefined,
+                paramMap: paramMap.map(m => m.substr(1)),
+                raw: rawRoute,
+                actions: target.prototype.route.actions || {}
+            });
         };
     }
 
-    private static init(target: IHttpController, action?: string, worker: (action: IHttpControllerAction) => void = action => { }): void {
-        if (!target.routes) target.routes = [];
-        if (!target.actions) target.actions = {};
-        if (action && !target.actions[action]) {
-            target.actions[action] = {
+    private static init(target: IHttpController, action?: string, worker: (action: HttpRouteAction) => void = action => { }): void {
+        if (target.route === undefined) target.route = new HttpRoute({ actions: {} });
+        if (action && !target.route.actions[action]) {
+            target.route.actions[action] = {
                 flags: {},
                 method: "GET",
                 isAuthRequired: false,
@@ -96,6 +97,6 @@ export default class MVC {
                 permissionsRequired: []
             };
         }
-        worker(target.actions[action]);
+        worker(target.route.actions[action]);
     }
 }

@@ -12,7 +12,7 @@ export default class DynamicRequestHandler extends RequestHandler {
                 server: this.app.server,
                 params: this.routeParams
             });
-            this.actionItem = this.controllerPrototype.actions[this.action];
+            this.actionItem = this.controllerPrototype.route.actions[this.action];
         }
         this.transformers = this.app.requestTransformers.map(t => {
             return new (<any>t)({

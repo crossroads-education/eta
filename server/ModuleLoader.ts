@@ -94,7 +94,7 @@ export default class ModuleLoader extends events.EventEmitter {
             watcher.on("change", (path: string) => {
                 const controllerType: typeof eta.IHttpController = this.loadController(path);
                 if (controllerType !== undefined) {
-                    eta.logger.trace(`Reloaded controller ${controllerType.name} (${controllerType.prototype.getRoutes().join(", ")})`);
+                    eta.logger.trace(`Reloaded controller ${controllerType.name} (${controllerType.prototype.route.raw})`);
                 }
             });
         }
@@ -114,26 +114,17 @@ export default class ModuleLoader extends events.EventEmitter {
             eta.logger.error(err);
             return undefined;
         }
-        if (!controllerType.prototype.routes) {
+        if (controllerType.prototype.route === undefined) {
             eta.logger.warn("Couldn't load controller: " + path + ". Please ensure all decorators are properly applied.");
             return undefined;
         }
-        const actions = controllerType.prototype.actions;
-        for (const k in actions) {
-            const flags = actions[k].flags;
-            if (flags.script) {
-                let foundScriptFile = false;
-                for (const dir of this.config.dirs.controllers) {
-                    if (fs.pathExistsSync(dir + flags.script)) {
-                        flags.script = dir + flags.script;
-                        foundScriptFile = true;
-                        break;
-                    }
-                }
-                if (!foundScriptFile) {
-                    eta.logger.warn("Couldn't find script file " + flags.script + " for controller " + path);
-                }
-            }
+        const actions: eta.HttpRouteAction[] = Object.values(controllerType.prototype.route.actions);
+        for (const action of actions) { // checking @eta.mvc.flags({script})
+            if (!action.flags.script) continue;
+            const dir: string = eta._.first(this.config.dirs.controllers.filter(dir =>
+                fs.pathExistsSync(dir + action.flags.script)));
+            if (dir === undefined) eta.logger.warn("Couldn't find script file " + action.flags.script + " for controller " + path);
+            else action.flags.script = dir + action.flags.script;
         }
         this.emit("controller-load", controllerType);
         return controllerType;

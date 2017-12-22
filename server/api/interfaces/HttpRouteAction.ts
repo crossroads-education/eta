@@ -1,4 +1,4 @@
-export default interface IHttpControllerAction {
+export default interface HttpRouteAction {
     flags: {[key: string]: string | number | boolean | RegExp};
     method: "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
     useView: boolean;

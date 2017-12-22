@@ -121,7 +121,7 @@ export default class WebServer extends EventEmitter {
             passport: passport.initialize(),
             passportSession: passport.session()
         };
-        ["session", "multer", "bodyParser", "passport", "passportSession"].forEach(m => {
+        Object.keys(this.middleware).forEach(m => {
             this.express.use(this.middleware[m]);
         });
     }

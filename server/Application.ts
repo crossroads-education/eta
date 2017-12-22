@@ -15,7 +15,6 @@ export default class Application extends EventEmitter {
      */
     public moduleLoaders: {[key: string]: ModuleLoader} = {};
 
-    /** key: route */
     public controllers: (typeof eta.IHttpController)[] = [];
     public requestTransformers: (typeof eta.IRequestTransformer)[] = [];
     public staticFiles: {[key: string]: string} = {};
@@ -69,9 +68,9 @@ export default class Application extends EventEmitter {
         action: (...args: any[]) => Promise<void>;
     }[] {
         const actions = this.controllers.map(c => {
-            let flaggedActionKeys: string[] = Object.keys(c.prototype.actions).filter(k => !!c.prototype.actions[k].flags[flag]);
+            let flaggedActionKeys: string[] = Object.keys(c.prototype.route.actions).filter(k => !!c.prototype.route.actions[k].flags[flag]);
             if (flagValue !== undefined) {
-                flaggedActionKeys = flaggedActionKeys.filter(k => c.prototype.actions[k].flags[flag] === flagValue);
+                flaggedActionKeys = flaggedActionKeys.filter(k => c.prototype.route.actions[k].flags[flag] === flagValue);
             }
             if (flaggedActionKeys.length === 0) return [];
             return flaggedActionKeys.map(k => {
@@ -88,7 +87,7 @@ export default class Application extends EventEmitter {
                     return (<any>instance)[k].bind(instance)(...args);
                 };
                 return {
-                    action, flagValue: c.prototype.actions[k].flags[flag]
+                    action, flagValue: c.prototype.route.actions[k].flags[flag]
                 };
             });
         }).filter(a => a.length > 0);
@@ -105,10 +104,8 @@ export default class Application extends EventEmitter {
         for (const moduleName of moduleDirs) {
             this.moduleLoaders[moduleName] = new ModuleLoader(moduleName);
             this.moduleLoaders[moduleName].on("controller-load", (controllerType: typeof eta.IHttpController) => {
-                const realRoutes: string = controllerType.prototype.getRoutes().join(", ");
-                this.controllers = this.controllers.filter(c => {
-                    return c.prototype.getRoutes().join(", ") !== realRoutes;
-                });
+                this.controllers = this.controllers.filter(c => // remove duplicates
+                    c.prototype.route.raw !== controllerType.prototype.route.raw);
                 this.controllers.push(controllerType);
                 this.emit("controller-load", controllerType);
             });

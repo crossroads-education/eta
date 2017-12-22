@@ -14,7 +14,7 @@ export default class RequestHandler extends eta.IRequestHandler {
     public controller: eta.IHttpController;
     public controllerPrototype: eta.IHttpController;
     public app: Application;
-    protected actionItem: eta.IHttpControllerAction;
+    protected actionItem: eta.HttpRouteAction;
     protected transformers: eta.IRequestTransformer[];
 
     public constructor(init: Partial<RequestHandler>) {
@@ -69,21 +69,15 @@ export default class RequestHandler extends eta.IRequestHandler {
         // route is everything else
         let route: string = tokens.join("/");
         // get this for instantiation in RequestHandler
-        const routeParams: {[key: string]: string} = {};
+        let routeParams: {[key: string]: string} = undefined;
         const controllerClass: typeof eta.IHttpController = this.app.controllers.find(controllerType => {
-            return controllerType.prototype.routes.find(r => {
-                // check route parameterization
-                if (typeof(r) === "string") return r === route;
-                const isMatch = r.regex.test(route);
-                if (!isMatch) return false;
-                route.match(r.regex).slice(1).forEach((param, i) => {
-                    routeParams[r.map[i]] = param;
-                });
-                // properly set previously set variables
-                route = r.raw.replace(/\:/g, "");
-                this.req.mvcPath = route + "/" + action;
-                return true;
-            }) !== undefined;
+            routeParams = controllerType.prototype.route.match(route);
+            if (routeParams === undefined) return false;
+            if (Object.keys(routeParams).length === 0) return true; // no need to replace variables
+            // properly set previously set variables
+            route = controllerType.prototype.route.raw.replace(/\:/g, "");
+            this.req.mvcPath = route + "/" + action;
+            return true;
         });
         this.req.fullUrl = this.req.baseUrl + this.req.mvcPath.substring(1);
         if (this.req.originalUrl.includes("?")) {

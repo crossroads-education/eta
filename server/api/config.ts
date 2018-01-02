@@ -20,7 +20,7 @@ function load(): IConfiguration {
     Object.keys(process.env)
         .filter(k => k.startsWith("ETA_"))
         .forEach(k => {
-            let tokens: string[] = k.split("_").slice(1);
+            let tokens: string[] = k.replace(/__/g, "-").split("_").slice(1);
             if (k.toUpperCase() === k) {
                 tokens = tokens.map(t => t.toLowerCase());
             }

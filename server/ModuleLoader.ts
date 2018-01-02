@@ -67,7 +67,7 @@ export default class ModuleLoader extends events.EventEmitter {
         if ((await fs.pathExists(configPath)) === true) {
             this.config = eta._.defaults(JSON.parse(await fs.readFile(configPath, "utf-8")), this.config);
         }
-        eta.config.modules[this.moduleName] = this.config;
+        eta.config.modules[this.moduleName] = eta._.defaultsDeep(eta.config.modules[this.moduleName] || {}, this.config);
     }
 
     public async loadControllers(): Promise<void> {

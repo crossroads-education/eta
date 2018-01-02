@@ -95,7 +95,7 @@ export default class Application extends EventEmitter {
     }
 
     private async loadModules(): Promise<void> {
-        eta.config.modules = {};
+        eta.config.modules = eta.config.modules || {};
         eta.constants.controllerPaths = [];
         eta.constants.staticPaths = [];
         eta.constants.viewPaths = [];

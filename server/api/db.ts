@@ -23,7 +23,7 @@ export async function connect(): Promise<orm.Connection> {
     return await orm.createConnection(
         eta._.extend({
             entities: modelDirs,
-            synchronize: true,
+            synchronize: !eta.config.db.isReadOnly,
             logging: logOptions
         }, eta.config.db)
     );

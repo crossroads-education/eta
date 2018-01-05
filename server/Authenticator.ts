@@ -22,8 +22,12 @@ export default class Authenticator {
             if (!req.session.authFrom) req.session.authFrom = "/home/index";
             req.session.save(err => {
                 if (err) eta.logger.error(err);
-                res.redirect(303, req.session.authFrom);
-                res.end();
+                if (req.query.noRedirect !== undefined) {
+                    res.send("Logged out successfully.");
+                } else {
+                    res.redirect(303, req.session.authFrom);
+                    res.end();
+                }
             });
         });
     }

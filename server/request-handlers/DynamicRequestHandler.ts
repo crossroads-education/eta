@@ -30,7 +30,8 @@ export default class DynamicRequestHandler extends RequestHandler {
                 await this.saveSession();
                 this.redirect("/login");
             } else if (this.actionItem.permissionsRequired.length > 0) {
-                if ((await this.fireTransformEvent("isRequestAuthorized", this.actionItem.permissionsRequired)) !== false) {
+                const isAuthorized = await this.fireTransformEvent("isRequestAuthorized", this.actionItem.permissionsRequired);
+                if (isAuthorized !== false) {
                     this.callController();
                 } else {
                     this.renderError(eta.constants.http.AccessDenied);

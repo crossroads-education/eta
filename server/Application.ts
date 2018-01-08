@@ -28,9 +28,11 @@ export default class Application extends EventEmitter {
         this.server.app = this;
         await this.loadModules();
         await this.emit("init");
+        eta.logger.info("Connecting to the database and initalizing ORM...");
         this.connection = await connectDatabase();
-        (<any>eta).redis = connectRedis();
         eta.logger.info("Successfully connected to the database.");
+        (<any>eta).redis = await connectRedis();
+        eta.logger.info("Successfully connected to the Redis server.");
         await this.emit("database-connect");
         return await this.server.init();
     }

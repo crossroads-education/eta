@@ -24,7 +24,7 @@ abstract class IRequestHandler {
     }
 
     public saveSession(): Promise<void> {
-        return helpers.session.save(this.req.session);
+        return helpers.session.promise(this.req.session, "save");
     }
 
     public isLoggedIn(): boolean {

@@ -27,9 +27,9 @@ export default class HelperSession {
         });
     }
 
-    public static async save(session: Express.Session): Promise<void> {
+    public static async promise(session: Express.Session, methodName: "save" | "regenerate" | "destroy"): Promise<void> {
         return new Promise<void>((resolve, reject) => {
-            session.save((err: Error) => {
+            session[methodName].bind(session)((err: Error) => {
                 if (err) reject(err);
                 else resolve();
             });

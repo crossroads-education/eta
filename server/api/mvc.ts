@@ -38,15 +38,33 @@ export default class MVC {
         };
     }
 
+    public static delete(): any {
+        return function(target: IHttpController, propertyKey: string, descriptor: PropertyDescriptor): any {
+            MVC.init(target, propertyKey, action => action.method = "DELETE");
+        };
+    }
+
     public static get(): any {
         return function(target: IHttpController, propertyKey: string, descriptor: PropertyDescriptor): any {
             MVC.init(target, propertyKey, action => action.method = "GET");
         };
     }
 
+    public static patch(): any {
+        return function(target: IHttpController, propertyKey: string, descriptor: PropertyDescriptor): any {
+            MVC.init(target, propertyKey, action => action.method = "PATCH");
+        };
+    }
+
     public static post(): any {
         return function(target: IHttpController, propertyKey: string, descriptor: PropertyDescriptor): any {
             MVC.init(target, propertyKey, action => action.method = "POST");
+        };
+    }
+
+    public static put(): any {
+        return function(target: IHttpController, propertyKey: string, descriptor: PropertyDescriptor): any {
+            MVC.init(target, propertyKey, action => action.method = "PUT");
         };
     }
 

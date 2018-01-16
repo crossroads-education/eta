@@ -50,12 +50,12 @@ export default class HelperDate {
      * @param end The end of the range
      * @return The weeks between `start` and `end`
      */
-    public static getWeeksBetween(start: Date, end: Date): Week[] {
+    public static getWeeksBetween(startDate: Date, endDate: Date): Week[] {
         const weeks: Week[] = [];
-        const startWeek: number = moment(start).week();
-        const endWeek: number = moment(end).week();
+        const startWeek: number = moment(startDate).week();
+        const endWeek: number = moment(endDate).week();
         for (let week: number = startWeek; week < endWeek; week++) {
-            const start: moment.Moment = moment(week, "w");
+            const start: moment.Moment = moment(week + "-" + startDate.getFullYear(), "w-YYYY");
             const end: moment.Moment = moment(start).add(6, "day");
             weeks.push({
                 number: week,

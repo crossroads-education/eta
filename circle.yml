@@ -14,6 +14,6 @@ compile:
     - npm run eta -- compile server
 test:
   override:
-    - npm run test:
+    - npm run eta -- test --standard-output:
         environment:
           MOCHA_FILE: $CIRCLE_TEST_REPORTS/junit/test-results.xml

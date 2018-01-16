@@ -1,7 +1,6 @@
 import * as chokidar from "chokidar";
 import * as eta from "../eta";
 import * as events from "events";
-import { IModuleConfiguration } from "./api/config";
 import * as fs from "fs-extra";
 import * as path from "path";
 
@@ -18,7 +17,7 @@ export default class ModuleLoader extends events.EventEmitter {
     public viewMetadata: {[key: string]: {[key: string]: any}};
 
     public moduleName: string;
-    public config: IModuleConfiguration;
+    public config: eta.ModuleConfiguration;
     public isInitialized = false;
 
     private requireFunc: (path: string) => any = require;

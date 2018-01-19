@@ -96,7 +96,7 @@
     "@types/supertest": "^2.0.3",
     "@types/useragent": "^2.1.1",
     "@types/uuid": "^3.4.2",
-    "@xroadsed/eta-cli": "^1.2.0-a.2",
+    "@xroadsed/eta-cli": "^1.2.0-a.3",
     "supertest": "^3.0.0"
   },
   "engines": {

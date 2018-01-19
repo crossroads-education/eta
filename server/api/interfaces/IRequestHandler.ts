@@ -1,10 +1,14 @@
 import * as express from "express";
 import * as helpers from "../../../helpers/index";
+import Configuration from "../../../lib/Configuration";
+import RepositoryManager from "../../../db";
 
 abstract class IRequestHandler {
     public req: express.Request;
     public res: express.Response;
-    public next: Function;
+    public next: express.NextFunction;
+    public config: Configuration;
+    public db: RepositoryManager;
 
     public constructor(init: Partial<IRequestHandler>) {
         Object.assign(this, init);

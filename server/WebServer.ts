@@ -16,6 +16,7 @@ import * as eta from "../eta";
 import Application from "./Application";
 import Authenticator from "./Authenticator";
 import ModuleLoader from "./ModuleLoader";
+import RepositoryManager from "../db";
 import RequestHandler from "./RequestHandler";
 const EventEmitter: typeof events.EventEmitter = require("promise-events");
 
@@ -37,6 +38,10 @@ export default class WebServer extends EventEmitter {
     public redirectServer?: http.Server = undefined;
 
     public middleware: {[key: string]: express.Handler} = <any>{};
+
+    private get config(): eta.Configuration {
+        return this.app.configs.global;
+    }
 
     // TODO: Document WebServer.init()
     public async init(): Promise<boolean> {
@@ -73,27 +78,23 @@ export default class WebServer extends EventEmitter {
         if (this.redirectServer) {
             this.redirectServer.on("error", onHttpServerError);
         }
-
-        const port: number = eta.config.https.enable ? eta.config.https.port : eta.config.http.port;
-
+        const port: number = this.config.get(`http${this.config.get("https.enable") ? "s" : ""}.port`);
         this.server.listen(port, () => {
             eta.logger.info("Web server (main) started on port " + port);
             (<Promise<void>><any>this.emit("start")).catch(err => {
                 eta.logger.error(err);
             });
         });
-
         if (this.redirectServer !== undefined) {
-            this.redirectServer.listen(eta.config.http.port, () => {
-                eta.logger.info("Web server (redirect) started on port " + eta.config.http.port);
+            this.redirectServer.listen(this.config.get("http.port"), () => {
+                eta.logger.info("Web server (redirect) started on port " + this.config.get("http.port"));
             });
         }
     }
 
     private configureExpress(): void {
         this.express.set("view engine", "pug");
-
-        if (eta.config.dev.enable) {
+        if (this.config.get("dev.enable")) {
             this.express.locals.pretty = true; // render Pug as readable HTML
             this.express.disable("view cache"); // pull Pug views from filesystem on request
         }
@@ -110,7 +111,7 @@ export default class WebServer extends EventEmitter {
                 }),
                 resave: true,
                 saveUninitialized: false,
-                secret: eta.config.http.session.secret
+                secret: this.config.get("session.secret")
             }),
             multer: multer({ // sets up support for file uploads
                 storage: multer.memoryStorage()
@@ -126,10 +127,12 @@ export default class WebServer extends EventEmitter {
         });
     }
 
-    private onRequest(req: express.Request, res: express.Response, next: Function): void {
+    private onRequest(req: express.Request, res: express.Response, next: express.NextFunction): void {
         new RequestHandler({
             req, res, next,
-            app: this.app
+            app: this.app,
+            config: this.app.configs[req.hostname] || this.config,
+            db: new RepositoryManager(req.hostname)
         }).handleRequest().then(() => { })
         .catch(err => {
             eta.logger.error(err);
@@ -137,23 +140,24 @@ export default class WebServer extends EventEmitter {
     }
 
     private setupHttpServer(): void {
-        if (!eta.config.https.enable) { // only http
+        if (!this.config.get("https.enable")) { // only http
             this.server = http.createServer(this.express);
             return;
         }
         // HTTPS (and redirect server)
         const sslOptions: any = {
-            "key": fs.readFileSync(eta.config.https.key),
-            "cert": fs.readFileSync(eta.config.https.cert),
+            "key": fs.readFileSync(this.config.get("https.privateKey") || this.config.get("https.key")),
+            "cert": fs.readFileSync(this.config.get("https.publicKey") || this.config.get("https.cert")),
             "secureProtocol": "TLSv1_2_method"
         };
-        if (eta.config.https.ca) {
-            sslOptions.ca = fs.readFileSync(eta.config.https.ca);
+        const chainFilename: string = this.config.get("https.chainKey") || this.config.get("https.ca");
+        if (chainFilename) {
+            sslOptions.ca = fs.readFileSync(chainFilename);
         }
         this.server = https.createServer(sslOptions, this.express);
         this.redirectServer = http.createServer((req: http.IncomingMessage, res: http.ServerResponse) => {
             res.writeHead(301, {
-                Location: "https://" + eta.config.http.host + ":" + eta.config.https.realPort + req.url
+                Location: "https://" + this.config.get("http.host") + ":" + this.config.get("https.realPort") + req.url
             });
             res.end();
         });

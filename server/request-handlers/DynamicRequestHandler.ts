@@ -10,16 +10,14 @@ export default class DynamicRequestHandler extends RequestHandler {
                 res: this.res,
                 next: this.next,
                 server: this.app.server,
-                params: this.routeParams
+                params: this.routeParams,
+                config: this.config,
+                db: this.db
             });
             this.actionItem = this.controllerPrototype.route.actions[this.action];
         }
         this.transformers = this.app.requestTransformers.map(t => {
-            return new (<any>t)({
-                req: this.req,
-                res: this.res,
-                next: this.next
-            });
+            return new (<any>t)(this);
         });
         await this.fireTransformEvent("onRequest");
         if (this.res.finished) return;
@@ -141,7 +139,7 @@ export default class DynamicRequestHandler extends RequestHandler {
         }
         await this.fireTransformEvent("beforeResponse");
         if (this.res.finished) return;
-        if (eta.config.dev.enable) {
+        if (this.config.get("dev.enable")) {
             this.res.view["compileDebug"] = true;
         }
         let html: string;

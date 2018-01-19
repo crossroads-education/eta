@@ -19,7 +19,7 @@ export default class StaticRequestHandler extends RequestHandler {
         if (this.mimeType === "video/mp4" && this.req.headers.range) {
             return this.handleVideo();
         }
-        if (eta.config.dev.enable) { // don't cache anything in dev mode
+        if (this.config.get("dev.enable")) { // don't cache anything in dev mode
             this.res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
             this.res.setHeader("Pragma", "no-cache");
             this.res.setHeader("Expires", "0");

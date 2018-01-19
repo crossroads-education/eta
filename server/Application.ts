@@ -4,7 +4,8 @@ import * as fs from "fs-extra";
 import * as orm from "typeorm";
 import ModuleLoader from "./ModuleLoader";
 import WebServer from "./WebServer";
-import { connect as connectDatabase } from "./api/db";
+import * as db from "../db";
+Object.keys(db); // initializes models
 import { connect as connectRedis } from "./api/redis";
 const EventEmitter: typeof events.EventEmitter = require("promise-events");
 
@@ -14,7 +15,7 @@ export default class Application extends EventEmitter {
      * Load module files
      */
     public moduleLoaders: {[key: string]: ModuleLoader} = {};
-
+    public configs: {[key: string]: eta.Configuration} = {};
     public controllers: (typeof eta.IHttpController)[] = [];
     public requestTransformers: (typeof eta.IRequestTransformer)[] = [];
     public staticFiles: {[key: string]: string} = {};
@@ -24,14 +25,16 @@ export default class Application extends EventEmitter {
     public connection: orm.Connection;
 
     public async init(): Promise<boolean> {
+        await this.loadConfiguration();
+        eta.logger.config = this.configs.global;
         this.server = new WebServer();
         this.server.app = this;
         await this.loadModules();
         await this.emit("init");
         eta.logger.info("Connecting to the database and initalizing ORM...");
-        this.connection = await connectDatabase();
+        await this.connectDatabases();
         eta.logger.info("Successfully connected to the database.");
-        (<any>eta).redis = await connectRedis();
+        (<any>eta).redis = await connectRedis(this.configs.global);
         eta.logger.info("Successfully connected to the Redis server.");
         await this.emit("database-connect");
         return await this.server.init();
@@ -45,6 +48,33 @@ export default class Application extends EventEmitter {
         return this.server.close();
     }
 
+    public async loadConfiguration(): Promise<void> {
+        this.configs.root = await eta.Configuration.load();
+        const hosts: string[] = await fs.readdir(eta.constants.basePath + "/config");
+        hosts.forEach(h => this.configs[h] = this.configs.root.buildChild(["global.", h + "."]));
+        delete this.configs.root;
+    }
+
+    public connectDatabases(): Promise<orm.Connection[]> {
+        return Promise.all(Object.keys(this.configs).filter(k => k !== "global").map(k => {
+            const config = this.configs[k];
+            const modelDirs = this.configs.global.modules()
+                .map(m => this.configs.global.get<string[]>(`modules.${m}.dirs.models`))
+                .reduce((p, v) => p.concat(v), [])
+                .map(d => d + "*.js");
+            let logOptions: string[] = [];
+            if (config.get("logger.logDatabaseQueries")) {
+                logOptions = ["error", "query"];
+            }
+            return orm.createConnection(eta._.extend({
+                entities: modelDirs,
+                synchronize: !config.get("db.isReadOnly"),
+                logging: logOptions,
+                name: config.get("http.host")
+            }, <any>config.buildToObject("db.")));
+        }));
+    }
+
     public async verifyStaticFile(mvcPath: string): Promise<boolean> {
         if (this.staticFiles[mvcPath]) {
             const exists: boolean = await fs.pathExists(this.staticFiles[mvcPath]);
@@ -53,9 +83,9 @@ export default class Application extends EventEmitter {
             }
             return exists;
         }
-        const staticDirs: string[] = Object.keys(eta.config.modules)
-            .map(k => eta.config.modules[k].dirs.staticFiles)
-            .reduce((p, a) => p.concat(a));
+        const staticDirs: string[] = this.configs.global.modules()
+            .map(m => this.configs.global.get<string[]>(`modules.${m}.dirs.staticFiles`) || [])
+            .reduce((p, v) => p.concat(v), []);
         for (const staticDir of staticDirs) {
             if (await fs.pathExists(staticDir + mvcPath)) {
                 this.staticFiles[mvcPath] = staticDir + mvcPath;
@@ -97,14 +127,13 @@ export default class Application extends EventEmitter {
     }
 
     private async loadModules(): Promise<void> {
-        eta.config.modules = eta.config.modules || {};
         eta.constants.controllerPaths = [];
         eta.constants.staticPaths = [];
         eta.constants.viewPaths = [];
         const moduleDirs: string[] = await fs.readdir(eta.constants.modulesPath);
         eta.logger.info(`Found ${moduleDirs.length} modules: ${moduleDirs.join(", ")}`);
         for (const moduleName of moduleDirs) {
-            this.moduleLoaders[moduleName] = new ModuleLoader(moduleName);
+            this.moduleLoaders[moduleName] = new ModuleLoader(moduleName, this);
             this.moduleLoaders[moduleName].on("controller-load", (controllerType: typeof eta.IHttpController) => {
                 this.controllers = this.controllers.filter(c => // remove duplicates
                     c.prototype.route.raw !== controllerType.prototype.route.raw);

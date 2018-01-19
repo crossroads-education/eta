@@ -3,6 +3,7 @@ import * as eta from "../eta";
 import * as events from "events";
 import * as fs from "fs-extra";
 import * as path from "path";
+import Application from "./Application";
 
 const requireReload: (path: string) => any = require("require-reload")(require);
 
@@ -20,16 +21,18 @@ export default class ModuleLoader extends events.EventEmitter {
     public config: eta.ModuleConfiguration;
     public isInitialized = false;
 
+    private app: Application;
     private requireFunc: (path: string) => any = require;
 
-    public constructor(moduleName: string) {
+    public constructor(moduleName: string, app: Application) {
         super();
         this.moduleName = moduleName;
+        this.app = app;
     }
 
     public async loadAll(): Promise<void> {
         await this.loadConfig();
-        if (this.config.disable || (process.env.ETA_TESTING === "true" && this.config.name !== eta.config.server.testModule)) {
+        if (this.config.disable || (process.env.ETA_TESTING === "true" && this.config.name !== this.app.configs.global.get("server.testModule"))) {
             return;
         }
         await Promise.all([
@@ -66,14 +69,14 @@ export default class ModuleLoader extends events.EventEmitter {
         if ((await fs.pathExists(configPath)) === true) {
             this.config = eta._.defaults(JSON.parse(await fs.readFile(configPath, "utf-8")), this.config);
         }
-        eta.config.modules[this.moduleName] = eta._.defaultsDeep(eta.config.modules[this.moduleName] || {}, this.config);
+        Object.values(this.app.configs).forEach(c => c.buildFromObject(this.config, ["modules", this.moduleName]));
     }
 
     public async loadControllers(): Promise<void> {
         this.controllers = {};
         const controllerFiles: string[] = (await eta.fs.recursiveReaddirs(this.config.dirs.controllers))
             .filter(f => f.endsWith(".js"));
-        if (eta.config.dev.enable) {
+        if (this.app.configs.global.get("dev.enable")) {
             const watcher: fs.FSWatcher = chokidar.watch(this.config.dirs.controllers, {
                 "persistent": false
             });
@@ -89,9 +92,7 @@ export default class ModuleLoader extends events.EventEmitter {
 
     private loadController(path: string): typeof eta.IHttpController {
         path = path.replace(/\\/g, "/");
-        if (!path.endsWith(".js")) {
-            return undefined;
-        }
+        if (!path.endsWith(".js")) return undefined;
         let controllerType: typeof eta.IHttpController;
         try {
             controllerType = this.requireFunc(path).default;

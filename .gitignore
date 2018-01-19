@@ -1,8 +1,9 @@
 /config/*.json
-/config/modules/*.json
+/config/**/*.json
 !/config/*.sample.json
+!/config/**/*.sample.json
 /modules
-/logs/
+*.log
 /node_modules/
 *.js
 *.js.map

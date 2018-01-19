@@ -50,7 +50,7 @@
     "socket.io": "^2.0.3",
     "source-map-support": "^0.4.18",
     "stack-trace": "0.0.10",
-    "typeorm": "0.1.0",
+    "typeorm": "^0.1.1",
     "useragent": "^2.2.1",
     "uuid": "^3.1.0"
   },
@@ -73,6 +73,7 @@
     "@types/mysql": "0.0.34",
     "@types/ndarray": "^1.0.5",
     "@types/node": "^8.0.52",
+    "@types/nodemailer": "^4.3.1",
     "@types/oboe": "^2.0.28",
     "@types/oracledb": "^1.11.33",
     "@types/passport": "^0.3.4",

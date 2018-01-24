@@ -107,7 +107,7 @@ export default class WebServer extends EventEmitter {
         this.middleware = {
             session: expressSession({ // sets up req.session provider
                 store: new (redisSession(expressSession))({
-                    client: eta.redis
+                    client: this.app.redis
                 }),
                 resave: true,
                 saveUninitialized: false,

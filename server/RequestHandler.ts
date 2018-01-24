@@ -20,6 +20,9 @@ export default class RequestHandler extends eta.IRequestHandler {
     public constructor(init: Partial<RequestHandler>) {
         super(init);
         Object.assign(this, init);
+        if (!this.app.configs[this.req.hostname]) {
+            eta.logger.warn("Unknown hostname being served: " + this.req.hostname);
+        }
     }
 
     /**

@@ -12,6 +12,15 @@ abstract class IHttpController extends IRequestHandler {
         super(init);
         Object.assign(this, init);
     }
+
+    public redis<T>(method: string, ...args: any[]): Promise<T> {
+        return new Promise<T>((resolve, reject) => {
+            (<any>this.server.app.redis)[method].bind(this.server.app.redis)(...args, (err: Error, result: T) => {
+                if (err) reject(err);
+                else resolve(result);
+            });
+        });
+    }
 }
 
 export default IHttpController;

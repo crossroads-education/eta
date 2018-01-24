@@ -2,6 +2,7 @@ import * as eta from "../eta";
 import * as events from "events";
 import * as fs from "fs-extra";
 import * as orm from "typeorm";
+import * as redis from "redis";
 import ModuleLoader from "./ModuleLoader";
 import WebServer from "./WebServer";
 import * as db from "../db";
@@ -22,7 +23,7 @@ export default class Application extends EventEmitter {
     public viewFiles: {[key: string]: string} = {};
     public viewMetadata: {[key: string]: {[key: string]: any}} = {};
 
-    public connection: orm.Connection;
+    public redis: redis.RedisClient;
 
     public async init(): Promise<boolean> {
         await this.loadConfiguration();
@@ -34,7 +35,7 @@ export default class Application extends EventEmitter {
         eta.logger.info("Connecting to the database and initalizing ORM...");
         await this.connectDatabases();
         eta.logger.info("Successfully connected to the database.");
-        (<any>eta).redis = await connectRedis(this.configs.global);
+        this.redis = await connectRedis(this.configs.global);
         eta.logger.info("Successfully connected to the Redis server.");
         await this.emit("database-connect");
         return await this.server.init();

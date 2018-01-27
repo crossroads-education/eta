@@ -1,7 +1,7 @@
 import Application from "../../Application";
 
 abstract class ILifecycleHandler {
-    public abstract register(server: Application): void;
+    public abstract register(app: Application): void;
 }
 
 export default ILifecycleHandler;

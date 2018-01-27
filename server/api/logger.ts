@@ -1,4 +1,4 @@
-import * as fs from "fs";
+import * as fs from "fs-extra";
 import * as moment from "moment";
 import * as stackTrace from "stack-trace";
 import constants from "./constants";
@@ -22,10 +22,13 @@ class Logger {
         return filename + ":" + stack.getLineNumber();
     }
 
-    private write(data: string, ...args: any[]): void {
+    private write(data: string, isData: boolean, ...args: any[]): void {
         const now: Date = new Date();
         const filename: string = constants.basePath + "/logs/" + moment(now).format("YYYY-MM-DD") + ".log";
-        let msg = `(${now.toLocaleTimeString()}) [${this.getCalling()}] ${data}`;
+        const source = this.getCalling();
+        console.log(data);
+        const level = data.split(" ")[0].slice(1, -1).toLowerCase();
+        let msg = `(${now.toLocaleTimeString()}) [${source}] ${data}`;
         if (!this.config.exists("logger.outputToConsole") || this.config.get("logger.outputToConsole")) {
             if (args.length > 0) {
                 args = args[0] instanceof Array ? args[0] : args;
@@ -50,34 +53,53 @@ class Logger {
                 console.log("Could not append log to " + filename + ": " + err.message);
             }
         });
+        if (isData) return;
+        const jsonFilename = filename.replace(/\.log/g, ".json");
+        (async () => {
+            let jsonData: {
+                level: string;
+                timestamp: string;
+                source: string;
+                message: string;
+            }[] = [];
+            try {
+                jsonData = await fs.readJSON(jsonFilename);
+            } catch (err) { }
+            jsonData.push({
+                level, source,
+                message: data.split(" ").slice(1).join(" "),
+                timestamp: now.toISOString()
+            });
+            await fs.writeJSON(jsonFilename, jsonData);
+        })().catch(err => console.error(err));
     }
 
     public obj(...args: any[]): void {
-        this.write("[OBJ]", args);
+        this.write("[OBJ]", true, args);
     }
 
     public json(obj: any): void {
-        this.write(`[JSON] ${JSON.stringify(obj)}`);
+        this.write(`[JSON] ${JSON.stringify(obj)}`, true);
     }
 
     public error(err: Error | string): void {
-        this.write(`[ERROR] `, err);
+        this.write(`[ERROR] `, false, err);
     }
 
     public warn(msg: string): void {
-        this.write(`[WARN] ${msg}`);
+        this.write(`[WARN] ${msg}`, false);
     }
 
     public info(msg: string): void {
-        this.write(`[INFO] ${msg}`);
+        this.write(`[INFO] ${msg}`, false);
     }
 
     public trace(msg: string): void {
-        this.write(`[TRACE] ${msg}`);
+        this.write(`[TRACE] ${msg}`, false);
     }
 
     public log(level: string, msg: any): void {
-        this.write(`[${level}] ${msg}`);
+        this.write(`[${level}] ${msg}`, false);
     }
 }
 

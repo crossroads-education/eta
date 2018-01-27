@@ -3,6 +3,7 @@
 !/config/*.sample.json
 !/config/**/*.sample.json
 /modules
+logs
 *.log
 /node_modules/
 *.js

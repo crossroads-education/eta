@@ -26,7 +26,6 @@ class Logger {
         const now: Date = new Date();
         const filename: string = constants.basePath + "/logs/" + moment(now).format("YYYY-MM-DD") + ".log";
         const source = this.getCalling();
-        console.log(data);
         const level = data.split(" ")[0].slice(1, -1).toLowerCase();
         let msg = `(${now.toLocaleTimeString()}) [${source}] ${data}`;
         if (!this.config.exists("logger.outputToConsole") || this.config.get("logger.outputToConsole")) {

@@ -64,12 +64,15 @@ class Logger {
             try {
                 jsonData = await fs.readJSON(jsonFilename);
             } catch (err) { }
+            let message = data.split(" ").slice(1).join(" ");
+            if (message.length === 0) {
+                message = args[0].toString() + "\n" + (<Error>args[0]).stack;
+            }
             jsonData.push({
-                level, source,
-                message: data.split(" ").slice(1).join(" "),
+                level, source, message,
                 timestamp: now.toISOString()
             });
-            await fs.writeJSON(jsonFilename, jsonData);
+            await fs.writeFile(jsonFilename, JSON.stringify(jsonData, undefined, this.config.get("dev.enable") ? 2 : 0));
         })().catch(err => console.error(err));
     }
 
@@ -82,7 +85,7 @@ class Logger {
     }
 
     public error(err: Error | string): void {
-        this.write(`[ERROR] `, false, err);
+        this.write(`[ERROR]`, false, err);
     }
 
     public warn(msg: string): void {

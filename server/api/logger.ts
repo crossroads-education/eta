@@ -66,7 +66,7 @@ class Logger {
             } catch (err) { }
             let message = data.split(" ").slice(1).join(" ");
             if (message.length === 0) {
-                message = args[0].toString() + "\n" + (<Error>args[0]).stack;
+                message = (<Error>args[0]).stack;
             }
             jsonData.push({
                 level, source, message,

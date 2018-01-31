@@ -27,6 +27,7 @@ export default class Application extends EventEmitter {
 
     public async init(): Promise<boolean> {
         await this.loadConfiguration();
+        process.env.eta_timezone = this.configs.global.get("server.timezone");
         eta.logger.config = this.configs.global;
         this.server = new WebServer();
         this.server.app = this;

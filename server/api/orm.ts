@@ -8,10 +8,10 @@ export default class ORM {
             typeorm.Column(_.defaults<typeorm.ColumnOptions, typeorm.ColumnOptions>({
                 transformer: {
                     to: (val: Date): Date => {
-                        return moment.tz(val.getTime(), process.env.eta_timezone).tz("UTC").toDate();
+                        return val ? moment.tz(val.getTime(), process.env.eta_timezone).tz("UTC").toDate() : val;
                     },
                     from: (val: Date): Date => {
-                        return moment.tz(val.getTime(), "UTC").tz(process.env.eta_timezone).toDate();
+                        return val ? moment.tz(val.getTime(), "UTC").tz(process.env.eta_timezone).toDate() : val;
                     }
                 },
                 type: "timestamp without time zone"

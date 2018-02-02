@@ -3,19 +3,22 @@ import * as moment from "moment-timezone";
 import * as typeorm from "typeorm";
 
 export default class ORM {
+    private static etaOffset: number;
     public static TimezoneColumn(options: typeorm.ColumnOptions): any {
-        return function(target: any, propertyKey: string, descriptor: PropertyDescriptor): any {
-            typeorm.Column(_.defaults<typeorm.ColumnOptions, typeorm.ColumnOptions>({
-                transformer: {
-                    to: (val: Date): Date => {
-                        return val ? moment.tz(val.getTime(), process.env.eta_timezone).tz("UTC").toDate() : val;
-                    },
-                    from: (val: Date): Date => {
-                        return val ? moment.tz(val.getTime(), "UTC").tz(process.env.eta_timezone).toDate() : val;
-                    }
+        return typeorm.Column(_.defaults<typeorm.ColumnOptions, typeorm.ColumnOptions>({
+            transformer: {
+                to: (val: Date): Date => {
+                    return val;
                 },
-                type: "timestamp without time zone"
-            }, options))(target, propertyKey, descriptor);
-        };
+                from: (val: Date): Date => {
+                    if (!val) return val;
+                    if (!this.etaOffset) this.etaOffset = moment.tz(process.env.eta_timezone).utcOffset();
+                    const localOffset = val.getTimezoneOffset();
+                    val.setUTCMinutes(val.getUTCMinutes() + this.etaOffset + localOffset);
+                    return val;
+                }
+            },
+            type: "timestamp without time zone"
+        }, options));
     }
 }

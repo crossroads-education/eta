@@ -22,7 +22,7 @@ abstract class IRequestHandler {
     }
 
     public static redirect(res: express.Response, url: string): void {
-        res.redirect(303, url);
+        res.redirect(302, url);
         res.end();
         res.finished = true;
     }

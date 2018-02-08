@@ -20,6 +20,9 @@ export default class RequestHandler extends eta.IRequestHandler {
     public constructor(init: Partial<RequestHandler>) {
         super(init);
         Object.assign(this, init);
+        if (!this.app.configs[this.req.hostname]) {
+            eta.logger.warn("Unknown hostname being served: " + this.req.hostname);
+        }
     }
 
     /**
@@ -30,10 +33,7 @@ export default class RequestHandler extends eta.IRequestHandler {
         this.transformExpressObjects();
         const staticPath: string = await this.isStaticFile();
         if (staticPath !== undefined) {
-            const staticHandler = new StaticRequestHandler({
-                req: this.req,
-                res: this.res
-            });
+            const staticHandler = new StaticRequestHandler(this);
             staticHandler.staticPath = staticPath;
             return await staticHandler.handle();
         }
@@ -53,13 +53,13 @@ export default class RequestHandler extends eta.IRequestHandler {
         }
         this.req.mvcFullPath = this.req.mvcPath;
         const hostTokens: string[] = this.req.get("host").split(":");
-        let host: string = eta.config.http.host + ":" + hostTokens[1];
-        if (eta.config.https.realPort !== undefined) {
+        let host: string = this.config.get("http.host") + ":" + hostTokens[1];
+        if (this.config.get("https.realPort") !== undefined) {
             let realPort = "";
-            if (<any>eta.config.https.realPort !== false) {
-                realPort = ":" + eta.config.https.realPort.toString();
+            if (this.config.get("https.realPort") !== false) {
+                realPort = ":" + this.config.get("https.realPort");
             }
-            host = host.replace(":" + eta.config.https.port, realPort);
+            host = host.replace(":" + this.config.get("https.port"), realPort);
         }
         this.req.baseUrl = this.req.protocol + "://" + host + "/";
         this.res.view = {};
@@ -99,7 +99,7 @@ export default class RequestHandler extends eta.IRequestHandler {
     private async isStaticFile(): Promise<string> {
         const staticPath: string = this.app.staticFiles[this.req.mvcPath];
         if (staticPath) return staticPath;
-        if (!eta.config.dev.enable) return undefined; // no live-reloading without dev mode
+        if (!this.config.get("dev.enable")) return undefined; // no live-reloading without dev mode
         if (await this.app.verifyStaticFile(this.req.mvcPath)) {
             return this.app.staticFiles[this.req.mvcPath]; // changed by verifyStaticFile()
         }
@@ -119,7 +119,7 @@ export default class RequestHandler extends eta.IRequestHandler {
     }
 
     protected renderError(code: number): Promise<void> {
-        return RequestHandler.renderError(this.res, code);
+        return RequestHandler.renderError(this, code);
     }
 
     protected shouldSaveLastPage(): boolean {
@@ -146,18 +146,18 @@ export default class RequestHandler extends eta.IRequestHandler {
         return result;
     }
 
-    public static async renderError(res: express.Response, code: number): Promise<void> {
-        if (res.statusCode !== code) {
-            res.statusCode = code;
+    public static async renderError(http: eta.HttpRequest, code: number): Promise<void> {
+        if (http.res.statusCode !== code) {
+            http.res.statusCode = code;
         }
         const errorDir: string = eta.constants.basePath + "server/errors/";
         let errorView: string = errorDir + code.toString();
         if (!await fs.pathExists(errorView + ".pug")) {
             errorView = errorDir + "layout";
         }
-        res.render(errorView, {
+        http.res.render(errorView, {
             errorCode: code,
-            email: "support@" + eta.config.http.host
+            email: "support@" + http.config.get("http.host")
         });
     }
 }

@@ -14,6 +14,6 @@ compile:
     - npm run eta -- compile server
 test:
   override:
-    - npm run eta -- test --standard-output:
+    - mocha --recursive --reporter mocha-junit-reporter:
         environment:
           MOCHA_FILE: $CIRCLE_TEST_REPORTS/junit/test-results.xml

@@ -33,9 +33,13 @@ export default class Authenticator {
     }
 
     private static onLogin(req: express.Request, res: express.Response, next: express.NextFunction): void {
-        (<Promise<void>><any>this.app.server.emit("pre-auth", { req, res, next })).then(() => {
+        const http: eta.HttpRequest = {
+            req, res, next,
+            config: this.app.configs[req.hostname] || this.app.configs.global
+        };
+        (<Promise<void>><any>this.app.server.emit("pre-auth", http)).then(() => {
             if (res.finished) return;
-            passport.authenticate(eta.config.auth.provider, (err: Error, user: any) => {
+            passport.authenticate(http.config.get("http.host") + "-" + http.config.get("auth.provider"), (err: Error, user: any) => {
                 (async () => {
                     if (err) throw err;
                     if (user === undefined) return res.redirect("/login");
@@ -46,7 +50,7 @@ export default class Authenticator {
                     });
                 })().catch(err => {
                     eta.logger.error(err);
-                    RequestHandler.renderError(res, eta.constants.http.InternalError);
+                    RequestHandler.renderError(http, eta.constants.http.InternalError);
                 });
             })(req, res, next);
         });
@@ -54,9 +58,6 @@ export default class Authenticator {
 
     public static setup(app: Application): void {
         this.app = app;
-        if (!eta.config.auth.provider) {
-            throw new Error("No authentication provider is set.");
-        }
         app.server.express.all("/login", this.onLogin.bind(this));
         app.server.express.all("/logout", this.onLogout.bind(this));
     }

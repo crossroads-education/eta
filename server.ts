@@ -1,9 +1,9 @@
 require("source-map-support").install();
+import "reflect-metadata";
 import * as dbInit from "./db";
 Object.keys(dbInit); // initializes all database models
 import logger from "./server/api/logger"; // Required to setup logger
 import Application from "./server/Application";
-import { connect } from "./server/api/db";
 
 function onUncaughtError(err: Error | string, extra?: any) {
     if (err instanceof Error) {

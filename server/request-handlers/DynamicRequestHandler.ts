@@ -17,7 +17,9 @@ export default class DynamicRequestHandler extends RequestHandler {
             this.actionItem = this.controllerPrototype.route.actions[this.action];
         }
         this.transformers = this.app.requestTransformers.map(t => {
-            return new (<any>t)(this);
+            const transformer: eta.IRequestTransformer = new (<any>t)(this);
+            transformer.server = this.app.server;
+            return transformer;
         });
         await this.fireTransformEvent("onRequest");
         if (this.res.finished) return;

@@ -39,7 +39,7 @@ export default class Authenticator {
         };
         (<Promise<void>><any>this.app.server.emit("pre-auth", http)).then(() => {
             if (res.finished) return;
-            passport.authenticate(http.config.get("auth.provider"), (err: Error, user: any) => {
+            passport.authenticate(http.config.get("http.host") + "-" + http.config.get("auth.provider"), (err: Error, user: any) => {
                 (async () => {
                     if (err) throw err;
                     if (user === undefined) return res.redirect("/login");

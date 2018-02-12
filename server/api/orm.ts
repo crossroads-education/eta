@@ -1,5 +1,5 @@
 import * as _ from "lodash";
-import * as moment from "moment-timezone";
+import HelperDate from "../../helpers/date";
 import * as typeorm from "typeorm";
 
 export default class ORM {
@@ -11,11 +11,7 @@ export default class ORM {
                     return val;
                 },
                 from: (val: Date): Date => {
-                    if (!val) return val;
-                    if (!this.etaOffset) this.etaOffset = moment.tz(process.env.eta_timezone).utcOffset();
-                    const localOffset = val.getTimezoneOffset();
-                    val.setUTCMinutes(val.getUTCMinutes() + this.etaOffset + localOffset);
-                    return val;
+                    return HelperDate.toConfigTimezone(val);
                 }
             },
             type: "timestamp without time zone"

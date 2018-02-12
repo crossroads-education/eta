@@ -17,9 +17,9 @@ export default class HelperDate {
      * Mutates the parameter.
      */
     public static toConfigTimezone(date: Date): Date {
+        if (!date) return date;
         const etaOffset = momentTimezone.tz(process.env.eta_timezone).utcOffset();
-        const localOffset = date.getTimezoneOffset();
-        date.setUTCMinutes(date.getUTCMinutes() - (etaOffset + localOffset));
+        date.setUTCMinutes(date.getUTCMinutes() + etaOffset);
         return date;
     }
 

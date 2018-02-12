@@ -60,7 +60,7 @@ export default class EntityCache<T extends { toCacheObject: () => any }> {
             // don't bother if cache is empty
         } else if (this.cache.length === 1 && this.repository !== undefined) {
             // just dump the single object normally, not worth generating SQL
-            this.repository.save(this.cache);
+            this.repository.save(<any[]>this.cache);
             this.cache = [];
         } else {
             // cache is big enough to justify generating SQL
@@ -143,7 +143,7 @@ export default class EntityCache<T extends { toCacheObject: () => any }> {
         await this.connection.query(sql, params);
     }
 
-    public static async dumpRaw<T extends { toCacheObject: () => any }>(repository: orm.Repository<T>, duplicateConstraints: string, objects: T[], getAllRaw = false, rawMapper: (entity: any) => Partial<T> = e => e): Promise<T[]> {
+    public static async dumpRaw<T extends { toCacheObject: () => any }>(repository: orm.Repository<T>, duplicateConstraints: string, objects: T[], getAllRaw = false, rawMapper: (entity: any) => DeepPartial<T> = e => e): Promise<T[]> {
         const cache: EntityCache<T> = new EntityCache({
             repository, duplicateConstraints,
             interval: 50,
@@ -179,3 +179,8 @@ interface EntityColumn {
     propertyName: string;
     databaseName: string;
 }
+
+// TypeORM doesn't export this type, but fortunately it's simple
+type DeepPartial<T> = {
+    [P in keyof T]?: DeepPartial<T[P]>;
+};

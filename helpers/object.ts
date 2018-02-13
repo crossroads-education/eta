@@ -10,6 +10,8 @@ export default class HelperObject {
         for (const i in from) {
             if (from[i] instanceof Array && to[i] instanceof Array) {
                 to[i] = reverseArrays ? (<any>from[i]).concat(to[i]) : (<any>to[i]).concat(from[i]);
+            } else if (typeof(from[i]) === "object" && typeof(to[i]) === "object") {
+                to[i] = this.merge(from[i], to[i], reverseArrays);
             } else {
                 to[i] = from[i];
             }

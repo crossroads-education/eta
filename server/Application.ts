@@ -64,15 +64,13 @@ export default class Application extends EventEmitter {
                 .map(m => this.configs.global.get<string[]>(`modules.${m}.dirs.models`))
                 .reduce((p, v) => p.concat(v), [])
                 .map(d => d + "*.js");
-            let logOptions: string[] = [];
-            if (config.get("logger.logDatabaseQueries")) {
-                logOptions = ["error", "query"];
-            }
-            return orm.createConnection(eta._.extend({
+            const logOptions = config.get("logger.logDatabaseQueries") ? ["error", "query"] : [];
+            return orm.createConnection(eta._.extend<Partial<orm.ConnectionOptions>, orm.ConnectionOptions>({
                 entities: modelDirs,
                 synchronize: !config.get("db.isReadOnly"),
-                logging: logOptions,
-                name: config.get("http.host")
+                logging: <any>logOptions,
+                name: config.get("http.host"),
+                namingStrategy: new eta.DatabaseNamingStrategy()
             }, <any>config.buildToObject("db.")));
         }));
     }

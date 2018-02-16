@@ -1,5 +1,6 @@
 import * as orm from "typeorm";
 import * as eta from "../eta";
+import DeepPartial from "./DeepPartial";
 
 export default class EntityCache<T extends { toCacheObject: () => any }> {
 
@@ -179,8 +180,3 @@ interface EntityColumn {
     propertyName: string;
     databaseName: string;
 }
-
-// TypeORM doesn't export this type, but fortunately it's simple
-type DeepPartial<T> = {
-    [P in keyof T]?: DeepPartial<T[P]>;
-};

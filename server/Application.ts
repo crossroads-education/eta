@@ -97,7 +97,7 @@ export default class Application extends EventEmitter {
         return false;
     }
 
-    public getActionsWithFlag<T = void>(flag: string, context: eta.IHttpController, flagValue?: string | boolean | number): {
+    public getActionsWithFlag<T = void>(flag: string, context: eta.IRequestHandler, flagValue?: string | boolean | number): {
         flagValue: string | boolean | number | RegExp;
         action: (...args: any[]) => Promise<T>;
     }[] {

@@ -97,9 +97,9 @@ export default class Application extends EventEmitter {
         return false;
     }
 
-    public getActionsWithFlag(flag: string, context: eta.IHttpController, flagValue?: string | boolean | number): {
+    public getActionsWithFlag<T = void>(flag: string, context: eta.IHttpController, flagValue?: string | boolean | number): {
         flagValue: string | boolean | number | RegExp;
-        action: (...args: any[]) => Promise<void>;
+        action: (...args: any[]) => Promise<T>;
     }[] {
         const actions = this.controllers.map(c => {
             let flaggedActionKeys: string[] = Object.keys(c.prototype.route.actions).filter(k => !!c.prototype.route.actions[k].flags[flag]);

@@ -2,7 +2,7 @@ import * as orm from "typeorm";
 import * as eta from "../eta";
 import DeepPartial from "./DeepPartial";
 
-export default class EntityCache<T extends { toCacheObject: () => any }> {
+export default class EntityCache<T> {
 
     public repository: orm.Repository<T> = undefined;
 
@@ -19,41 +19,26 @@ export default class EntityCache<T extends { toCacheObject: () => any }> {
     public archive: T[] = [];
     public cache: T[] = [];
     public shouldUpdateOnDuplicate = false;
-    public duplicateConstraints = "";
-    public columns: EntityColumn[];
+    public duplicateConstraints: string;
     public tableName: string;
     private timer: NodeJS.Timer;
     private connection: orm.Connection;
+    private get columns() { return this.repository.metadata.columns; }
 
     public constructor(options: Partial<EntityCache<T>>) {
         Object.assign(this, options);
-        if (this.repository !== undefined) {
-            this.connection = this.repository.manager.connection;
-            this.columns = this.repository.metadata.columns.map(c => {
-                return {
-                    isGenerated: c.isGenerated,
-                    isRelation: c.relationMetadata !== undefined,
-                    databaseName: c.databaseName,
-                    propertyName: c.propertyName
-                };
-            });
-            this.tableName = this.repository.metadata.tableName;
-            if (this.duplicateConstraints === undefined) {
-                const indices: string[][] = this.repository.metadata.indices.filter(im => im.isUnique).map(im => im.columns.map(c => c.databaseName));
-                if (indices.length !== 1) {
-                    throw new Error(`Cannot guess index to use for ${this.tableName}: ${indices.length} are defined.`);
-                }
-                this.duplicateConstraints = indices[0].map(c => `"${c}"`).join(", ");
-            }
+        if (this.repository === undefined) return;
+        this.connection = this.repository.manager.connection;
+        this.tableName = this.repository.metadata.tableName;
+        if (this.duplicateConstraints === undefined) {
+            const indices: string[][] = this.repository.metadata.indices.filter(im => im.isUnique).map(im => im.columns.map(c => c.databaseName));
+            this.duplicateConstraints = eta._.uniq(indices.reduce((p, v) => p.concat(v), [])).map(c => `"${c}"`).join(", ");
         }
-        this.start();
     }
 
-    private get rawColumns() { return this.repository.metadata.columns; }
-
-    public add(objects: T[]): void {
-        this.cache = this.cache.concat(objects);
-        this.archive = this.archive.concat(objects);
+    public add(items: T[]): void {
+        this.cache = this.cache.concat(items);
+        this.archive = this.archive.concat(items);
     }
 
     public dump(): void {
@@ -73,8 +58,7 @@ export default class EntityCache<T extends { toCacheObject: () => any }> {
     }
 
     public dumpMany(): Promise<void> {
-        const objects = this.cache.splice(0, this.count);
-        return this.insertMany(objects);
+        return this.insertMany(this.cache.splice(0, this.count));
     }
 
     public async dumpAll(): Promise<void> {
@@ -83,78 +67,62 @@ export default class EntityCache<T extends { toCacheObject: () => any }> {
         }
     }
 
-    public async getAllRaw(mapRelations = false): Promise<{[key: string]: any}[]> {
+    public getAllRaw(): Promise<{[key: string]: any}[]> {
         const tableName = this.connection.driver.escape(this.tableName);
         const columns: string = eta._.uniq(this.columns.map(c => {
             const dbName: string = this.connection.driver.escape(c.databaseName);
-            const name: string = this.connection.driver.escape(c.isRelation ? c.databaseName : c.propertyName);
+            const name: string = this.connection.driver.escape(c.relationMetadata ? c.databaseName : c.propertyName);
             return `${dbName} AS ${name}`;
         })).join(", ");
-        const rows: any[] = await this.connection.query(`SELECT ${columns} FROM ${tableName}`);
-        if (mapRelations) {
-            for (let i = 0; i < rows.length; i++) {
-                Object.keys(rows[i]).forEach(k => {
-                    if (k.endsWith("Id")) {
-                        const mappedKey: string = k.slice(0, -2);
-                        if (!rows[i][mappedKey]) rows[i][mappedKey] = { id: rows[i][k] };
-                    }
-                });
-            }
-        }
-        return rows;
+        return this.connection.query(`SELECT ${columns} FROM ${tableName}`);
     }
 
-    public start(): void {
+    public startTimer(): void {
         this.timer = setInterval(() => this.dump(), this.interval);
     }
 
-    public stop(): void {
+    public stopTimer(): void {
         clearInterval(this.timer);
         this.timer = undefined;
     }
 
-    private async insertMany(objects: T[]): Promise<void> {
+    private async insertMany(items: T[]): Promise<void> {
+        items = items.filter(i => i !== undefined);
+        if (items.length === 0) return;
         const tableName = this.connection.driver.escape(this.tableName);
         let sql = `INSERT INTO ${tableName} `;
-        const columns: string[] = eta._.uniq(this.columns
-            .filter(c => !c.isGenerated)
-            .map(c => c.databaseName));
-        sql += "(" + columns.map(c => this.connection.driver.escape(c)).join(",") + ") VALUES ";
+        const columns = eta._.uniq(this.columns.filter(c => !c.isGenerated));
+        sql += "(" + columns.map(c => this.connection.driver.escape(c.databaseName)).join(",") + ") VALUES ";
         const sqlTokens: string[] = [];
         const params: any[] = [];
         let count = 0;
-        objects = objects.map(o => o.toCacheObject()).filter(o => o !== undefined);
-        if (objects.length === 0) {
-            return;
-        }
-        objects.forEach((obj: any) => {
+        for (const item of <any[]>items) {
             const objectTokens: string[] = [];
-            columns.forEach(c => {
+            for (const column of columns) {
                 objectTokens.push("$" + ++count);
-                params.push(obj[c]);
-            });
+                if (column.relationMetadata) {
+                    params.push((item[column.propertyName] || {})[column.relationMetadata.inverseEntityMetadata.primaryColumns[0].propertyName]);
+                } else {
+                    params.push(item[column.propertyName]); // normal column
+                }
+            }
             sqlTokens.push("(" + objectTokens.join(",") + ")");
-        });
+        }
         sql += sqlTokens.join(",");
         if (this.shouldUpdateOnDuplicate) {
-            sql += " ON CONFLICT (" + this.duplicateConstraints + ") DO UPDATE SET " + columns.map(c => `"${c}" = EXCLUDED."${c}"`).join(",");
+            sql += " ON CONFLICT (" + this.duplicateConstraints + ") DO UPDATE SET " + columns.map(c => `"${c.databaseName}" = EXCLUDED."${c.databaseName}"`).join(",");
         } else {
             sql += " ON CONFLICT DO NOTHING";
         }
         await this.connection.query(sql, params);
     }
 
-    public static async dumpRaw<T extends { toCacheObject: () => any }>(repository: orm.Repository<T>, duplicateConstraints: string, objects: T[], getAllRaw = false, rawMapper: (entity: any) => DeepPartial<T> = e => e): Promise<T[]> {
+    public static dumpMany<T>(repository: orm.Repository<T>, items: T[], shouldUpdateOnDuplicate = true): Promise<void> {
         const cache: EntityCache<T> = new EntityCache({
-            repository, duplicateConstraints,
-            interval: 50,
-            count: 250,
-            shouldUpdateOnDuplicate: true
+            repository, shouldUpdateOnDuplicate
         });
-        cache.stop();
-        cache.add(objects);
-        await cache.dumpAll();
-        return getAllRaw ? (await cache.getAllRaw(true)).map((e: Partial<T>) => repository.create(rawMapper(e))) : [];
+        cache.add(items);
+        return cache.dumpAll();
     }
 
     public static async dumpManyToMany(connection: orm.Connection, tableName: string, entities: {[key: string]: any}[]): Promise<void> {

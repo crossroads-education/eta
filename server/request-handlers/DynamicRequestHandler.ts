@@ -81,7 +81,7 @@ export default class DynamicRequestHandler extends RequestHandler {
             this.renderError(this.res.statusCode);
             return;
         }
-        if (this.actionItem.useView) {
+        if (this.actionItem.useView) { // basically, if @eta.mvc.raw() is not set
             return await this.serveView();
         }
         // handle this.res.raw

@@ -49,7 +49,7 @@ export default class RequestHandler extends eta.IRequestHandler {
         this.req.mvcFullPath = this.req.mvcPath;
         const hostTokens: string[] = this.req.get("host").split(":");
         let host: string = this.config.get("http.host") + ":" + hostTokens[1];
-        if (this.config.get("https.realPort") !== undefined) {
+        if (this.config.get("https.realPort") !== undefined) { // set the host properly based on https realPort
             let realPort = "";
             if (this.config.get("https.realPort") !== false) {
                 realPort = ":" + this.config.get("https.realPort");

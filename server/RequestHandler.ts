@@ -43,13 +43,8 @@ export default class RequestHandler extends eta.IRequestHandler {
     private transformExpressObjects(): void {
         this.req.mvcPath = decodeURIComponent(this.req.path);
         // ensure that mvcPath always has a route and action (/route.../action)
-        if (this.req.mvcPath === "/") {
-            this.req.mvcPath = "/home/index";
-        } else if (this.req.mvcPath.endsWith("/")) {
+        if (this.req.mvcPath.endsWith("/")) {
             this.req.mvcPath += "index";
-        }
-        if (this.req.mvcPath.split("/").length === 2) {
-            this.req.mvcPath = "/home" + this.req.mvcPath;
         }
         this.req.mvcFullPath = this.req.mvcPath;
         const hostTokens: string[] = this.req.get("host").split(":");

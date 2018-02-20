@@ -140,6 +140,8 @@ export default class Application extends EventEmitter {
                     c.prototype.route.raw !== controllerType.prototype.route.raw);
                 this.controllers.push(controllerType);
                 this.emit("controller-load", controllerType);
+            }).on("metadata-load", (metadataMVCPath: string) => {
+                this.viewMetadata[metadataMVCPath] = this.moduleLoaders[moduleName].viewMetadata[metadataMVCPath];
             });
             await this.moduleLoaders[moduleName].loadAll();
             if (!this.moduleLoaders[moduleName].isInitialized) {
@@ -155,7 +157,6 @@ export default class Application extends EventEmitter {
             this.requestTransformers = this.requestTransformers.concat(moduleLoader.requestTransformers);
             this.staticFiles = eta._.defaults(moduleLoader.staticFiles, this.staticFiles);
             this.viewFiles = eta._.defaults(moduleLoader.viewFiles, this.viewFiles);
-            this.viewMetadata = eta._.defaults(moduleLoader.viewMetadata, this.viewMetadata);
         });
     }
 }

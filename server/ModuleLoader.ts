@@ -43,6 +43,7 @@ export default class ModuleLoader extends events.EventEmitter {
             this.loadLifecycleHandlers(),
             this.loadRequestTransformers()
         ]);
+        this.setupWatchers();
         this.requireFunc = requireReload;
         this.isInitialized = true;
     }
@@ -76,17 +77,6 @@ export default class ModuleLoader extends events.EventEmitter {
         this.controllers = {};
         const controllerFiles: string[] = (await eta.fs.recursiveReaddirs(this.config.dirs.controllers))
             .filter(f => f.endsWith(".js"));
-        if (this.app.configs.global.get("dev.enable")) {
-            const watcher: fs.FSWatcher = chokidar.watch(this.config.dirs.controllers, {
-                "persistent": false
-            });
-            watcher.on("change", (path: string) => {
-                const controllerType: typeof eta.IHttpController = this.loadController(path);
-                if (controllerType !== undefined) {
-                    eta.logger.trace(`Reloaded controller ${controllerType.name} (${controllerType.prototype.route.raw})`);
-                }
-            });
-        }
         controllerFiles.forEach(this.loadController.bind(this));
     }
 
@@ -134,14 +124,14 @@ export default class ModuleLoader extends events.EventEmitter {
             const files: string[] = (await eta.fs.recursiveReaddirs([viewDir]))
                 .filter(f => f.endsWith(".json"));
             for (const path of files) {
-                await this.loadSingleViewMetadata(path, viewDir);
+                await this.loadSingleViewMetadata(path, viewDir, false);
             }
         }));
     }
 
-    private async loadSingleViewMetadata(path: string, viewDir: string): Promise<{[key: string]: any}> {
+    private async loadSingleViewMetadata(path: string, viewDir: string, forceReload: boolean): Promise<{[key: string]: any}> {
         const mvcPath: string = path.substring(viewDir.length - 1, path.length - 5);
-        if (this.viewMetadata[mvcPath]) {
+        if (this.viewMetadata[mvcPath] && !forceReload) {
             return this.viewMetadata[mvcPath];
         }
         let metadata: {[key: string]: any};
@@ -156,7 +146,7 @@ export default class ModuleLoader extends events.EventEmitter {
         if (metadata.include !== undefined) {
             for (let p of metadata.include) {
                 p = p.startsWith("/") ? p.substring(1) : p;
-                const more: {[key: string]: any} = await this.loadSingleViewMetadata(viewDir + p, viewDir);
+                const more: {[key: string]: any} = await this.loadSingleViewMetadata(viewDir + p, viewDir, forceReload);
                 if (more !== undefined) {
                     // TODO: Fix deprecated usage
                     metadata = eta.object.merge(more, metadata, true);
@@ -164,6 +154,7 @@ export default class ModuleLoader extends events.EventEmitter {
             }
         }
         this.viewMetadata[mvcPath] = metadata;
+        this.emit("metadata-load", mvcPath);
         return metadata;
     }
 
@@ -188,5 +179,33 @@ export default class ModuleLoader extends events.EventEmitter {
         const loadResult = await eta.misc.loadModules(this.config.dirs.requestTransformers, this.requireFunc);
         loadResult.errors.forEach(err => eta.logger.error(err));
         this.requestTransformers = loadResult.modules.map(m => m.default);
+    }
+
+    private setupWatchers(): void {
+        if (!this.app.configs.global.get("dev.enable")) return;
+        // controllers
+        chokidar.watch(this.config.dirs.controllers, {
+            persistent: false
+        }).on("change", (path: string) => {
+            const controllerType: typeof eta.IHttpController = this.loadController(path);
+            if (controllerType !== undefined) {
+                eta.logger.trace(`Reloaded controller: ${controllerType.name} (${controllerType.prototype.route.raw})`);
+            }
+        });
+        // view metadata
+        chokidar.watch(this.config.dirs.views, {
+            persistent: false,
+            ignored: /\.pug$/
+        }).on("change", (path: string, i) => {
+            path = path.replace(/\\/g, "/");
+            const viewDir = this.config.dirs.views.find(d => path.startsWith(d));
+            this.loadSingleViewMetadata(path, viewDir, true).then(data => {
+                if (data !== undefined) {
+                    eta.logger.trace(`Reloaded view metadata: ${path.substring(viewDir.length)}`);
+                }
+            }).catch(err => {
+                eta.logger.error(err);
+            });
+        });
     }
 }

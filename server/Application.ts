@@ -63,6 +63,7 @@ export default class Application extends EventEmitter {
             const modelDirs = this.configs.global.modules()
                 .map(m => this.configs.global.get<string[]>(`modules.${m}.dirs.models`))
                 .reduce((p, v) => p.concat(v), [])
+                .filter(d => d !== undefined)
                 .map(d => d + "*.js");
             const logOptions = config.get("logger.logDatabaseQueries") ? ["error", "query"] : [];
             return orm.createConnection(eta._.extend<Partial<orm.ConnectionOptions>, orm.ConnectionOptions>({

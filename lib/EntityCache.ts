@@ -96,25 +96,52 @@ export default class EntityCache<T> {
         const sqlTokens: string[] = [];
         const params: any[] = [];
         let count = 0;
+        const manyToManyRows: {[key: string]: {[key: string]: number}[][]} = {};
         for (const item of <any[]>items) {
             const objectTokens: string[] = [];
             for (const column of columns) {
                 objectTokens.push("$" + ++count);
                 if (column.relationMetadata) {
-                    params.push((item[column.propertyName] || {})[column.relationMetadata.inverseEntityMetadata.primaryColumns[0].propertyName]);
+                    const relationPath = column.relationMetadata.buildPropertyPath();
+                    if (!column.relationMetadata.isManyToMany) {
+                        params.push((item[relationPath] || {})[column.relationMetadata.inverseEntityMetadata.primaryColumns[0].propertyName]);
+                    }
                 } else {
                     params.push(item[column.propertyName]); // normal column
                 }
             }
+            for (const relation of this.repository.metadata.manyToManyRelations) {
+                if (!manyToManyRows[relation.joinTableName]) manyToManyRows[relation.joinTableName] = [];
+                const rows: any[] = [];
+                for (const relationItem of (<any[]>item[relation.propertyName] || [])) {
+                    const row: any = {};
+                    for (const column of relation.inverseJoinColumns) {
+                        row[column.propertyName] = relationItem[column.propertyName.substring(column.relationMetadata.inverseEntityMetadata.tableName.length + 1)];
+                    }
+                    rows.push(row);
+                }
+                manyToManyRows[relation.joinTableName].push(rows);
+            }
             sqlTokens.push("(" + objectTokens.join(",") + ")");
         }
         sql += sqlTokens.join(",");
+        const generatedColumns = this.columns.filter(c => c.isGenerated).map(c => `"${c.databaseName}"`);
+        const returningSql = generatedColumns.length > 0 ? ` RETURNING ${generatedColumns.join(", ")}` : "";
         if (this.shouldUpdateOnDuplicate) {
-            sql += " ON CONFLICT (" + this.duplicateConstraints + ") DO UPDATE SET " + columns.map(c => `"${c.databaseName}" = EXCLUDED."${c.databaseName}"`).join(",");
+            sql += ` ON CONFLICT (${this.duplicateConstraints}) DO UPDATE SET ${columns.map(c => `"${c.databaseName}" = EXCLUDED."${c.databaseName}"`).join(",")}${returningSql}`;
         } else {
-            sql += " ON CONFLICT DO NOTHING";
+            sql += ` ON CONFLICT DO NOTHING${returningSql}`;
         }
-        await this.connection.query(sql, params);
+        const resultRows: any[] = await this.connection.query(sql, params);
+        await Promise.all(this.repository.metadata.manyToManyRelations.map(relation => {
+            for (let i = 0; i < manyToManyRows[relation.joinTableName].length; i++) {
+                const rows = manyToManyRows[relation.joinTableName][i] || [];
+                for (const row of rows) {
+                    row[this.tableName + "_id"] = <number>resultRows[i].id;
+                }
+            }
+            return EntityCache.dumpManyToMany(this.repository.manager.connection, relation.joinTableName, (manyToManyRows[relation.joinTableName] || []).reduce((p, v) => p.concat(v), []));
+        }));
     }
 
     public static dumpMany<T>(repository: orm.Repository<T>, items: T[], shouldUpdateOnDuplicate = true): Promise<void> {

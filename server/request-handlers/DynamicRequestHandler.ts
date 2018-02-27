@@ -20,7 +20,7 @@ export default class DynamicRequestHandler extends RequestHandler {
             const transformer: eta.IRequestTransformer = new (<any>t)(this);
             transformer.server = this.app.server;
             return transformer;
-        });
+        }).sort((a, b) => a.sortOrder - b.sortOrder);
         await this.fireTransformEvent("onRequest");
         if (this.res.finished) return;
         if (this.controller && this.actionItem) {

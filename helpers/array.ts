@@ -1,3 +1,5 @@
+import * as _ from "lodash";
+
 export default class HelperArray {
     /**
      * Maps an array into an object.
@@ -11,5 +13,9 @@ export default class HelperArray {
             object[key] = <T>pair[1];
         });
         return object;
+    }
+
+    public static getRandomItem<T>(items: T[], allowUndefined = false): T {
+        return items[_.random(0, items.length - (allowUndefined ? 0 : 1))];
     }
 }

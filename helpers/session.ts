@@ -3,7 +3,6 @@ import * as http from "http";
 import * as orm from "typeorm";
 import * as redis from "redis";
 import * as eta from "../eta";
-import Application from "../server/Application";
 
 export default class HelperSession {
     public static getFromRequest(req: http.IncomingMessage, redis: redis.RedisClient): Promise<{[key: string]: any}> {

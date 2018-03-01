@@ -1,5 +1,4 @@
 import * as supertest from "supertest";
-import main from "../../server";
 
 export default class Tests {
     public static server: {
@@ -8,7 +7,7 @@ export default class Tests {
 
     public static async init(): Promise<void> {
         if (this.server !== undefined) return;
-        this.server = (await main()).server;
+        this.server = (await require("../../server").default()).server;
     }
 
     public static request(): supertest.SuperTest<supertest.Test> {

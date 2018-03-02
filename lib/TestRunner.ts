@@ -33,9 +33,11 @@ export default class TestRunner {
                     done();
                 }).catch(done);
             });
+            it("should respond successfully", () => {
+                expect(res.status).to.equal(200);
+            });
             it("should respond with JSON", () => {
                 expect(res.header).to.have.property("content-type").which.matches(/^application\/json/);
-                expect(res.status).to.equal(200);
             });
             it("should have successful result", () => {
                 expect(res.body).to.have.property("result");

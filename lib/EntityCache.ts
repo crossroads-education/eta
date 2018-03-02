@@ -111,7 +111,7 @@ export default class EntityCache<T> {
                 }
             }
             for (const relation of this.repository.metadata.manyToManyRelations) {
-                if (!manyToManyRows[relation.joinTableName]) manyToManyRows[relation.joinTableName] = [];
+                if (!manyToManyRows[relation.propertyName]) manyToManyRows[relation.propertyName] = [];
                 const rows: any[] = [];
                 for (const relationItem of (<any[]>item[relation.propertyName] || [])) {
                     const row: any = {};
@@ -120,7 +120,7 @@ export default class EntityCache<T> {
                     }
                     rows.push(row);
                 }
-                manyToManyRows[relation.joinTableName].push(rows);
+                manyToManyRows[relation.propertyName].push(rows);
             }
             sqlTokens.push("(" + objectTokens.join(",") + ")");
         }
@@ -134,13 +134,13 @@ export default class EntityCache<T> {
         }
         const resultRows: any[] = await this.connection.query(sql, params);
         await Promise.all(this.repository.metadata.manyToManyRelations.map(relation => {
-            for (let i = 0; i < manyToManyRows[relation.joinTableName].length; i++) {
-                const rows = manyToManyRows[relation.joinTableName][i] || [];
+            for (let i = 0; i < manyToManyRows[relation.propertyName].length; i++) {
+                const rows = manyToManyRows[relation.propertyName][i] || [];
                 for (const row of rows) {
                     row[this.tableName + "_id"] = <number>resultRows[i].id;
                 }
             }
-            return EntityCache.dumpManyToMany(this.repository.manager.connection, relation.joinTableName, (manyToManyRows[relation.joinTableName] || []).reduce((p, v) => p.concat(v), []));
+            return EntityCache.dumpManyToMany(this.repository.manager.connection, relation.joinTableName, (manyToManyRows[relation.propertyName] || []).reduce((p, v) => p.concat(v), []));
         }));
     }
 

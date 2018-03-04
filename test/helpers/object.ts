@@ -1,8 +1,7 @@
-import * as assert from "assert";
-import * as mocha from "mocha";
+import { expect } from "chai";
 import HelperObject from "../../helpers/object";
 
-describe("HelperObject", function(): void {
+describe("helpers/object", function(): void {
     describe("#merge()", function(): void {
         it("should combine properties of `from` and `to`", function(): void {
             const from: any = { foo: true };
@@ -11,25 +10,25 @@ describe("HelperObject", function(): void {
                 bar: 4,
                 foo: true
             };
-            assert.deepEqual(expected, HelperObject.merge(from, to));
+            expect(HelperObject.merge(from, to)).to.deep.equal(expected);
         });
         it("should overwrite non-array members of `to` with `from`", function(): void {
             const from: any = { foo: true };
             const to: any = { foo: false };
             const expected: any = { foo: true };
-            assert.deepEqual(expected, HelperObject.merge(from, to));
+            expect(HelperObject.merge(from, to)).to.deep.equal(expected);
         });
         it("should concat array members of `to` to `from`", function(): void {
             const from: any = { foo: [2, 3] };
             const to: any = { foo: [1] };
             const expected: any = { foo: [1, 2, 3] };
-            assert.deepEqual(expected, HelperObject.merge(from, to));
+            expect(HelperObject.merge(from, to)).to.deep.equal(expected);
         });
         it("should return the same reference as `to`", function(): void {
             const from: any = { foo: 2 };
             const to: any = { bar: 3 };
             const result: any = HelperObject.merge(from, to);
-            assert.strictEqual(to, result);
+            expect(to).to.equal(result);
         });
     });
 });

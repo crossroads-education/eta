@@ -1,20 +1,16 @@
-import * as assert from "assert";
-import * as mocha from "mocha";
+import { expect } from "chai";
 import HelperString from "../../helpers/string";
 
-describe("HelperString", function(): void {
+describe("helpers/string", function(): void {
     describe("#toCamelCase", function(): void {
         it("should lowercase single leading character", function(): void {
-            const result: string = HelperString.toCamelCase("Foo");
-            assert.equal(result, "foo");
+            expect(HelperString.toCamelCase("Foo")).to.equal("foo");
         });
         it("should not lowercase multiple leading characters", function(): void {
-            const result: string = HelperString.toCamelCase("IFoo");
-            assert.equal(result, "iFoo");
+            expect(HelperString.toCamelCase("IFoo")).to.equal("iFoo");
         });
         it("should not lowercase non-leading characters", function(): void {
-            const result: string = HelperString.toCamelCase("IFooBar");
-            assert.equal(result, "iFooBar");
+            expect(HelperString.toCamelCase("IFooBar")).to.equal("iFooBar");
         });
     });
 });

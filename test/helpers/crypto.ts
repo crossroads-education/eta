@@ -1,11 +1,13 @@
 import "../../helpers/require";
+import { install as sourceMapInstall } from "source-map-support";
+sourceMapInstall();
 import { expect } from "chai";
 import HelperCrypto from "@eta/helpers/crypto";
 
 describe("helpers/crypto", () => {
     const password = "testing";
-    const salt = HelperCrypto.generateSalt();
-    const key = "test";
+    const salt = HelperCrypto.generateSalt(32);
+    const key = HelperCrypto.generateSalt(32);
 
     describe("#hashPassword", () => {
         let output: string;
@@ -51,11 +53,11 @@ describe("helpers/crypto", () => {
 
     describe("#encrypt", () => {
         const output: string = HelperCrypto.encrypt(password, key);
-        it("should return a string with 2x characters of the original", () => {
-            expect(output).to.have.lengthOf(2 * password.length);
+        it("should return a string with 2x + 33 characters of the original", () => {
+            expect(output).to.have.lengthOf(2 * password.length + 33);
         });
-        it("should return a consistent value given the same inputs", () => {
-            expect(output).to.equal(HelperCrypto.encrypt(password, key));
+        it("should return an inconsistent value given the same inputs", () => {
+            expect(output).to.not.equal(HelperCrypto.encrypt(password, key));
         });
         it("should return an inconsistent value given a different key", () => {
             expect(output).to.not.equal(HelperCrypto.encrypt(password, salt));

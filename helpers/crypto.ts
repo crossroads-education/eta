@@ -13,13 +13,11 @@ export default class HelperCrypto {
     }
 
     /**
-     * Creates a random string of length 20.
+     * Creates a random string (by default, of length 20).
      * @return The random string
      */
-    public static generateSalt(): string {
-        return randomstring.generate({
-            length: 20
-        });
+    public static generateSalt(length = 20): string {
+        return randomstring.generate({ length });
     }
 
     /**
@@ -38,9 +36,11 @@ export default class HelperCrypto {
      * @return The encrypted data
      */
     public static encrypt(data: string, key: string): string {
-        const cipher: crypto.Cipher = crypto.createCipher("aes-256-ctr", key);
+        if (key.length !== 32) throw new Error("Encryption key must be 32 characters.");
+        const iv = this.generateSalt(16);
+        const cipher: crypto.Cipher = crypto.createCipheriv("aes-256-ctr", key, iv);
         const encrypted = cipher.update(data, "utf8", "hex");
-        return encrypted + cipher.final("hex");
+        return Buffer.from(iv).toString("hex") + ":" + encrypted + cipher.final("hex");
     }
 
     /**
@@ -50,8 +50,11 @@ export default class HelperCrypto {
      * @return The decrypted data
      */
     public static decrypt(data: string, key: string): string {
-        const decipher: crypto.Decipher = crypto.createDecipher("aes-256-ctr", key);
-        const decrypted: string = decipher.update(data, "hex", "utf8");
+        if (key.length !== 32) throw new Error("Decryption key must be 32 characters.");
+        const tokens = data.split(":");
+        const iv = Buffer.from(tokens.splice(0, 1)[0], "hex");
+        const decipher: crypto.Decipher = crypto.createDecipheriv("aes-256-ctr", key, iv);
+        const decrypted: string = decipher.update(tokens.join(":"), "hex", "utf8");
         return decrypted + decipher.final("utf8");
     }
 }

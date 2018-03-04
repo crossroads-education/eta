@@ -1,5 +1,6 @@
 require("source-map-support").install();
 import "reflect-metadata";
+import "./helpers/require";
 import * as dbInit from "./db";
 Object.keys(dbInit); // initializes all database models
 import logger from "./server/api/logger"; // Required to setup logger

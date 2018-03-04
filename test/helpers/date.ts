@@ -5,18 +5,18 @@ describe("helpers/date", function() {
     const start: Date = new Date("2017-02-07");
     const end: Date = new Date("2017-05-10");
 
-    describe("#getDate()", function(): void {
+    describe("#getDate()", () => {
         const input = new Date();
         const inputTime = input.getTime();
         let output: Date;
         beforeEach(() => {
             output = HelperDate.getDate(input);
         });
-        it("should not mutate the parameter", function(): void {
+        it("should not mutate the parameter", () => {
             const copy: Date = new Date(inputTime);
             expect(copy).to.deep.equal(input);
         });
-        it("should not return a Date with any time", function(): void {
+        it("should not return a Date with any time", () => {
             expect(output.getHours()).to.equal(0);
             expect(output.getMinutes()).to.equal(0);
             expect(output.getSeconds()).to.equal(0);
@@ -24,18 +24,18 @@ describe("helpers/date", function() {
         });
     });
 
-    describe("#getMonthsBetween()", function(): void {
+    describe("#getMonthsBetween()", () => {
         const result: (typeof HelperDate.Month)[] = HelperDate.getMonthsBetween(start, end);
         // getMonthsBetween(February, May) should return [February, March, April]
-        it("should return the correct number of months", function(): void {
+        it("should return the correct number of months", () => {
             expect(result).to.have.lengthOf(3);
         });
-        it("should return the correct months", function(): void {
+        it("should return the correct months", () => {
             expect(result[0].number).to.equal(2);
             expect(result[1].number).to.equal(3);
             expect(result[2].number).to.equal(4);
         });
-        it("should return the correct month names", function(): void {
+        it("should return the correct month names", () => {
             expect(result[0].name).to.equal("February");
             expect(result[1].name).to.equal("March");
             expect(result[2].name).to.equal("April");
@@ -43,24 +43,24 @@ describe("helpers/date", function() {
         // Not testing Month.weeks since we're already testing getWeeksBetween()
     });
 
-    describe("#getWeeksBetween()", function(): void {
+    describe("#getWeeksBetween()", () => {
         const result: (typeof HelperDate.Week)[] = HelperDate.getWeeksBetween(start, end);
-        it("should return the correct number of weeks", function(): void {
+        it("should return the correct number of weeks", () => {
             expect(result).to.have.lengthOf(13);
         });
-        it("should return the correct weeks", function(): void {
+        it("should return the correct weeks", () => {
             for (let i = 0; i < result.length; i++) {
                 expect(result[i].number).to.equal(i + 6);
             }
         });
-        it("should return the correct start dates", function(): void {
+        it("should return the correct start dates", () => {
             const temp: Date = new Date("2017-02-05 00:00:00");
             for (let i = 0; i < result.length; i++) {
                 expect(result[i].start.toDate()).to.deep.equal(temp);
                 temp.setDate(temp.getDate() + 7);
             }
         });
-        it("should return the correct end dates", function(): void {
+        it("should return the correct end dates", () => {
             const temp: Date = new Date("2017-02-11 00:00:00");
             for (let i = 0; i < result.length; i++) {
                 expect(result[i].end.toDate()).to.deep.equal(temp);
@@ -69,18 +69,18 @@ describe("helpers/date", function() {
         });
     });
 
-    describe("#getFromTime()", function(): void {
+    describe("#getFromTime()", () => {
         let now: Date, result: Date;
-        beforeEach(function(): void {
+        beforeEach(() => {
             now = new Date();
             now.setSeconds(0);
             now.setMilliseconds(0);
             result = HelperDate.getFromTime(now.getHours() + ":" + now.getMinutes());
         });
-        it("should return a full Date object", function(): void {
+        it("should return a full Date object", () => {
             expect(result).to.be.an.instanceof(Date);
         });
-        it("should return a Date object for today", function(): void {
+        it("should return a Date object for today", () => {
             expect(result.getTime()).to.equal(now.getTime());
         });
     });

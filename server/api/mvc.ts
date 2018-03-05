@@ -4,11 +4,17 @@ import HttpRouteAction from "./interfaces/HttpRouteAction";
 import * as _ from "lodash";
 
 export default class MVC {
-    public static action(method: "GET" | "POST"): any {
+    public static action(method: "GET" | "POST" | "DELETE" | "PATCH" | "PUT"): any {
         return function(target: IHttpController, propertyKey: string, descriptor: PropertyDescriptor): any {
             MVC.init(target, propertyKey, action => action.method = method);
         };
     }
+
+    public static delete(): any { return this.action("DELETE"); }
+    public static get(): any { return this.action("GET"); }
+    public static patch(): any { return this.action("PATCH"); }
+    public static post(): any { return this.action("POST"); }
+    public static put(): any { return this.action("PUT"); }
 
     public static authorize(permissions?: any[]): any {
         return function(target: IHttpController, propertyKey: string, descriptor: PropertyDescriptor): any {
@@ -35,36 +41,6 @@ export default class MVC {
                 flags = temp;
             }
             MVC.init(target, propertyKey, action => action.flags = flags);
-        };
-    }
-
-    public static delete(): any {
-        return function(target: IHttpController, propertyKey: string, descriptor: PropertyDescriptor): any {
-            MVC.init(target, propertyKey, action => action.method = "DELETE");
-        };
-    }
-
-    public static get(): any {
-        return function(target: IHttpController, propertyKey: string, descriptor: PropertyDescriptor): any {
-            MVC.init(target, propertyKey, action => action.method = "GET");
-        };
-    }
-
-    public static patch(): any {
-        return function(target: IHttpController, propertyKey: string, descriptor: PropertyDescriptor): any {
-            MVC.init(target, propertyKey, action => action.method = "PATCH");
-        };
-    }
-
-    public static post(): any {
-        return function(target: IHttpController, propertyKey: string, descriptor: PropertyDescriptor): any {
-            MVC.init(target, propertyKey, action => action.method = "POST");
-        };
-    }
-
-    public static put(): any {
-        return function(target: IHttpController, propertyKey: string, descriptor: PropertyDescriptor): any {
-            MVC.init(target, propertyKey, action => action.method = "PUT");
         };
     }
 

@@ -68,12 +68,6 @@ export default class MVC {
         };
     }
 
-    public static params(names: string[]): any {
-        return function(target: IHttpController, propertyKey: string, descriptor: PropertyDescriptor): any {
-            console.error(`@eta.mvc.params() is deprecated, will not work, and should not be used. (${target.toString()} :: ${propertyKey}())`);
-        };
-    }
-
     public static raw(): any {
         return function(target: IHttpController, propertyKey: string, descriptor: PropertyDescriptor): any {
             MVC.init(target, propertyKey, action => action.useView = false);

@@ -12,7 +12,7 @@ export default class TestRunner {
     }
 
     public request(url: string, options?: Partial<RequestOptions>): supertest.Test {
-        url = this.pathPrefix + url;
+        if (!url.startsWith("/")) url = this.pathPrefix + url;
         options = _.defaults<Partial<RequestOptions>, Partial<RequestOptions>>(options, {
             method: "get",
             apiToken: process.env.API_TOKEN,

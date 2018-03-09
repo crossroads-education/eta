@@ -15,7 +15,6 @@ export default class RequestHandler extends eta.IRequestHandler {
     public controllerPrototype: eta.IHttpController;
     public app: Application;
     protected actionItem: eta.HttpRouteAction;
-    protected transformers: eta.IRequestTransformer[];
 
     public constructor(init: Partial<RequestHandler>) {
         super(init);
@@ -43,18 +42,13 @@ export default class RequestHandler extends eta.IRequestHandler {
     private transformExpressObjects(): void {
         this.req.mvcPath = decodeURIComponent(this.req.path);
         // ensure that mvcPath always has a route and action (/route.../action)
-        if (this.req.mvcPath === "/") {
-            this.req.mvcPath = "/home/index";
-        } else if (this.req.mvcPath.endsWith("/")) {
+        if (this.req.mvcPath.endsWith("/")) {
             this.req.mvcPath += "index";
-        }
-        if (this.req.mvcPath.split("/").length === 2) {
-            this.req.mvcPath = "/home" + this.req.mvcPath;
         }
         this.req.mvcFullPath = this.req.mvcPath;
         const hostTokens: string[] = this.req.get("host").split(":");
         let host: string = this.config.get("http.host") + ":" + hostTokens[1];
-        if (this.config.get("https.realPort") !== undefined) {
+        if (this.config.get("https.realPort") !== undefined) { // set the host properly based on https realPort
             let realPort = "";
             if (this.config.get("https.realPort") !== false) {
                 realPort = ":" + this.config.get("https.realPort");
@@ -124,26 +118,6 @@ export default class RequestHandler extends eta.IRequestHandler {
 
     protected shouldSaveLastPage(): boolean {
         return !this.req.mvcPath.includes("/auth/") && this.req.method === "GET" && this.req.mvcPath !== "/home/login" && this.req.mvcPath !== "/home/logout";
-    }
-
-    // TODO Document transform events
-    protected async fireTransformEvent(name: string, ...args: any[]): Promise<boolean> {
-        let result = true;
-        for (const t of this.transformers) {
-            const method: () => Promise<void> = (<any>t)[name];
-            if (method) {
-                try {
-                    const value: boolean | void = await method.apply(t, args);
-                    if (typeof(value) === "boolean") {
-                        if (!value) result = false;
-                    }
-                } catch (err) {
-                    eta.logger.error(err);
-                    result = false;
-                }
-            }
-        }
-        return result;
     }
 
     public static async renderError(http: eta.HttpRequest, code: number): Promise<void> {

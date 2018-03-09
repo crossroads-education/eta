@@ -14,7 +14,7 @@ export default class StaticRequestHandler extends RequestHandler {
             this.renderError(eta.constants.http.NotFound);
             return;
         }
-        this.mimeType = mime.lookup(this.req.mvcPath, "text/plain");
+        this.mimeType = mime.getType(this.req.mvcPath) || "text/plain";
         this.stats = await fs.stat(this.staticPath);
         if (this.mimeType === "video/mp4" && this.req.headers.range) {
             return this.handleVideo();

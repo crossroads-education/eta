@@ -1,16 +1,15 @@
 require("source-map-support").install();
 import "reflect-metadata";
+import "./helpers/require";
 import * as dbInit from "./db";
 Object.keys(dbInit); // initializes all database models
 import logger from "./server/api/logger"; // Required to setup logger
 import Application from "./server/Application";
 
 function onUncaughtError(err: Error | string, extra?: any) {
-    if (err instanceof Error) {
-        console.error("An uncaught error occurred:", err.message, err.stack);
-    } else {
-        console.error("An uncaught error occurred:", err);
-    }
+    console.error("An uncaught error occurred:");
+    console.error(err);
+    console.trace(extra);
 }
 
 /**

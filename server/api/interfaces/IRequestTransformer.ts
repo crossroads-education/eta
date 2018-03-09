@@ -2,6 +2,7 @@ import * as express from "express";
 import IRequestHandler from "./IRequestHandler";
 
 abstract class IRequestTransformer extends IRequestHandler {
+    public get sortOrder(): number { return 100; }
     public async onRequest(): Promise<void> { }
     public async beforeResponse(): Promise<void> { }
     /**

@@ -10,7 +10,11 @@
     "noImplicitReturns": true,
     "preserveConstEnums": true,
     "sourceMap": true,
-    "rootDir": "."
+    "rootDir": ".",
+    "baseUrl": ".",
+    "paths": {
+      "@eta/*": ["*"]
+    }
   },
   "compileOnSave": true,
   "buildOnSave": false,

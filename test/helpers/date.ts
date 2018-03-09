@@ -1,95 +1,87 @@
-import * as assert from "assert";
-import * as mocha from "mocha";
+import { expect } from "chai";
 import HelperDate from "../../helpers/date";
 
-describe("HelperDate", function() {
+describe("helpers/date", function() {
     const start: Date = new Date("2017-02-07");
     const end: Date = new Date("2017-05-10");
-    describe("#getDate()", function(): void {
-        it("should not mutate the parameter", function(): void {
-            const param: Date = new Date();
-            const copy: Date = new Date(param.getTime());
-            const result: Date = HelperDate.getDate(param);
-            assert.deepEqual(copy, param);
+
+    describe("#getDate()", () => {
+        const input = new Date();
+        const inputTime = input.getTime();
+        let output: Date;
+        beforeEach(() => {
+            output = HelperDate.getDate(input);
         });
-        it("should not return a Date with any time", function(): void {
-            const result: Date = HelperDate.getDate(new Date());
-            assert.equal(0, result.getHours());
-            assert.equal(0, result.getMinutes());
-            assert.equal(0, result.getSeconds());
-            assert.equal(0, result.getMilliseconds());
+        it("should not mutate the parameter", () => {
+            const copy: Date = new Date(inputTime);
+            expect(copy).to.deep.equal(input);
+        });
+        it("should not return a Date with any time", () => {
+            expect(output.getHours()).to.equal(0);
+            expect(output.getMinutes()).to.equal(0);
+            expect(output.getSeconds()).to.equal(0);
+            expect(output.getMilliseconds()).to.equal(0);
         });
     });
-    describe("#getMonthsBetween()", function(): void {
+
+    describe("#getMonthsBetween()", () => {
         const result: (typeof HelperDate.Month)[] = HelperDate.getMonthsBetween(start, end);
         // getMonthsBetween(February, May) should return [February, March, April]
-        it("should not mutate `start`", function(): void {
-            assert.deepEqual(new Date(start.getTime()), start);
+        it("should return the correct number of months", () => {
+            expect(result).to.have.lengthOf(3);
         });
-        it("should not mutate `end`", function(): void {
-            assert.deepEqual(new Date(end.getTime()), end);
+        it("should return the correct months", () => {
+            expect(result[0].number).to.equal(2);
+            expect(result[1].number).to.equal(3);
+            expect(result[2].number).to.equal(4);
         });
-        it("should return the correct number of months", function(): void {
-            assert.equal(3, result.length);
-        });
-        it("should return the correct months", function(): void {
-            assert.equal(2, result[0].number);
-            assert.equal(3, result[1].number);
-            assert.equal(4, result[2].number);
-        });
-        it("should return the correct month names", function(): void {
-            assert.equal("February", result[0].name);
-            assert.equal("March", result[1].name);
-            assert.equal("April", result[2].name);
+        it("should return the correct month names", () => {
+            expect(result[0].name).to.equal("February");
+            expect(result[1].name).to.equal("March");
+            expect(result[2].name).to.equal("April");
         });
         // Not testing Month.weeks since we're already testing getWeeksBetween()
     });
 
-    describe("#getWeeksBetween()", function(): void {
+    describe("#getWeeksBetween()", () => {
         const result: (typeof HelperDate.Week)[] = HelperDate.getWeeksBetween(start, end);
-        it("should not mutate `start`", function(): void {
-            assert.deepEqual(new Date(start.getTime()), start);
+        it("should return the correct number of weeks", () => {
+            expect(result).to.have.lengthOf(13);
         });
-        it("should not mutate `end`", function(): void {
-            assert.deepEqual(new Date(end.getTime()), end);
-        });
-        it("should return the correct number of weeks", function(): void {
-            assert.equal(13, result.length);
-        });
-        it("should return the correct weeks", function(): void {
+        it("should return the correct weeks", () => {
             for (let i = 0; i < result.length; i++) {
-                assert.equal(i + 6, result[i].number);
+                expect(result[i].number).to.equal(i + 6);
             }
         });
-        it("should return the correct start dates", function(): void {
+        it("should return the correct start dates", () => {
             const temp: Date = new Date("2017-02-05 00:00:00");
             for (let i = 0; i < result.length; i++) {
-                assert.deepEqual(temp, result[i].start.toDate());
+                expect(result[i].start.toDate()).to.deep.equal(temp);
                 temp.setDate(temp.getDate() + 7);
             }
         });
-        it("should return the correct end dates", function(): void {
+        it("should return the correct end dates", () => {
             const temp: Date = new Date("2017-02-11 00:00:00");
             for (let i = 0; i < result.length; i++) {
-                assert.deepEqual(temp, result[i].end.toDate());
+                expect(result[i].end.toDate()).to.deep.equal(temp);
                 temp.setDate(temp.getDate() + 7);
             }
         });
     });
 
-    describe("#getFromTime()", function(): void {
+    describe("#getFromTime()", () => {
         let now: Date, result: Date;
-        beforeEach(function(): void {
+        beforeEach(() => {
             now = new Date();
             now.setSeconds(0);
             now.setMilliseconds(0);
             result = HelperDate.getFromTime(now.getHours() + ":" + now.getMinutes());
         });
-        it("should return a full Date object", function(): void {
-            assert.ok(result instanceof Date);
+        it("should return a full Date object", () => {
+            expect(result).to.be.an.instanceof(Date);
         });
-        it("should return a Date object for today", function(): void {
-            assert.equal(now.getTime(), result.getTime());
+        it("should return a Date object for today", () => {
+            expect(result.getTime()).to.equal(now.getTime());
         });
     });
 });

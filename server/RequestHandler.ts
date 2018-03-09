@@ -15,7 +15,6 @@ export default class RequestHandler extends eta.IRequestHandler {
     public controllerPrototype: eta.IHttpController;
     public app: Application;
     protected actionItem: eta.HttpRouteAction;
-    protected transformers: eta.IRequestTransformer[];
 
     public constructor(init: Partial<RequestHandler>) {
         super(init);
@@ -119,26 +118,6 @@ export default class RequestHandler extends eta.IRequestHandler {
 
     protected shouldSaveLastPage(): boolean {
         return !this.req.mvcPath.includes("/auth/") && this.req.method === "GET" && this.req.mvcPath !== "/home/login" && this.req.mvcPath !== "/home/logout";
-    }
-
-    // TODO Document transform events
-    protected async fireTransformEvent(name: string, ...args: any[]): Promise<boolean> {
-        let result = true;
-        for (const t of this.transformers) {
-            const method: () => Promise<void> = (<any>t)[name];
-            if (method) {
-                try {
-                    const value: boolean | void = await method.apply(t, args);
-                    if (typeof(value) === "boolean") {
-                        if (!value) result = false;
-                    }
-                } catch (err) {
-                    eta.logger.error(err);
-                    result = false;
-                }
-            }
-        }
-        return result;
     }
 
     public static async renderError(http: eta.HttpRequest, code: number): Promise<void> {

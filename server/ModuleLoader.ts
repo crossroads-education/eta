@@ -179,6 +179,7 @@ export default class ModuleLoader extends events.EventEmitter {
         const loadResult = await eta.misc.loadModules(this.config.dirs.requestTransformers, this.requireFunc);
         loadResult.errors.forEach(err => eta.logger.error(err));
         this.requestTransformers = loadResult.modules.map(m => m.default);
+        this.requestTransformers.forEach(t => this.emit("transformer-load", t));
     }
 
     private setupWatchers(): void {
@@ -187,16 +188,16 @@ export default class ModuleLoader extends events.EventEmitter {
         chokidar.watch(this.config.dirs.controllers, {
             persistent: false
         }).on("change", (path: string) => {
-            const controllerType: typeof eta.IHttpController = this.loadController(path);
-            if (controllerType !== undefined) {
-                eta.logger.trace(`Reloaded controller: ${controllerType.name} (${controllerType.prototype.route.raw})`);
+            const HttpController: typeof eta.IHttpController = this.loadController(path);
+            if (HttpController !== undefined) {
+                eta.logger.trace(`Reloaded controller: ${HttpController.name} (${HttpController.prototype.route.raw})`);
             }
         });
         // view metadata
         chokidar.watch(this.config.dirs.views, {
             persistent: false,
             ignored: /\.pug$/
-        }).on("change", (path: string, i) => {
+        }).on("change", (path: string) => {
             path = path.replace(/\\/g, "/");
             const viewDir = this.config.dirs.views.find(d => path.startsWith(d));
             this.loadSingleViewMetadata(path, viewDir, true).then(data => {
@@ -206,6 +207,16 @@ export default class ModuleLoader extends events.EventEmitter {
             }).catch(err => {
                 eta.logger.error(err);
             });
+        });
+        // request transformers
+        chokidar.watch(this.config.dirs.requestTransformers, {
+            persistent: false
+        }).on("change", (path: string) => {
+            path = path.replace(/\\/g, "/");
+            if (!path.endsWith(".js")) return;
+            const RequestTransformer: typeof eta.IRequestTransformer = requireReload(path).default;
+            this.emit("transformer-load", RequestTransformer);
+            eta.logger.trace(`Reloaded request transformer: ${RequestTransformer.name}`);
         });
     }
 }

@@ -136,13 +136,17 @@ export default class Application extends EventEmitter {
         eta.logger.info(`Found ${moduleDirs.length} modules: ${moduleDirs.join(", ")}`);
         for (const moduleName of moduleDirs) {
             this.moduleLoaders[moduleName] = new ModuleLoader(moduleName, this);
-            this.moduleLoaders[moduleName].on("controller-load", (controllerType: typeof eta.IHttpController) => {
+            this.moduleLoaders[moduleName].on("controller-load", (HttpController: typeof eta.IHttpController) => {
                 this.controllers = this.controllers.filter(c => // remove duplicates
-                    c.prototype.route.raw !== controllerType.prototype.route.raw);
-                this.controllers.push(controllerType);
-                this.emit("controller-load", controllerType);
+                    c.prototype.route.raw !== HttpController.prototype.route.raw);
+                this.controllers.push(HttpController);
+                this.emit("controller-load", HttpController);
             }).on("metadata-load", (metadataMVCPath: string) => {
                 this.viewMetadata[metadataMVCPath] = this.moduleLoaders[moduleName].viewMetadata[metadataMVCPath];
+            }).on("transformer-load", (RequestTransformer: typeof eta.IRequestTransformer) => {
+                this.requestTransformers = this.requestTransformers.filter(t => // remove duplicates
+                    t.name !== RequestTransformer.name);
+                this.requestTransformers.push(RequestTransformer);
             });
             await this.moduleLoaders[moduleName].loadAll();
             if (!this.moduleLoaders[moduleName].isInitialized) {
@@ -155,7 +159,6 @@ export default class Application extends EventEmitter {
             moduleLoader.lifecycleHandlers.forEach(LifecycleHandler => {
                 new (<any>LifecycleHandler)().register(this);
             });
-            this.requestTransformers = this.requestTransformers.concat(moduleLoader.requestTransformers);
             this.staticFiles = eta._.defaults(moduleLoader.staticFiles, this.staticFiles);
             this.viewFiles = eta._.defaults(moduleLoader.viewFiles, this.viewFiles);
         });

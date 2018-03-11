@@ -9,11 +9,6 @@ export default class StaticRequestHandler extends RequestHandler {
     private stats: fs.Stats;
 
     public async handle(): Promise<void> {
-        if (!await fs.pathExists(this.staticPath)) { // since static file list is cached
-            eta.logger.trace("A static file was deleted after the server started. " + this.staticPath);
-            this.renderError(eta.constants.http.NotFound);
-            return;
-        }
         this.mimeType = mime.getType(this.req.mvcPath) || "text/plain";
         this.stats = await fs.stat(this.staticPath);
         if (this.mimeType === "video/mp4" && this.req.headers.range) {

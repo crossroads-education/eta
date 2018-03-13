@@ -161,10 +161,14 @@ export default class DynamicRequestHandler extends RequestHandler {
     }
 
     private buildTransformFire<T>(name: string): (...args: any[]) => Promise<T[]> {
-        return (...args: any[]) => Promise.all(this.transformers.map(t => {
-            const method: (...args: any[]) => Promise<void> = (<any>t)[name];
-            if (!method) return undefined;
-            return method.apply(t, args);
-        }).filter(p => p !== undefined));
+        return async (...args: any[]) => {
+            const results: T[] = [];
+            for (const t of this.transformers) {
+                const method: (...args: any[]) => Promise<void> = (<any>t)[name];
+                if (!method) continue;
+                results.push(await method.apply(t, args));
+            }
+            return results;
+        };
     }
 }

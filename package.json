@@ -1,6 +1,6 @@
 {
   "name": "@xroadsed/eta",
-  "version": "2.7.1",
+  "version": "2.7.2",
   "description": "A Node.JS webserver, designed to provide a speedy MVC interface with little effort.",
   "homepage": "http://github.com/crossroads-education/eta/",
   "repository": "git://github.com:crossroads-education/eta.git",

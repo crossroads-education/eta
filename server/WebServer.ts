@@ -119,6 +119,7 @@ export default class WebServer extends EventEmitter {
             bodyParser: bodyParser.urlencoded({ // sets up support for standard POST bodies
                 extended: false
             }),
+            bodyParserJson: bodyParser.json(),
             passport: passport.initialize(),
             passportSession: passport.session()
         };

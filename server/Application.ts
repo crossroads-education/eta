@@ -153,7 +153,7 @@ export default class Application extends EventEmitter {
         // map all modules' objects into webserver's global arrays
         Object.keys(this.moduleLoaders).sort().forEach(k => {
             const moduleLoader: ModuleLoader = this.moduleLoaders[k];
-            lifecycleHandlers.push(...moduleLoader.lifecycleHandlers);
+            lifecycleHandlers.push(...<any[]>moduleLoader.lifecycleHandlers);
             this.staticFiles = eta._.defaults(moduleLoader.staticFiles, this.staticFiles);
             this.viewFiles = eta._.defaults(moduleLoader.viewFiles, this.viewFiles);
         });

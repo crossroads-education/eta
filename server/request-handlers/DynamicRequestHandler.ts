@@ -3,8 +3,6 @@ import * as fs from "fs-extra";
 import RequestHandler from "../RequestHandler";
 
 export default class DynamicRequestHandler extends RequestHandler {
-    private transformers: eta.IRequestTransformer[];
-
     public async handle(): Promise<void> {
         if (this.controllerPrototype) {
             this.controller = new (<any>this.controllerPrototype.constructor)({
@@ -18,12 +16,7 @@ export default class DynamicRequestHandler extends RequestHandler {
             });
             this.actionItem = this.controllerPrototype.route.actions[this.action];
         }
-        this.transformers = this.app.requestTransformers.map(t => {
-            const transformer: eta.IRequestTransformer = new (<any>t)(this);
-            transformer.server = this.app.server;
-            return transformer;
-        }).sort((a, b) => a.sortOrder - b.sortOrder);
-        await this.buildTransformFire("onRequest")();
+        await this.app.emit("request", this);
         if (this.res.finished) return;
         if (this.controller && this.actionItem) {
             if (this.actionItem.isAuthRequired && !this.isLoggedIn()) { // requires login but is not logged in
@@ -32,7 +25,7 @@ export default class DynamicRequestHandler extends RequestHandler {
                 await this.saveSession();
                 this.redirect("/login");
             } else if (this.actionItem.permissionsRequired.length > 0) {
-                const isAuthorizedResults: boolean[] = await this.buildTransformFire<boolean>("isRequestAuthorized")(this.actionItem.permissionsRequired);
+                const isAuthorizedResults: boolean[] = await <any>this.app.emit("request:auth", this, this.actionItem.permissionsRequired);
                 if (!isAuthorizedResults.includes(false)) {
                     this.callController();
                 } else {
@@ -141,7 +134,7 @@ export default class DynamicRequestHandler extends RequestHandler {
             this.renderError(eta.constants.http.NotFound);
             return;
         }
-        await this.buildTransformFire("beforeResponse")();
+        await this.app.emit("request:pre-response", this);
         if (this.res.finished) return;
         if (this.config.get("dev.enable")) {
             this.res.view["compileDebug"] = true;
@@ -158,17 +151,5 @@ export default class DynamicRequestHandler extends RequestHandler {
             this.req.session.lastPage = this.req.mvcFullPath;
         }
         this.res.send(html);
-    }
-
-    private buildTransformFire<T>(name: string): (...args: any[]) => Promise<T[]> {
-        return async (...args: any[]) => {
-            const results: T[] = [];
-            for (const t of this.transformers) {
-                const method: (...args: any[]) => Promise<void> = (<any>t)[name];
-                if (!method) continue;
-                results.push(await method.apply(t, args));
-            }
-            return results;
-        };
     }
 }

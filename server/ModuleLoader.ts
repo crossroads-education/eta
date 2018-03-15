@@ -9,8 +9,7 @@ const requireReload: (path: string) => any = require("require-reload")(require);
 
 export default class ModuleLoader extends events.EventEmitter {
     public controllers: {[key: string]: typeof eta.IHttpController};
-    public lifecycleHandlers: (typeof eta.ILifecycleHandler)[];
-    public requestTransformers: (typeof eta.IRequestTransformer)[];
+    public lifecycleHandlers: (typeof eta.LifecycleHandler)[];
     /** webPath: fsPath */
     public staticFiles: {[key: string]: string};
     /** webPath: fsPath */
@@ -40,8 +39,7 @@ export default class ModuleLoader extends events.EventEmitter {
             this.loadStatic(),
             this.loadViewMetadata(),
             this.loadViews(),
-            this.loadLifecycleHandlers(),
-            this.loadRequestTransformers()
+            this.loadLifecycleHandlers()
         ]);
         this.setupWatchers();
         this.requireFunc = requireReload;
@@ -175,13 +173,6 @@ export default class ModuleLoader extends events.EventEmitter {
         this.lifecycleHandlers = loadResult.modules.map(m => m.default);
     }
 
-    public async loadRequestTransformers(): Promise<void> {
-        const loadResult = await eta.misc.loadModules(this.config.dirs.requestTransformers, this.requireFunc);
-        loadResult.errors.forEach(err => eta.logger.error(err));
-        this.requestTransformers = loadResult.modules.map(m => m.default);
-        this.requestTransformers.forEach(t => this.emit("transformer-load", t));
-    }
-
     private setupWatchers(): void {
         if (!this.app.configs.global.get("dev.enable")) return;
         // controllers
@@ -207,16 +198,6 @@ export default class ModuleLoader extends events.EventEmitter {
             }).catch(err => {
                 eta.logger.error(err);
             });
-        });
-        // request transformers
-        chokidar.watch(this.config.dirs.requestTransformers, {
-            persistent: false
-        }).on("change", (path: string) => {
-            path = path.replace(/\\/g, "/");
-            if (!path.endsWith(".js")) return;
-            const RequestTransformer: typeof eta.IRequestTransformer = requireReload(path).default;
-            this.emit("transformer-load", RequestTransformer);
-            eta.logger.trace(`Reloaded request transformer: ${RequestTransformer.name}`);
         });
     }
 }

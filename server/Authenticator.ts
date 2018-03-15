@@ -37,13 +37,13 @@ export default class Authenticator {
             req, res, next,
             config: this.app.configs[req.hostname] || this.app.configs.global
         };
-        (<Promise<void>><any>this.app.server.emit("pre-auth", http)).then(() => {
+        (<Promise<void>><any>this.app.emit("auth:pre", http)).then(() => {
             if (res.finished) return;
             passport.authenticate(http.config.get("http.host") + "-" + http.config.get("auth.provider"), (err: Error, user: any) => {
                 (async () => {
                     if (err) throw err;
                     if (user === undefined) return res.redirect("/login");
-                    await this.app.server.emit("auth", { req, res, next }, user);
+                    await this.app.emit("auth", { req, res, next }, user);
                     if (res.finished) return;
                     req.session.save(() => {
                         res.redirect(req.session.lastPage);

@@ -18,9 +18,8 @@ import Authenticator from "./Authenticator";
 import ModuleLoader from "./ModuleLoader";
 import RepositoryManager from "../db";
 import RequestHandler from "./RequestHandler";
-const EventEmitter: typeof events.EventEmitter = require("promise-events");
 
-export default class WebServer extends EventEmitter {
+export default class WebServer {
     public app: Application;
     /**
      * Express application powering the web server
@@ -43,7 +42,6 @@ export default class WebServer extends EventEmitter {
         return this.app.configs.global;
     }
 
-    // TODO: Document WebServer.init()
     public async init(): Promise<boolean> {
         this.express = express();
         this.configureExpress();
@@ -56,12 +54,12 @@ export default class WebServer extends EventEmitter {
         }
         this.express.all("/*", this.onRequest.bind(this));
         this.setupHttpServer();
-        await this.emit("pre-start");
+        // await this.app.emit("pre-start");
         return true;
     }
 
     public async close(): Promise<void> {
-        await this.emit("stop");
+        await this.app.emit("server:stop");
         if (this.server) {
             this.server.close();
         }
@@ -81,7 +79,7 @@ export default class WebServer extends EventEmitter {
         const port: number = this.config.get(`http${this.config.get("https.enable") ? "s" : ""}.port`);
         this.server.listen(port, () => {
             eta.logger.info("Web server (main) started on port " + port);
-            (<Promise<void>><any>this.emit("start")).catch(err => {
+            (<Promise<void>><any>this.app.emit("server:start")).catch(err => {
                 eta.logger.error(err);
             });
         });
@@ -133,7 +131,7 @@ export default class WebServer extends EventEmitter {
             app: this.app,
             config: this.app.configs[req.hostname] || this.config,
             db: new RepositoryManager(req.hostname)
-        }).handleRequest().then(() => { })
+        }).handleRequest()
         .catch(err => {
             eta.logger.error(err);
         });

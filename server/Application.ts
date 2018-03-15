@@ -18,7 +18,6 @@ export default class Application extends EventEmitter {
     public moduleLoaders: {[key: string]: ModuleLoader} = {};
     public configs: {[key: string]: eta.Configuration} = {};
     public controllers: (typeof eta.IHttpController)[] = [];
-    public requestTransformers: (typeof eta.IRequestTransformer)[] = [];
     public staticFiles: {[key: string]: string} = {};
     public viewFiles: {[key: string]: string} = {};
     public viewMetadata: {[key: string]: {[key: string]: any}} = {};
@@ -32,13 +31,13 @@ export default class Application extends EventEmitter {
         this.server = new WebServer();
         this.server.app = this;
         await this.loadModules();
-        await this.emit("init");
+        await this.emit("app:start");
         eta.logger.info("Connecting to the database and initalizing ORM...");
         await this.connectDatabases();
         eta.logger.info("Successfully connected to the database.");
         this.redis = await connectRedis(this.configs.global);
         eta.logger.info("Successfully connected to the Redis server.");
-        await this.emit("database-connect");
+        await this.emit("database:connect");
         return await this.server.init();
     }
 
@@ -140,27 +139,27 @@ export default class Application extends EventEmitter {
                 this.controllers = this.controllers.filter(c => // remove duplicates
                     c.prototype.route.raw !== HttpController.prototype.route.raw);
                 this.controllers.push(HttpController);
-                this.emit("controller-load", HttpController);
+                this.emit("load:controller", HttpController);
             }).on("metadata-load", (metadataMVCPath: string) => {
                 this.viewMetadata[metadataMVCPath] = this.moduleLoaders[moduleName].viewMetadata[metadataMVCPath];
-            }).on("transformer-load", (RequestTransformer: typeof eta.IRequestTransformer) => {
-                this.requestTransformers = this.requestTransformers.filter(t => // remove duplicates
-                    t.name !== RequestTransformer.name);
-                this.requestTransformers.push(RequestTransformer);
+                this.emit("load:view-metadata");
             });
             await this.moduleLoaders[moduleName].loadAll();
             if (!this.moduleLoaders[moduleName].isInitialized) {
                 delete this.moduleLoaders[moduleName];
             }
         }
+        const lifecycleHandlers: (new (app: Application) => eta.LifecycleHandler)[] = [];
         // map all modules' objects into webserver's global arrays
         Object.keys(this.moduleLoaders).sort().forEach(k => {
             const moduleLoader: ModuleLoader = this.moduleLoaders[k];
-            moduleLoader.lifecycleHandlers.forEach(LifecycleHandler => {
-                new (<any>LifecycleHandler)().register(this);
-            });
+            lifecycleHandlers.push(...moduleLoader.lifecycleHandlers);
             this.staticFiles = eta._.defaults(moduleLoader.staticFiles, this.staticFiles);
             this.viewFiles = eta._.defaults(moduleLoader.viewFiles, this.viewFiles);
         });
+        lifecycleHandlers
+            .map(LH => new LH(this))
+            .sort((a, b) => a.sortOrder - b.sortOrder)
+            .forEach(h => h.register());
     }
 }

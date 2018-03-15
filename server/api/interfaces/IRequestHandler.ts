@@ -1,6 +1,7 @@
 import * as express from "express";
 import * as helpers from "../../../helpers/index";
 import Configuration from "../../../lib/Configuration";
+import HttpRequest from "./HttpRequest";
 import RepositoryManager from "../../../db";
 import WebServer from "../../WebServer";
 

@@ -116,44 +116,32 @@ export default class ModuleLoader extends events.EventEmitter {
         }));
     }
 
-    public loadViewMetadata(): Promise<void> {
+    public async loadViewMetadata(): Promise<void> {
         this.viewMetadata = {};
-        return <any>Promise.all(this.config.dirs.views.map(async viewDir => {
+        await Promise.all(this.config.dirs.views.map(async viewDir => {
             const files: string[] = (await eta.fs.recursiveReaddirs([viewDir]))
                 .filter(f => f.endsWith(".json"));
-            for (const path of files) {
-                await this.loadSingleViewMetadata(path, viewDir, false);
+            for (const filename of files) {
+                await this.loadViewMetadataFile(filename, viewDir, false);
             }
         }));
     }
 
-    private async loadSingleViewMetadata(path: string, viewDir: string, forceReload: boolean): Promise<{[key: string]: any}> {
-        const mvcPath: string = path.substring(viewDir.length - 1, path.length - 5);
-        if (this.viewMetadata[mvcPath] && !forceReload) {
-            return this.viewMetadata[mvcPath];
+    private async loadViewMetadataFile(filename: string, viewDir: string, forceReload: boolean): Promise<void> {
+        const mvcPath = filename.substring(viewDir.length - 1, filename.length - 5);
+        if (this.viewMetadata[mvcPath] !== undefined && !forceReload) {
+            eta.logger.warn("View metadata " + mvcPath + " was already loaded - keeping the first one found (not " + filename + ").");
+            return;
         }
         let metadata: {[key: string]: any};
         try {
-            const rawJson: string = (await fs.readFile(path)).toString();
-            metadata = JSON.parse(rawJson);
+            metadata = await fs.readJson(filename);
         } catch (err) {
             eta.logger.warn("Encountered invalid JSON in " + path);
             eta.logger.error(err);
-            return undefined;
-        }
-        if (metadata.include !== undefined) {
-            for (let p of metadata.include) {
-                p = p.startsWith("/") ? p.substring(1) : p;
-                const more: {[key: string]: any} = await this.loadSingleViewMetadata(viewDir + p, viewDir, forceReload);
-                if (more !== undefined) {
-                    // TODO: Fix deprecated usage
-                    metadata = eta.object.merge(more, metadata, true);
-                }
-            }
         }
         this.viewMetadata[mvcPath] = metadata;
         this.emit("metadata-load", mvcPath);
-        return metadata;
     }
 
     public loadViews(): Promise<void> {
@@ -191,10 +179,8 @@ export default class ModuleLoader extends events.EventEmitter {
         }).on("change", (path: string) => {
             path = path.replace(/\\/g, "/");
             const viewDir = this.config.dirs.views.find(d => path.startsWith(d));
-            this.loadSingleViewMetadata(path, viewDir, true).then(data => {
-                if (data !== undefined) {
-                    eta.logger.trace(`Reloaded view metadata: ${path.substring(viewDir.length)}`);
-                }
+            this.loadViewMetadataFile(path, viewDir, true).then(data => {
+                eta.logger.trace(`Reloaded view metadata: ${path.substring(viewDir.length)}`);
             }).catch(err => {
                 eta.logger.error(err);
             });

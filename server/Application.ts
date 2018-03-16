@@ -140,8 +140,14 @@ export default class Application extends EventEmitter {
                     c.prototype.route.raw !== HttpController.prototype.route.raw);
                 this.controllers.push(HttpController);
                 this.emit("load:controller", HttpController);
-            }).on("metadata-load", (metadataMVCPath: string) => {
-                this.viewMetadata[metadataMVCPath] = this.moduleLoaders[moduleName].viewMetadata[metadataMVCPath];
+            }).on("metadata-load", (mvcPath: string) => {
+                this.viewMetadata[mvcPath] = this.moduleLoaders[moduleName].viewMetadata[mvcPath];
+                if (this.moduleLoaders[moduleName].isInitialized) {
+                    const includePaths: string[] = (this.viewMetadata[mvcPath].include || []);
+                    for (const includePath of includePaths) {
+                        this.viewMetadata[mvcPath] = eta._.merge(this.viewMetadata[includePath] || {}, this.viewMetadata[mvcPath]);
+                    }
+                }
                 this.emit("load:view-metadata");
             });
             await this.moduleLoaders[moduleName].loadAll();
@@ -161,5 +167,16 @@ export default class Application extends EventEmitter {
             .map(LH => new LH(this))
             .sort((a, b) => a.sortOrder - b.sortOrder)
             .forEach(h => h.register());
+        let unvisitedPaths: string[] = Object.keys(this.viewMetadata).filter(k => (this.viewMetadata[k].include || []).length === 0);
+        const nextPaths: string[] = [];
+        while (unvisitedPaths.length > 0) {
+            const currentPath = unvisitedPaths.splice(0, 1)[0];
+            const otherPaths = Object.keys(this.viewMetadata).filter(k => (this.viewMetadata[k].include || []).includes(currentPath));
+            for (const otherPath of otherPaths) {
+                this.viewMetadata[otherPath] = eta._.merge(this.viewMetadata[otherPath], this.viewMetadata[currentPath]);
+                nextPaths.push(otherPath);
+            }
+            if (unvisitedPaths.length === 0) unvisitedPaths = eta._.uniq(nextPaths.splice(0, nextPaths.length));
+        }
     }
 }

@@ -1,17 +1,13 @@
 /// <reference path="../def/express.d.ts"/>
 import * as bodyParser from "body-parser";
 import * as redisSession from "connect-redis";
-import * as events from "events";
 import * as express from "express";
 import * as expressSession from "express-session";
 import * as fs from "fs-extra";
 import * as http from "http";
 import * as https from "https";
 import * as multer from "multer";
-import * as orm from "typeorm";
 import * as passport from "passport";
-import * as pg from "pg";
-import * as redis from "redis";
 import * as eta from "../eta";
 import Application from "./Application";
 import Authenticator from "./Authenticator";

@@ -163,10 +163,7 @@ export default class Application extends EventEmitter {
             this.staticFiles = eta._.defaults(moduleLoader.staticFiles, this.staticFiles);
             this.viewFiles = eta._.defaults(moduleLoader.viewFiles, this.viewFiles);
         });
-        lifecycleHandlers
-            .map(LH => new LH(this))
-            .sort((a, b) => a.sortOrder - b.sortOrder)
-            .forEach(h => h.register());
+        lifecycleHandlers.forEach(LifecycleHandler => new LifecycleHandler(this).register());
         let unvisitedPaths: string[] = Object.keys(this.viewMetadata).filter(k => (this.viewMetadata[k].include || []).length === 0);
         const nextPaths: string[] = [];
         while (unvisitedPaths.length > 0) {

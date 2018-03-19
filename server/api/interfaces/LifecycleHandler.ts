@@ -6,6 +6,5 @@ export default abstract class LifecycleHandler {
         this.app = app;
     }
 
-    public get sortOrder() { return 100; }
     public abstract register(): void;
 }

@@ -24,7 +24,7 @@ export default class DynamicRequestHandler extends RequestHandler {
                 if (this.shouldSaveLastPage) this.req.session.lastPage = this.req.mvcFullPath;
                 await this.saveSession();
                 this.redirect("/login");
-            } else if (this.actionItem.permissionsRequired.length > 0) {
+            } else if (this.actionItem.isAuthRequired) {
                 const isAuthorizedResults: boolean[] = await <any>this.app.emit("request:auth", this, this.actionItem.permissionsRequired);
                 if (!isAuthorizedResults.includes(false)) {
                     this.callController();

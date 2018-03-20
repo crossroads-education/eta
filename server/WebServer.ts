@@ -111,7 +111,7 @@ export default class WebServer {
                 storage: multer.memoryStorage()
             }).any(),
             bodyParser: bodyParser.urlencoded({ // sets up support for standard POST bodies
-                extended: false
+                extended: true
             }),
             passport: passport.initialize(),
             passportSession: passport.session()

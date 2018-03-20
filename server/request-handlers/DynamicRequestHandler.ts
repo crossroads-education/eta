@@ -1,5 +1,6 @@
 import * as eta from "../../eta";
 import * as fs from "fs-extra";
+import * as querystring from "querystring";
 import RequestHandler from "../RequestHandler";
 
 export default class DynamicRequestHandler extends RequestHandler {
@@ -91,40 +92,13 @@ export default class DynamicRequestHandler extends RequestHandler {
     }
 
     private buildQueryParams(): {[key: string]: any} {
-        const queryParams: {[key: string]: any} = {};
-        const rawQueryParams: {[key: string]: any} = this.req[this.req.method === "GET" ? "query" : "body"];
-        // checks GET/POST for JSON-encoded values and "bad" JQuery-encoded keys
-        const rawQueryKeys: string[] = Object.keys(rawQueryParams);
-        rawQueryKeys.filter(k => !k.includes("[")).forEach(k => {
+        const queryParams = this.req[this.req.method === "GET" ? "query" : "body"];
+        for (const key in queryParams) { // just parse any JSON parameters
+            if (typeof(queryParams[key]) !== "string") continue;
             try {
-                queryParams[k] = JSON.parse(rawQueryParams[k]);
-            } catch (err) {
-                queryParams[k] = rawQueryParams[k];
-            }
-        });
-        // transform JQuery-encoded keys
-        rawQueryKeys.filter(k => k.includes("[")).forEach(k => {
-            const tokens: string[] = k.split("[");
-            const keys: string[] = [tokens.splice(0, 1)[0]].concat(tokens.map(t => t.slice(0, -1)));
-            let lastItem: any = queryParams;
-            keys.slice(0, -1).forEach(qk => {
-                if (!lastItem[qk]) {
-                    lastItem[qk] = {};
-                }
-                lastItem = lastItem[qk];
-            });
-            lastItem[keys.slice(-1)[0]] = rawQueryParams[k];
-        });
-        const nonArrayKeys: string[] = rawQueryKeys.filter(k => !k.includes("["));
-        Object.keys(queryParams).filter(k => !nonArrayKeys.includes(k)).forEach(k => {
-            // convert JQuery-encoded arrays from number-keyed objects to arrays in-memory
-            const itemKeys: string[] = Object.keys(queryParams[k]);
-            if (!(queryParams[k] instanceof Array) && itemKeys.every(k => !isNaN(Number(k)))) {
-                const arr: any[] = [];
-                itemKeys.forEach(key => arr[Number(key)] = queryParams[k][key]);
-                queryParams[k] = arr;
-            }
-        });
+                queryParams[key] = JSON.parse(queryParams[key]);
+            } catch { }
+        }
         return queryParams;
     }
 

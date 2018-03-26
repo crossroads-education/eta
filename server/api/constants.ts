@@ -10,7 +10,7 @@ export default class Constants {
     public static http = {
         AccessDenied: 403,
         InternalError: 500,
-        InvalidParameters: 400,
+        MissingParameters: 422,
         NotFound: 404,
         NotModified: 304
     };

@@ -1,12 +1,9 @@
 import * as express from "express";
 import HttpRoute from "./HttpRoute";
-import IRequestHandler from "./IRequestHandler";
+import RequestHandler from "./RequestHandler";
 
-abstract class IHttpController extends IRequestHandler {
-    public route: HttpRoute;
-    public params: {[key: string]: string} = {};
-
-    public constructor(init: Partial<IHttpController>) {
+export default abstract class HttpController extends RequestHandler {
+    public constructor(init: Partial<HttpController>) {
         super(init);
         Object.assign(this, init);
     }
@@ -20,5 +17,3 @@ abstract class IHttpController extends IRequestHandler {
         });
     }
 }
-
-export default IHttpController;

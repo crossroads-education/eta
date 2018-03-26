@@ -1,7 +1,6 @@
 import * as express from "express";
 import * as helpers from "../../../helpers/index";
 import Configuration from "../../../lib/Configuration";
-import HttpRequest from "./HttpRequest";
 import RepositoryManager from "../../../db";
 import WebServer from "../../WebServer";
 
@@ -17,17 +16,8 @@ abstract class IRequestHandler {
         Object.assign(this, init);
     }
 
-    public error(code: number, more?: {[key: string]: any}): void { this.sendRawResponse("error", code, more); }
-    public result(code: number, more?: {[key: string]: any}): void { this.sendRawResponse("result", code, more); }
-
     public redirect(url: string): void {
-        IRequestHandler.redirect(this.res, url);
-    }
-
-    public static redirect(res: express.Response, url: string): void {
-        res.redirect(303, url);
-        res.end();
-        res.finished = true;
+        helpers.http.redirect(this.res, url);
     }
 
     public saveSession(): Promise<void> {
@@ -36,12 +26,6 @@ abstract class IRequestHandler {
 
     public isLoggedIn(): boolean {
         return this.req.session !== undefined && this.req.session.userid !== undefined;
-    }
-
-    private sendRawResponse(name: string, code: number, more?: {[key: string]: any}): void {
-        if (!more) more = {};
-        more[name] = code;
-        this.res.raw = more;
     }
 }
 

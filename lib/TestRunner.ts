@@ -1,5 +1,4 @@
 import * as _ from "lodash";
-import { expect } from "chai";
 import * as supertest from "supertest";
 
 export default class TestRunner {

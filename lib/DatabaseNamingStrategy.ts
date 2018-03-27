@@ -18,7 +18,8 @@ export default class DatabaseNamingStrategy extends orm.DefaultNamingStrategy im
         return _.snakeCase(relationName + "_" + referencedColumnName);
     }
 
-    public joinTableName(firstTableName: string, secondTableName: string, firstPropertyName: string, lastPropertyName: string): string {
+    // @ts-ignore: secondTableName is unused
+    public joinTableName(firstTableName: string, secondTableName: string, firstPropertyName: string): string {
         return _.snakeCase(firstTableName + "_" + firstPropertyName);
     }
 

@@ -2,7 +2,7 @@ import HelperFS from "./fs";
 
 export default class MiscHelper {
     public static delay(ms: number): Promise<void> {
-        return new Promise((resolve, reject) => {
+        return new Promise(resolve => {
             const timer = setTimeout(() => {
                 clearTimeout(timer);
                 resolve();

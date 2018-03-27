@@ -1,4 +1,3 @@
-import * as fs from "fs-extra";
 import * as recursiveReaddir from "recursive-readdir";
 import * as util from "util";
 

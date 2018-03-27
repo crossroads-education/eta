@@ -1,6 +1,3 @@
-import * as fs from "fs";
-import * as helpers from "../../helpers";
-
 export default class Constants {
     public static basePath: string = process.cwd().replace(/\\/g, "/") + "/";
     public static controllerPaths: string[];

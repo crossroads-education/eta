@@ -1,4 +1,3 @@
-import * as express from "express";
 import * as fs from "fs-extra";
 import * as eta from "../eta";
 import Application from "./Application";

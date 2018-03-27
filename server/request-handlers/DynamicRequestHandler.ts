@@ -1,6 +1,5 @@
 import * as eta from "../../eta";
 import * as fs from "fs-extra";
-import * as querystring from "querystring";
 import RequestHandler from "../RequestHandler";
 
 export default class DynamicRequestHandler extends RequestHandler {

@@ -202,7 +202,7 @@ export default class ModuleLoader extends events.EventEmitter {
         }).on("change", (path: string) => {
             path = path.replace(/\\/g, "/");
             const viewDir = this.config.dirs.views.find(d => path.startsWith(d));
-            this.loadViewMetadataFile(path, viewDir, true).then(data => {
+            this.loadViewMetadataFile(path, viewDir, true).then(() => {
                 eta.logger.trace(`Reloaded view metadata: ${path.substring(viewDir.length)}`);
             }).catch(err => {
                 eta.logger.error(err);

@@ -6,7 +6,7 @@ export default client;
 
 export function connect(config: eta.Configuration): Promise<redis.RedisClient> {
     const tempClient: redis.RedisClient = redis.createClient(config.get("session.port"), config.get("session.host"));
-    return new Promise((resolve, reject) => {
+    return new Promise(resolve => {
         tempClient.on("error", err => {
             eta.logger.error(err);
             if (err.code === "ECONNREFUSED") process.exit(1);

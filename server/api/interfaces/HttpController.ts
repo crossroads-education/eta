@@ -1,5 +1,3 @@
-import * as express from "express";
-import HttpRoute from "./HttpRoute";
 import RequestHandler from "./RequestHandler";
 
 export default abstract class HttpController extends RequestHandler {

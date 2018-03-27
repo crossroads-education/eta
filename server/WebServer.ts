@@ -11,7 +11,6 @@ import * as passport from "passport";
 import * as eta from "../eta";
 import Application from "./Application";
 import Authenticator from "./Authenticator";
-import ModuleLoader from "./ModuleLoader";
 import RepositoryManager from "../db";
 import RequestHandler from "./RequestHandler";
 

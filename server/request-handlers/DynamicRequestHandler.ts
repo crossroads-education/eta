@@ -50,8 +50,9 @@ export default class DynamicRequestHandler extends RequestHandler {
         if (queryParams === undefined) {
             return await this.renderError(eta.constants.http.MissingParameters);
         }
-        let result: any;
+        let result: any; // return value from the controller's action
         try {
+            // some nasty stuff to call the action with proper params
             result = await (<any>this.controller)[this.action.name].apply(this.controller, queryParams);
         } catch (err) {
             eta.logger.error(err);
@@ -70,7 +71,8 @@ export default class DynamicRequestHandler extends RequestHandler {
         if (this.res.statusCode !== 200) {
             return await this.renderError(this.res.statusCode);
         }
-        if (result === undefined) { // undefined return means render the view
+        if (result === undefined) {
+            // if the action returns undefined, it wants us to render the associated view
             return await this.serveView();
         }
         let val: string | Buffer = undefined;

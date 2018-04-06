@@ -52,7 +52,7 @@ export default class DynamicRequestHandler extends RequestHandler {
         }
         let result: any; // return value from the controller's action
         try {
-            // some nasty stuff to call the action with proper params
+            // call the action with proper params (forcing correct context with `apply()`)
             result = await (<any>this.controller)[this.action.name].apply(this.controller, queryParams);
         } catch (err) {
             eta.logger.error(err);
@@ -88,6 +88,7 @@ export default class DynamicRequestHandler extends RequestHandler {
     private buildQueryParams(): any[] {
         const rawParams: {[key: string]: any} = this.req[this.req.method === "GET" ? "query" : "body"] || {};
         const checkParam = (name: string) => {
+            // don't try to parse anything that isn't a string
             if (typeof(rawParams[name]) !== "string") return rawParams[name];
             try {
                 return JSON.parse(rawParams[name]);
@@ -98,10 +99,12 @@ export default class DynamicRequestHandler extends RequestHandler {
             return [rawParams];
         }
         const params = Object.values(this.action.params);
+        // check for required params which aren't provided
         if (params.find(p => p.isRequired && !rawParams[p.name])) return undefined;
-        eta.logger.obj(rawParams, params);
         return params.map(p => {
+            // don't try to convert params intended to be strings
             if (p.type === String) return rawParams[p.name];
+            // try to parse this as JSON
             return checkParam(p.name);
         });
     }

@@ -83,6 +83,7 @@ export default class ModuleLoader extends events.EventEmitter {
         if (!path.endsWith(".js")) return undefined;
         let HttpController: new () => eta.HttpController;
         try {
+            // load the controller
             HttpController = this.requireFunc(path).default;
         } catch (err) {
             eta.logger.warn("Couldn't load controller: " + path);
@@ -90,23 +91,27 @@ export default class ModuleLoader extends events.EventEmitter {
             return undefined;
         }
         if (!Reflect.hasMetadata("route", HttpController)) {
+            // @controller() hasn't been applied
             eta.logger.warn("Couldn't load controller: " + path + ". Please ensure all decorators are properly applied.");
             return undefined;
         }
         let routeUrl: string = Reflect.getMetadata("route", HttpController);
+        // clean up the route to look like /foo/bar (not foo/bar/, etc)
         if (!routeUrl.startsWith("/")) routeUrl = "/" + routeUrl; // absolute url
         if (routeUrl.endsWith("/")) routeUrl = routeUrl.slice(0, -1); // remove trailing slash
         const controller = new HttpController();
         const route: eta.HttpRoute = {
             controller: HttpController,
             route: routeUrl,
-            actions: Object.getOwnPropertyNames(HttpController.prototype)
+            actions: Object.getOwnPropertyNames(HttpController.prototype) // get all methods
                 .filter(k => k !== "constructor" && typeof(HttpController.prototype[k]) === "function")
                 .map(method => {
                     const action: Partial<eta.HttpAction> = Reflect.getMetadata("action", controller, method) || {};
+                    // make sure action.url is an absolute path
                     if (action.url && !action.url.startsWith("/")) action.url = routeUrl + "/" + action.url;
                     const params: {[key: string]: eta.HttpActionParam} = {};
                     const paramTypes: Function[] = Reflect.getMetadata("design:paramtypes", controller, method) || [];
+                    // parameter indices that aren't required
                     const optionalIndices: number[] = Reflect.getMetadata("optional", controller, method) || [];
                     eta.object.getFunctionParameterNames((<any>controller)[method]).forEach((name, index) =>
                         params[name] = {
@@ -190,7 +195,6 @@ export default class ModuleLoader extends events.EventEmitter {
             persistent: false
         }).on("change", (path: string) => {
             const route: eta.HttpRoute = this.loadController(path);
-            eta.logger.obj(route.controller);
             if (route !== undefined) {
                 eta.logger.trace(`Reloaded controller: ${route.controller.prototype.name} (${route.route})`);
             }

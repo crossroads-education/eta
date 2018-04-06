@@ -8,7 +8,7 @@ import Application from "./Application";
 const requireReload: (path: string) => any = require("require-reload")(require);
 
 export default class ModuleLoader extends events.EventEmitter {
-    public controllers: {[key: string]: typeof eta.IHttpController};
+    public controllers: {[key: string]: eta.HttpRoute};
     public lifecycleHandlers: (typeof eta.LifecycleHandler)[];
     /** webPath: fsPath */
     public staticFiles: {[key: string]: string};
@@ -78,31 +78,58 @@ export default class ModuleLoader extends events.EventEmitter {
         controllerFiles.forEach(this.loadController.bind(this));
     }
 
-    private loadController(path: string): typeof eta.IHttpController {
+    private loadController(path: string): eta.HttpRoute {
         path = path.replace(/\\/g, "/");
         if (!path.endsWith(".js")) return undefined;
-        let controllerType: typeof eta.IHttpController;
+        let HttpController: new () => eta.HttpController;
         try {
-            controllerType = this.requireFunc(path).default;
+            // load the controller
+            HttpController = this.requireFunc(path).default;
         } catch (err) {
             eta.logger.warn("Couldn't load controller: " + path);
             eta.logger.error(err);
             return undefined;
         }
-        if (controllerType.prototype.route === undefined) {
+        if (!Reflect.hasMetadata("route", HttpController)) {
+            // @controller() hasn't been applied
             eta.logger.warn("Couldn't load controller: " + path + ". Please ensure all decorators are properly applied.");
             return undefined;
         }
-        const actions: eta.HttpRouteAction[] = Object.values(controllerType.prototype.route.actions);
-        for (const action of actions) { // checking @eta.mvc.flags({script})
-            if (!action.flags.script) continue;
-            const dir: string = eta._.first(this.config.dirs.controllers.filter(dir =>
-                fs.pathExistsSync(dir + action.flags.script)));
-            if (dir === undefined) eta.logger.warn("Couldn't find script file " + action.flags.script + " for controller " + path);
-            else action.flags.script = dir + action.flags.script;
-        }
-        this.emit("controller-load", controllerType);
-        return controllerType;
+        let routeUrl: string = Reflect.getMetadata("route", HttpController);
+        // clean up the route to look like /foo/bar (not foo/bar/, etc)
+        if (!routeUrl.startsWith("/")) routeUrl = "/" + routeUrl; // absolute url
+        if (routeUrl.endsWith("/")) routeUrl = routeUrl.slice(0, -1); // remove trailing slash
+        const controller = new HttpController();
+        const route: eta.HttpRoute = {
+            controller: HttpController,
+            route: routeUrl,
+            actions: Object.getOwnPropertyNames(HttpController.prototype) // get all methods
+                .filter(k => k !== "constructor" && typeof(HttpController.prototype[k]) === "function")
+                .map(method => {
+                    const action: Partial<eta.HttpAction> = Reflect.getMetadata("action", controller, method) || {};
+                    // make sure action.url is an absolute path
+                    if (action.url && !action.url.startsWith("/")) action.url = routeUrl + "/" + action.url;
+                    const params: {[key: string]: eta.HttpActionParam} = {};
+                    const paramTypes: Function[] = Reflect.getMetadata("design:paramtypes", controller, method) || [];
+                    // parameter indices that aren't required
+                    const optionalIndices: number[] = Reflect.getMetadata("optional", controller, method) || [];
+                    eta.object.getFunctionParameterNames((<any>controller)[method]).forEach((name, index) =>
+                        params[name] = {
+                            name,
+                            type: paramTypes[index] || Object,
+                            isRequired: !optionalIndices.includes(index)
+                        });
+                    return eta._.defaults<Partial<eta.HttpAction>, eta.HttpAction>(action, {
+                        name: method,
+                        url: routeUrl + "/" + method,
+                        method: "GET",
+                        params,
+                        groupParams: false
+                    });
+                })
+        };
+        this.emit("controller-load", route);
+        return route;
     }
 
     public loadStatic(): Promise<void> {
@@ -167,9 +194,9 @@ export default class ModuleLoader extends events.EventEmitter {
         chokidar.watch(this.config.dirs.controllers, {
             persistent: false
         }).on("change", (path: string) => {
-            const HttpController: typeof eta.IHttpController = this.loadController(path);
-            if (HttpController !== undefined) {
-                eta.logger.trace(`Reloaded controller: ${HttpController.name} (${HttpController.prototype.route.raw})`);
+            const route: eta.HttpRoute = this.loadController(path);
+            if (route !== undefined) {
+                eta.logger.trace(`Reloaded controller: ${route.controller.prototype.name} (${route.route})`);
             }
         });
         // view metadata
@@ -179,7 +206,7 @@ export default class ModuleLoader extends events.EventEmitter {
         }).on("change", (path: string) => {
             path = path.replace(/\\/g, "/");
             const viewDir = this.config.dirs.views.find(d => path.startsWith(d));
-            this.loadViewMetadataFile(path, viewDir, true).then(data => {
+            this.loadViewMetadataFile(path, viewDir, true).then(() => {
                 eta.logger.trace(`Reloaded view metadata: ${path.substring(viewDir.length)}`);
             }).catch(err => {
                 eta.logger.error(err);

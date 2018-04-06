@@ -1,6 +1,5 @@
 import * as orm from "typeorm";
 import * as eta from "../eta";
-import DeepPartial from "./DeepPartial";
 
 export default class EntityCache<T> {
 
@@ -167,11 +166,4 @@ export default class EntityCache<T> {
             ON CONFLICT DO NOTHING`;
         await connection.query(sql, params);
     }
-}
-
-interface EntityColumn {
-    isGenerated: boolean;
-    isRelation: boolean;
-    propertyName: string;
-    databaseName: string;
 }

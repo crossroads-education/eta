@@ -1,4 +1,3 @@
-import * as express from "express";
 import * as fs from "fs-extra";
 import * as eta from "../eta";
 import Application from "./Application";
@@ -6,14 +5,12 @@ import Application from "./Application";
 /**
  * Logic for processing HTTP requests. Instantiated per request.
  */
-export default class RequestHandler extends eta.IRequestHandler {
-    public route: string;
-    public action: string;
-    public routeParams: {[key: string]: string};
-    public controller: eta.IHttpController;
-    public controllerPrototype: eta.IHttpController;
+export default class RequestHandler extends eta.RequestHandler {
+    public path: {
+        route: string;
+        action: string;
+    };
     public app: Application;
-    protected actionItem: eta.HttpRouteAction;
 
     public constructor(init: Partial<RequestHandler>) {
         super(init);
@@ -60,18 +57,7 @@ export default class RequestHandler extends eta.IRequestHandler {
         // action is the last token of mvcPath
         const action: string = tokens.splice(-1, 1)[0];
         // route is everything else
-        let route: string = tokens.join("/");
-        // get this for instantiation in RequestHandler
-        let routeParams: {[key: string]: string} = undefined;
-        const controllerClass: typeof eta.IHttpController = this.app.controllers.find(controllerType => {
-            routeParams = controllerType.prototype.route.match(route);
-            if (routeParams === undefined) return false;
-            if (Object.keys(routeParams).length === 0) return true; // no need to replace variables
-            // properly set previously set variables
-            route = controllerType.prototype.route.raw.replace(/\:/g, "");
-            this.req.mvcPath = route + "/" + action;
-            return true;
-        });
+        const route: string = tokens.join("/");
         this.req.fullUrl = this.req.baseUrl + this.req.mvcPath.substring(1);
         if (this.req.originalUrl.includes("?")) {
             this.req.mvcFullPath += "?" + this.req.originalUrl.split("?").slice(-1)[0];
@@ -79,10 +65,7 @@ export default class RequestHandler extends eta.IRequestHandler {
         if (this.app.viewMetadata[this.req.mvcPath]) { // clone static view metadata into this request's metadata
             this.res.view = eta._.cloneDeep(this.app.viewMetadata[this.req.mvcPath]);
         }
-        this.route = route;
-        this.action = action;
-        this.routeParams = routeParams;
-        this.controllerPrototype = controllerClass ? controllerClass.prototype : undefined;
+        this.path = { action, route };
     }
 
     /**

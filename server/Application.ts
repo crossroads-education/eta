@@ -17,7 +17,7 @@ export default class Application extends EventEmitter {
      */
     public moduleLoaders: {[key: string]: ModuleLoader} = {};
     public configs: {[key: string]: eta.Configuration} = {};
-    public controllers: (typeof eta.IHttpController)[] = [];
+    public controllers: {[key: string]: eta.HttpRoute} = {};
     public staticFiles: {[key: string]: string} = {};
     public viewFiles: {[key: string]: string} = {};
     public viewMetadata: {[key: string]: {[key: string]: any}} = {};
@@ -96,17 +96,12 @@ export default class Application extends EventEmitter {
         return false;
     }
 
-    public getActionsWithFlag<T = void>(flag: string, context: eta.IRequestHandler, flagValue?: string | boolean | number): {
-        flagValue: string | boolean | number | RegExp;
+    public getActionsWithFlag<T = void>(flag: string, context: eta.RequestHandler, flagValue?: string | boolean | number): {
+        flagValue: any;
         action: (...args: any[]) => Promise<T>;
     }[] {
-        const actions = this.controllers.map(c => {
-            let flaggedActionKeys: string[] = Object.keys(c.prototype.route.actions).filter(k => !!c.prototype.route.actions[k].flags[flag]);
-            if (flagValue !== undefined) {
-                flaggedActionKeys = flaggedActionKeys.filter(k => c.prototype.route.actions[k].flags[flag] === flagValue);
-            }
-            if (flaggedActionKeys.length === 0) return [];
-            return flaggedActionKeys.map(k => {
+        return Object.values(this.controllers).map(route => {
+            return route.actions.filter(a => !!a[flag] && (flagValue === undefined || a[flag] === flagValue)).map(a => {
                 const action = (...args: any[]) => {
                     let params = { server: this };
                     if (context !== undefined) {
@@ -116,15 +111,14 @@ export default class Application extends EventEmitter {
                             next: context.next
                         });
                     }
-                    const instance: eta.IHttpController = new (<any>c.prototype.constructor)(params);
-                    return (<any>instance)[k].bind(instance)(...args);
+                    const instance: eta.HttpController = new route.controller({ server: this.server });
+                    return (<any>instance)[a.name].bind(instance)(...args);
                 };
                 return {
-                    action, flagValue: c.prototype.route.actions[k].flags[flag]
+                    action, flagValue: a[flag]
                 };
             });
-        }).filter(a => a.length > 0);
-        return actions.length > 0 ? actions.reduce((p, v) => p.concat(v)) : [];
+        }).reduce((p, v) => p.concat(v), []);
     }
 
     private async loadModules(): Promise<void> {
@@ -135,11 +129,10 @@ export default class Application extends EventEmitter {
         eta.logger.info(`Found ${moduleDirs.length} modules: ${moduleDirs.join(", ")}`);
         for (const moduleName of moduleDirs) {
             this.moduleLoaders[moduleName] = new ModuleLoader(moduleName, this);
-            this.moduleLoaders[moduleName].on("controller-load", (HttpController: typeof eta.IHttpController) => {
-                this.controllers = this.controllers.filter(c => // remove duplicates
-                    c.prototype.route.raw !== HttpController.prototype.route.raw);
-                this.controllers.push(HttpController);
-                this.emit("load:controller", HttpController);
+            this.moduleLoaders[moduleName].on("controller-load", (route: eta.HttpRoute) => {
+                delete(this.controllers[route.route]);
+                this.controllers[route.route] = route;
+                this.emit("load:controller", route);
             }).on("metadata-load", (mvcPath: string) => {
                 this.viewMetadata[mvcPath] = this.moduleLoaders[moduleName].viewMetadata[mvcPath];
                 if (this.moduleLoaders[moduleName].isInitialized) {

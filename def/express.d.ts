@@ -7,7 +7,6 @@ declare namespace Express {
     }
 
     export interface Response {
-        raw: any;
         view: {
             css?: string[];
             [key: string]: any;

@@ -1,32 +1,34 @@
 import * as eta from "../../eta";
 import * as fs from "fs-extra";
-import * as querystring from "querystring";
 import RequestHandler from "../RequestHandler";
 
 export default class DynamicRequestHandler extends RequestHandler {
+    private route: eta.HttpRoute;
+    private action: eta.HttpAction;
+    private controller: eta.HttpController;
     public async handle(): Promise<void> {
-        if (this.controllerPrototype) {
-            this.controller = new (<any>this.controllerPrototype.constructor)({
+        this.route = this.app.controllers[this.path.route];
+        if (this.route !== undefined) {
+            this.controller = new this.route.controller({
                 req: this.req,
                 res: this.res,
                 next: this.next,
                 server: this.app.server,
-                params: this.routeParams,
                 config: this.config,
                 db: this.db
             });
-            this.actionItem = this.controllerPrototype.route.actions[this.action];
+            this.action = this.route.actions.find(a => a.url === this.req.mvcPath && a.method === this.req.method);
         }
         await this.app.emit("request", this);
         if (this.res.finished) return;
-        if (this.controller && this.actionItem) {
-            if (this.actionItem.isAuthRequired && !this.isLoggedIn()) { // requires login but is not logged in
+        if (this.controller && this.action) {
+            if (this.action.isAuthRequired && !this.isLoggedIn()) { // requires login but is not logged in
                 this.req.session.authFrom = this.req.mvcFullPath;
                 if (this.shouldSaveLastPage) this.req.session.lastPage = this.req.mvcFullPath;
                 await this.saveSession();
                 this.redirect("/login");
-            } else if (this.actionItem.isAuthRequired) {
-                const isAuthorizedResults: boolean[] = await <any>this.app.emit("request:auth", this, this.actionItem.permissionsRequired);
+            } else if (this.action.isAuthRequired) {
+                const isAuthorizedResults: boolean[] = await <any>this.app.emit("request:auth", this, this.action.permissionsRequired || []);
                 if (!isAuthorizedResults.includes(false)) {
                     this.callController();
                 } else {
@@ -44,24 +46,17 @@ export default class DynamicRequestHandler extends RequestHandler {
      * It is assumed that a controller is defined for this request, if not an action / route.
      */
     private async callController(): Promise<void> {
-        if (this.actionItem.method !== this.req.method) {
-            await this.serveView();
-            return;
+        const queryParams: any[] = this.buildQueryParams();
+        if (queryParams === undefined) {
+            return await this.renderError(eta.constants.http.MissingParameters);
         }
-        const queryParams: {[key: string]: any} = this.buildQueryParams();
+        let result: any; // return value from the controller's action
         try {
-            const scriptFilename: string = <string>this.actionItem.flags["script"];
-            if (!scriptFilename) { // Typescript (default)
-                await (<any>this.controller)[this.action].apply(this.controller, [queryParams]);
-            } else if (scriptFilename.endsWith(".py")) { // Python
-                this.actionItem.useView = false;
-                this.res.raw = (await eta.PythonLoader.load(scriptFilename)(queryParams))[0];
-            } else { // Unknown script type
-                throw new Error("Script " + scriptFilename + " cannot be handled.");
-            }
+            // call the action with proper params (forcing correct context with `apply()`)
+            result = await (<any>this.controller)[this.action.name].apply(this.controller, queryParams);
         } catch (err) {
             eta.logger.error(err);
-            this.renderError(eta.constants.http.InternalError);
+            await this.renderError(eta.constants.http.InternalError);
             return;
         }
         if (this.res.finished) {
@@ -74,32 +69,44 @@ export default class DynamicRequestHandler extends RequestHandler {
             return;
         }
         if (this.res.statusCode !== 200) {
-            this.renderError(this.res.statusCode);
-            return;
+            return await this.renderError(this.res.statusCode);
         }
-        if (this.actionItem.useView) { // basically, if @eta.mvc.raw() is not set
+        if (result === undefined) {
+            // if the action returns undefined, it wants us to render the associated view
             return await this.serveView();
         }
-        // handle this.res.raw
         let val: string | Buffer = undefined;
-        if (typeof(this.res.raw) === "string" || this.res.raw instanceof Buffer) {
-            val = this.res.raw;
+        if (typeof(result) === "string" || result instanceof Buffer) {
+            val = result;
         } else {
-            val = JSON.stringify(this.res.raw);
+            val = JSON.stringify(result);
             this.res.set("Content-Type", "application/json");
         }
         this.res.send(val);
     }
 
-    private buildQueryParams(): {[key: string]: any} {
-        const queryParams = this.req[this.req.method === "GET" ? "query" : "body"];
-        for (const key in queryParams) { // just parse any JSON parameters
-            if (typeof(queryParams[key]) !== "string") continue;
+    private buildQueryParams(): any[] {
+        const rawParams: {[key: string]: any} = this.req[this.req.method === "GET" ? "query" : "body"] || {};
+        const checkParam = (name: string) => {
+            // don't try to parse anything that isn't a string
+            if (typeof(rawParams[name]) !== "string") return rawParams[name];
             try {
-                queryParams[key] = JSON.parse(queryParams[key]);
-            } catch { }
+                return JSON.parse(rawParams[name]);
+            } catch { return rawParams[name]; }
+        };
+        if (this.action.groupParams) {
+            Object.keys(rawParams).forEach(k => rawParams[k] = checkParam(k));
+            return [rawParams];
         }
-        return queryParams;
+        const params = Object.values(this.action.params);
+        // check for required params which aren't provided
+        if (params.find(p => p.isRequired && !rawParams[p.name])) return undefined;
+        return params.map(p => {
+            // don't try to convert params intended to be strings
+            if (p.type === String) return rawParams[p.name];
+            // try to parse this as JSON
+            return checkParam(p.name);
+        });
     }
 
     private async serveView(): Promise<void> {

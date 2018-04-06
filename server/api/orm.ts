@@ -3,7 +3,6 @@ import HelperDate from "../../helpers/date";
 import * as typeorm from "typeorm";
 
 export default class ORM {
-    private static etaOffset: number;
     public static TimezoneColumn(options: typeorm.ColumnOptions = {}): any {
         return typeorm.Column(_.defaults<typeorm.ColumnOptions, typeorm.ColumnOptions>({
             transformer: {

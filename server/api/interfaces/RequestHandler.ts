@@ -4,7 +4,7 @@ import Configuration from "../../../lib/Configuration";
 import RepositoryManager from "../../../db";
 import WebServer from "../../WebServer";
 
-abstract class IRequestHandler {
+abstract class RequestHandler {
     public server: WebServer;
     public req: express.Request;
     public res: express.Response;
@@ -12,7 +12,7 @@ abstract class IRequestHandler {
     public config: Configuration;
     public db: RepositoryManager;
 
-    public constructor(init: Partial<IRequestHandler>) {
+    public constructor(init: Partial<RequestHandler>) {
         Object.assign(this, init);
     }
 
@@ -29,4 +29,4 @@ abstract class IRequestHandler {
     }
 }
 
-export default IRequestHandler;
+export default RequestHandler;

@@ -1,5 +1,6 @@
 import * as fs from "fs-extra";
 import * as eta from "../eta";
+import * as path from "path";
 import Application from "./Application";
 
 /**
@@ -83,6 +84,13 @@ export default class RequestHandler extends eta.RequestHandler {
     }
 
     protected async renderView(viewPath: string): Promise<string> {
+        this.res.view.plugins = [{
+            name: "eta-multiple-paths",
+            resolve: (filename: string, source: string): string => {
+                if (!filename.startsWith("/")) return path.resolve(path.dirname(source), filename);
+                return this.app.viewFiles[filename.replace(/\.pug$/, "")];
+            }
+        }];
         return new Promise<string>((resolve, reject) => {
             this.res.render(viewPath, this.res.view, (err: Error, html: string) => {
                 if (err) {

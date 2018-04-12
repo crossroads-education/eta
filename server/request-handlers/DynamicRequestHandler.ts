@@ -13,7 +13,7 @@ export default class DynamicRequestHandler extends RequestHandler {
                 req: this.req,
                 res: this.res,
                 next: this.next,
-                server: this.app.server,
+                app: this.app,
                 config: this.config,
                 db: this.db
             });
@@ -55,7 +55,7 @@ export default class DynamicRequestHandler extends RequestHandler {
             // call the action with proper params (forcing correct context with `apply()`)
             result = await (<any>this.controller)[this.action.name].apply(this.controller, queryParams);
         } catch (err) {
-            eta.logger.error(err);
+            this.app.logger.error(err);
             await this.renderError(eta.constants.http.InternalError);
             return;
         }
@@ -124,7 +124,7 @@ export default class DynamicRequestHandler extends RequestHandler {
         try {
             html = await this.renderView(viewPath);
         } catch (err) {
-            eta.logger.error(`Rendering ${viewPath} failed: ${err.message}`);
+            this.app.logger.error(`Rendering ${viewPath} failed: ${err.message}`);
             this.renderError(eta.constants.http.InternalError);
             return;
         }

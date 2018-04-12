@@ -11,6 +11,7 @@ import { connect as connectRedis } from "./api/redis";
 const EventEmitter: typeof events.EventEmitter = require("promise-events");
 
 export default class Application extends EventEmitter {
+    public logger: eta.StackLogger;
     public server: WebServer;
     /**
      * Load module files
@@ -27,16 +28,16 @@ export default class Application extends EventEmitter {
     public async init(): Promise<boolean> {
         await this.loadConfiguration();
         process.env.eta_timezone = this.configs.global.get("server.timezone");
-        eta.logger.config = this.configs.global;
+        this.logger = await eta.StackLogger.new(__dirname + "/../logs");
         this.server = new WebServer();
         this.server.app = this;
         await this.loadModules();
         await this.emit("app:start");
-        eta.logger.info("Connecting to the database and initalizing ORM...");
+        this.logger.info("Connecting to the database and initalizing ORM...");
         await this.connectDatabases();
-        eta.logger.info("Successfully connected to the database.");
-        this.redis = await connectRedis(this.configs.global);
-        eta.logger.info("Successfully connected to the Redis server.");
+        this.logger.info("Successfully connected to the database.");
+        this.redis = await connectRedis(this.configs.global, err => this.logger.error(err));
+        this.logger.info("Successfully connected to the Redis server.");
         await this.emit("database:connect");
         return await this.server.init();
     }
@@ -111,7 +112,7 @@ export default class Application extends EventEmitter {
                             next: context.next
                         });
                     }
-                    const instance: eta.HttpController = new route.controller({ server: this.server });
+                    const instance: eta.HttpController = new route.controller({ app: this });
                     return (<any>instance)[a.name].bind(instance)(...args);
                 };
                 return {
@@ -126,7 +127,7 @@ export default class Application extends EventEmitter {
         eta.constants.staticPaths = [];
         eta.constants.viewPaths = [];
         const moduleDirs: string[] = await fs.readdir(eta.constants.modulesPath);
-        eta.logger.info(`Found ${moduleDirs.length} modules: ${moduleDirs.join(", ")}`);
+        this.logger.info(`Found ${moduleDirs.length} modules: ${moduleDirs.join(", ")}`);
         for (const moduleName of moduleDirs) {
             this.moduleLoaders[moduleName] = new ModuleLoader(moduleName, this);
             this.moduleLoaders[moduleName].on("controller-load", (route: eta.HttpRoute) => {

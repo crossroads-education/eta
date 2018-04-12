@@ -47,7 +47,9 @@
     "tsconfig-paths": "^3.1.1",
     "typeorm": "^0.2.0-alpha.28",
     "useragent": "^2.3.0",
-    "uuid": "^3.2.1"
+    "uuid": "^3.2.1",
+    "winston": "^2.4.1",
+    "winston-daily-rotate-file": "^3.0.2"
   },
   "devDependencies": {
     "@types/body-parser": "^1.16.8",
@@ -80,6 +82,7 @@
     "@types/supertest": "^2.0.4",
     "@types/useragent": "^2.1.1",
     "@types/uuid": "^3.4.3",
+    "@types/winston": "^2.3.9",
     "@xroadsed/eta-cli": "^1.2.9",
     "supertest": "^3.0.0"
   },

@@ -8,7 +8,7 @@ export default abstract class HttpController extends RequestHandler {
 
     public redis<T>(method: string, ...args: any[]): Promise<T> {
         return new Promise<T>((resolve, reject) => {
-            (<any>this.server.app.redis)[method].bind(this.server.app.redis)(...args, (err: Error, result: T) => {
+            (<any>this.app.redis)[method].bind(this.app.redis)(...args, (err: Error, result: T) => {
                 if (err) reject(err);
                 else resolve(result);
             });

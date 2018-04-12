@@ -44,7 +44,7 @@ export default class WebServer {
         try {
             Authenticator.setup(this.app);
         } catch (err) {
-            eta.logger.error(err);
+            this.app.logger.error(err);
             return false;
         }
         this.express.all("/*", this.onRequest.bind(this));
@@ -65,7 +65,7 @@ export default class WebServer {
 
     public start(): void {
         const onHttpServerError = (err: Error) => {
-            eta.logger.error("Web server error occurred: " + err.message);
+            this.app.logger.error("Web server error occurred: " + err.message);
         };
         this.server.on("error", onHttpServerError);
         if (this.redirectServer) {
@@ -73,14 +73,14 @@ export default class WebServer {
         }
         const port: number = this.config.get(`http${this.config.get("https.enable") ? "s" : ""}.port`);
         this.server.listen(port, () => {
-            eta.logger.info("Web server (main) started on port " + port);
+            this.app.logger.info("Web server (main) started on port " + port);
             (<Promise<void>><any>this.app.emit("server:start")).catch(err => {
-                eta.logger.error(err);
+                this.app.logger.error(err);
             });
         });
         if (this.redirectServer !== undefined) {
             this.redirectServer.listen(this.config.get("http.port"), () => {
-                eta.logger.info("Web server (redirect) started on port " + this.config.get("http.port"));
+                this.app.logger.info("Web server (redirect) started on port " + this.config.get("http.port"));
             });
         }
     }
@@ -128,7 +128,7 @@ export default class WebServer {
             db: new RepositoryManager(req.hostname)
         }).handleRequest()
         .catch(err => {
-            eta.logger.error(err);
+            this.app.logger.error(err);
         });
     }
 

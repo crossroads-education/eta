@@ -86,13 +86,13 @@ export default class ModuleLoader extends events.EventEmitter {
             // load the controller
             HttpController = this.requireFunc(path).default;
         } catch (err) {
-            eta.logger.warn("Couldn't load controller: " + path);
-            eta.logger.error(err);
+            this.app.logger.warn("Couldn't load controller: " + path);
+            this.app.logger.error(err);
             return undefined;
         }
         if (!Reflect.hasMetadata("route", HttpController)) {
             // @controller() hasn't been applied
-            eta.logger.warn("Couldn't load controller: " + path + ". Please ensure all decorators are properly applied.");
+            this.app.logger.warn("Couldn't load controller: " + path + ". Please ensure all decorators are properly applied.");
             return undefined;
         }
         let routeUrl: string = Reflect.getMetadata("route", HttpController);
@@ -157,15 +157,15 @@ export default class ModuleLoader extends events.EventEmitter {
     private async loadViewMetadataFile(filename: string, viewDir: string, forceReload: boolean): Promise<void> {
         const mvcPath = filename.substring(viewDir.length - 1, filename.length - 5);
         if (this.viewMetadata[mvcPath] !== undefined && !forceReload) {
-            eta.logger.warn("View metadata " + mvcPath + " was already loaded - keeping the first one found (not " + filename + ").");
+            this.app.logger.warn("View metadata " + mvcPath + " was already loaded - keeping the first one found (not " + filename + ").");
             return;
         }
         let metadata: {[key: string]: any};
         try {
             metadata = await fs.readJson(filename);
         } catch (err) {
-            eta.logger.warn("Encountered invalid JSON in " + path);
-            eta.logger.error(err);
+            this.app.logger.warn("Encountered invalid JSON in " + path);
+            this.app.logger.error(err);
         }
         this.viewMetadata[mvcPath] = metadata;
         this.emit("metadata-load", mvcPath);
@@ -184,7 +184,7 @@ export default class ModuleLoader extends events.EventEmitter {
 
     public async loadLifecycleHandlers(): Promise<void> {
         const loadResult = await eta.misc.loadModules(this.config.dirs.lifecycleHandlers, this.requireFunc);
-        loadResult.errors.forEach(err => eta.logger.error(err));
+        loadResult.errors.forEach(err => this.app.logger.error(err));
         this.lifecycleHandlers = loadResult.modules.map(m => m.default);
     }
 
@@ -196,7 +196,7 @@ export default class ModuleLoader extends events.EventEmitter {
         }).on("change", (path: string) => {
             const route: eta.HttpRoute = this.loadController(path);
             if (route !== undefined) {
-                eta.logger.trace(`Reloaded controller: ${route.controller.prototype.constructor.name} (${route.route})`);
+                this.app.logger.info(`Reloaded controller: ${route.controller.prototype.constructor.name} (${route.route})`);
             }
         });
         // view metadata
@@ -207,9 +207,9 @@ export default class ModuleLoader extends events.EventEmitter {
             path = path.replace(/\\/g, "/");
             const viewDir = this.config.dirs.views.find(d => path.startsWith(d));
             this.loadViewMetadataFile(path, viewDir, true).then(() => {
-                eta.logger.trace(`Reloaded view metadata: ${path.substring(viewDir.length)}`);
+                this.app.logger.info(`Reloaded view metadata: ${path.substring(viewDir.length)}`);
             }).catch(err => {
-                eta.logger.error(err);
+                this.app.logger.error(err);
             });
         });
     }

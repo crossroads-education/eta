@@ -13,7 +13,7 @@ export default class Authenticator {
         };
         req.session.regenerate(err => {
             if (err) {
-                eta.logger.error(err);
+                this.app.logger.error(err);
                 res.statusCode = eta.constants.http.InternalError;
                 res.send("Internal error");
                 return;
@@ -21,7 +21,7 @@ export default class Authenticator {
             Object.keys(newSession).forEach(k => req.session[k] = newSession[k]);
             if (!req.session.authFrom) req.session.authFrom = "/home/index";
             req.session.save(err => {
-                if (err) eta.logger.error(err);
+                if (err) this.app.logger.error(err);
                 if (req.query.noRedirect !== undefined) {
                     res.send("Logged out successfully.");
                 } else {
@@ -49,7 +49,7 @@ export default class Authenticator {
                         res.redirect(req.session.lastPage);
                     });
                 })().catch(err => {
-                    eta.logger.error(err);
+                    this.app.logger.error(err);
                     RequestHandler.renderError(http, eta.constants.http.InternalError);
                 });
             })(req, res, next);

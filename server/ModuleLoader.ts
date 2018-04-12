@@ -196,7 +196,7 @@ export default class ModuleLoader extends events.EventEmitter {
         }).on("change", (path: string) => {
             const route: eta.HttpRoute = this.loadController(path);
             if (route !== undefined) {
-                eta.logger.trace(`Reloaded controller: ${route.controller.prototype.name} (${route.route})`);
+                eta.logger.trace(`Reloaded controller: ${route.controller.prototype.constructor.name} (${route.route})`);
             }
         });
         // view metadata

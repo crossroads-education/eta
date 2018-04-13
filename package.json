@@ -9,7 +9,7 @@
   "contributors": [],
   "main": "./server.js",
   "scripts": {
-    "eta": "node node_modules/@xroadsed/eta-cli/dist/bin/eta.js",
+    "eta": "node node_modules/@xroadsed/eta-cli/bin/run",
     "generate-docs": "node ./node_modules/typedoc/bin/typedoc --out ./docs/generated/ --excludeExternals --excludePrivate --module commonjs --target ES2017 --ignoreCompilerErrors .",
     "start": "node ./server.js"
   },

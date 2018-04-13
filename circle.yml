@@ -10,8 +10,8 @@ machine:
     ETA_DB_DATABASE: circle_test
 compile:
   override:
-    - npm run eta -- generate indexes
-    - npm run eta -- compile server
+    - npm run eta -- generate:indexes
+    - npm run eta -- compile:server
 test:
   override:
     - mocha --recursive --reporter mocha-junit-reporter:

@@ -123,9 +123,6 @@ export default class Application extends EventEmitter {
     }
 
     private async loadModules(): Promise<void> {
-        eta.constants.controllerPaths = [];
-        eta.constants.staticPaths = [];
-        eta.constants.viewPaths = [];
         const moduleDirs: string[] = await fs.readdir(eta.constants.modulesPath);
         this.logger.info(`Found ${moduleDirs.length} modules: ${moduleDirs.join(", ")}`);
         for (const moduleName of moduleDirs) {

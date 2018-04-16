@@ -3,53 +3,12 @@ import { install as sourceMapInstall } from "source-map-support";
 sourceMapInstall();
 import { expect } from "chai";
 import HelperCrypto from "@eta/helpers/crypto";
+import * as randomstring from "randomstring";
 
 describe("helpers/crypto", () => {
     const password = "testing";
-    const salt = HelperCrypto.generateSalt(32);
-    const key = HelperCrypto.generateSalt(32);
-
-    describe("#hashPassword", () => {
-        let output: string;
-        beforeEach(() => {
-            output = HelperCrypto.hashPassword(password, salt);
-        });
-        it("should return a string with 64 characters", () => {
-            expect(output).to.have.lengthOf(64);
-        });
-        it("should return a consistent value", () => {
-            expect(output).to.equal(HelperCrypto.hashPassword(password, salt));
-        });
-    });
-
-    describe("#generateSalt", () => {
-        let output: string;
-        beforeEach(() => {
-            output = HelperCrypto.generateSalt();
-        });
-        it("should return a string with 20 characters", () => {
-            expect(output).to.have.lengthOf(20);
-        });
-        it("should return an inconsistent value", () => {
-            expect(output).to.not.equal(HelperCrypto.generateSalt());
-        });
-    });
-
-    describe("#getUnique", () => {
-        let output: string;
-        beforeEach(() => {
-            output = HelperCrypto.getUnique(Buffer.from(password));
-        });
-        it("should return a string with 32 characters", () => {
-            expect(output).to.have.lengthOf(32);
-        });
-        it("should return a consistent value given the same input", () => {
-            expect(output).to.equal(HelperCrypto.getUnique(Buffer.from(password)));
-        });
-        it("should return an inconsistent value given a different input", () => {
-            expect(output).to.not.equal(HelperCrypto.getUnique(Buffer.from(salt)));
-        });
-    });
+    const salt = randomstring.generate({ length: 32 });
+    const key = randomstring.generate({ length: 32 });
 
     describe("#encrypt", () => {
         const output: string = HelperCrypto.encrypt(password, key);

@@ -4,17 +4,11 @@ export default interface IModuleConfiguration {
      */
     dirs: {
         controllers: string[];
+        lifecycleHandlers: string[];
         models: string[];
         staticFiles: string[];
         views: string[];
-        // hooks and handlers
-        lifecycleHandlers: string[];
-        requestTransformers: string[];
     };
-    /**
-     * CSS redirect mappings
-     */
-    css: {[key: string]: string};
     /**
      * The actual name of the module (in filesystem as well)
      */
@@ -34,10 +28,9 @@ export default interface IModuleConfiguration {
      * Only Github repositories are supported.
      */
     dependencies: string[];
-    /**
-     * Whether the module should be loaded or not.
-     */
-    disable?: boolean;
-    hooks: {[key: string]: {cwd: string, exec: string}[]};
+    hooks: {[key: string]: {
+        cwd: string;
+        exec: string;
+    }[]};
     [key: string]: any;
 }

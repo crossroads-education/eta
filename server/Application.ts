@@ -27,7 +27,7 @@ export default class Application extends EventEmitter {
     public async init(): Promise<boolean> {
         await this.loadConfiguration();
         process.env.eta_timezone = this.configs.global.get("server.timezone");
-        this.logger = await eta.StackLogger.new(__dirname + "/../logs");
+        this.logger = await new eta.StackLogger(__dirname + "/../logs");
         this.server = new WebServer();
         this.server.app = this;
         await this.loadModules();

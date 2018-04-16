@@ -1,4 +1,3 @@
-import * as fs from "fs-extra";
 import * as path from "path";
 import * as stackTrace from "stack-trace";
 import * as util from "util";
@@ -13,12 +12,32 @@ export default class StackLogger extends winston.Logger {
     stackLevel = STACK_LEVEL;
     private stackSortedKeys: string[] = [];
 
-    public constructor(options?: winston.LoggerOptions & { stackDirs: {[key: string]: string} }) {
-        super(options);
-        if (options) {
-            this.stackDirs = options.stackDirs;
-            this.generateStackKeys();
-        }
+    public constructor(logDir: string, options?: winston.LoggerOptions) {
+        super({
+            transports: [
+                new winston.transports.Console({
+                    formatter(options: {
+                        timestamp: Date | false;
+                        level: string;
+                        message: string;
+                        meta: {[key: string]: any};
+                    }): string {
+                        const level = winston.config.colorize(<any>options.level, options.level);
+                        const message = Object.keys(options.meta).length ? util.format(options.message, options.meta) : options.message;
+                        return `(${(options.timestamp || new Date()).toLocaleTimeString()}) [${level}] ${message}`;
+                    }
+                }),
+                new WinstonDailyRotateFile({
+                    name: "file",
+                    datePattern: "YYYY-MM-DD",
+                    maxFiles: "14d",
+                    filename: path.join(logDir, "/%DATE%.log").replace(/\\/g, "/")
+                })
+            ],
+            ...options
+        });
+        this.stackDirs.eta = path.dirname(__dirname).replace(/\\/g, "/");
+        this.generateStackKeys();
     }
 
     generateStackKeys() {
@@ -43,34 +62,5 @@ export default class StackLogger extends winston.Logger {
 
     error = (msg: string | Error, ...meta: any[]) => {
         return super.error(<any>msg, meta);
-    }
-
-    static async new(dir: string) {
-        await fs.mkdirp(dir);
-        return new StackLogger({
-            stackDirs: {
-                eta: path.dirname(__dirname).replace(/\\/g, "/")
-            },
-            transports: [
-                new winston.transports.Console({
-                    formatter(options: {
-                        timestamp: Date | false;
-                        level: string;
-                        message: string;
-                        meta: {[key: string]: any};
-                    }): string {
-                        const level = winston.config.colorize(<any>options.level, options.level);
-                        const message = Object.keys(options.meta).length ? util.format(options.message, options.meta) : options.message;
-                        return `(${(options.timestamp || new Date()).toLocaleTimeString()}) [${level}] ${message}`;
-                    }
-                }),
-                new WinstonDailyRotateFile({
-                    name: "file",
-                    datePattern: "YYYY-MM-DD",
-                    maxFiles: "14d",
-                    filename: path.join(__dirname, "/../logs/%DATE%.log").replace(/\\/g, "/")
-                })
-            ]
-        });
     }
 }

@@ -23,7 +23,7 @@ jobs:
           key: v1-dependencies-{{ checksum "package.json" }}
       - run:
           name: Unit Tests
-          command: mocha --recursive --reporter mocha-junit-reporter
+          command: npm run eta -- --reporter=mocha-junit-reporter
           environment:
             MOCHA_FILE: /home/circleci/junit/test-results.xml
       - store_test_results:

@@ -163,7 +163,12 @@ export default class Application extends EventEmitter {
             const currentPath = unvisitedPaths.splice(0, 1)[0];
             const otherPaths = Object.keys(this.viewMetadata).filter(k => (this.viewMetadata[k].include || []).includes(currentPath));
             for (const otherPath of otherPaths) {
-                this.viewMetadata[otherPath] = eta._.merge(this.viewMetadata[otherPath], this.viewMetadata[currentPath]);
+                this.viewMetadata[otherPath] = eta._.mergeWith(this.viewMetadata[otherPath], this.viewMetadata[currentPath],
+                    (objValue: any, srcValue: any) => {
+                        if (!objValue || !srcValue || objValue.constructor.name !== srcValue.constructor.name || objValue.constructor.name !== "Array") return undefined;
+                        return srcValue.concat(objValue);
+                    }
+                );
                 nextPaths.push(otherPath);
             }
             if (unvisitedPaths.length === 0) unvisitedPaths = eta._.uniq(nextPaths.splice(0, nextPaths.length));

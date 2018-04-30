@@ -2,7 +2,7 @@ import { expect } from "chai";
 import HelperString from "../../helpers/string";
 
 describe("helpers/string", () => {
-    describe("#toCamelCase", () => {
+    describe("#toCamelCase()", () => {
         it("should lowercase single leading character", () => {
             expect(HelperString.toCamelCase("Foo")).to.equal("foo");
         });

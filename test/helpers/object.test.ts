@@ -21,4 +21,30 @@ describe("helpers/object", () => {
             expect(HelperObject.getFunctionParameterNames(foo)).to.deep.equal(["a", "b"]);
         });
     });
+
+    describe("#recursiveKeys()", () => {
+        const obj = {
+            foo: true,
+            bar: {
+                a: true,
+                b: [{
+                    c: true
+                }, true]
+            }
+        };
+        const keys = HelperObject.recursiveKeys(obj);
+        console.log(keys);
+        it("should return first-level keys", () => {
+            expect(keys).to.deep.include(["foo"]);
+        });
+        it("should return keys with object values", () => {
+            expect(keys).to.deep.include(["bar"]);
+        });
+        it("should return second-level keys", () => {
+            expect(keys).to.deep.include(["bar", "a"]);
+        });
+        it("should return array indices as keys", () => {
+            expect(keys).to.deep.include(["bar", "b", "0"]);
+        });
+    });
 });

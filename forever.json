@@ -1,7 +1,0 @@
-{
-  "uid": "eta",
-  "script": "server.js",
-  "sourceDir": "/srv/eta",
-  "workingDir": "/srv/eta",
-  "append": true
-}

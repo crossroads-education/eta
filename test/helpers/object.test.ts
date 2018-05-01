@@ -22,6 +22,37 @@ describe("helpers/object", () => {
         });
     });
 
+    describe("#forEachPath()", () => {
+      const obj = {
+          foo: true,
+          bar: {
+              a: true,
+              b: [{
+                  c: true
+              }, true]
+          }
+      };
+      let idx = 0;
+      const targets = [[["foo"], obj, "foo"],
+                     [["bar"], obj, "bar"],
+                     [["bar", "a"], obj.bar, "a"],
+                     [["bar", "b"], obj.bar, "b"],
+                     [["bar", "b", "0"], obj.bar.b, "0"],
+                     [["bar", "b", "0", "c"], obj.bar.b[0], "c"],
+                     [["bar", "b", "1"], obj.bar.b, "1"]];
+      it("should call the callback with the correct parameters", () => {
+        HelperObject.forEachPath(obj, (path, obj, key) => {
+          expect(path).to.deep.equal(targets[idx][0]);
+          expect(obj).to.equal(targets[idx][1]);
+          expect(key).to.equal(targets[idx][2]);
+          idx += 1;
+        });
+      });
+      it("should call the callback for all paths", () => {
+        expect(idx).to.equal(targets.length);
+      });
+    });
+
     describe("#recursiveKeys()", () => {
         const obj = {
             foo: true,
@@ -33,7 +64,6 @@ describe("helpers/object", () => {
             }
         };
         const keys = HelperObject.recursiveKeys(obj);
-        console.log(keys);
         it("should return first-level keys", () => {
             expect(keys).to.deep.include(["foo"]);
         });
@@ -45,6 +75,10 @@ describe("helpers/object", () => {
         });
         it("should return array indices as keys", () => {
             expect(keys).to.deep.include(["bar", "b", "0"]);
+        });
+        const keysLeavesOnly = HelperObject.recursiveKeys(obj, false);
+        it("should exclude objects if asked to", () => {
+          expect(keysLeavesOnly).to.deep.equal([["foo"], ["bar", "a"], ["bar", "b", "0", "c"], ["bar", "b", "1"]]);
         });
     });
 });

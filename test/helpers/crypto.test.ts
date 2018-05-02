@@ -9,7 +9,7 @@ describe("helpers/crypto", () => {
     const salt = HelperCrypto.generateSalt(32);
     const key = HelperCrypto.generateSalt(32);
 
-    describe("#hashPassword", () => {
+    describe("#hashPassword()", () => {
         let output: string;
         beforeEach(() => {
             output = HelperCrypto.hashPassword(password, salt);
@@ -22,7 +22,7 @@ describe("helpers/crypto", () => {
         });
     });
 
-    describe("#generateSalt", () => {
+    describe("#generateSalt()", () => {
         let output: string;
         beforeEach(() => {
             output = HelperCrypto.generateSalt();
@@ -35,7 +35,7 @@ describe("helpers/crypto", () => {
         });
     });
 
-    describe("#getUnique", () => {
+    describe("#getUnique()", () => {
         let output: string;
         beforeEach(() => {
             output = HelperCrypto.getUnique(Buffer.from(password));
@@ -51,7 +51,7 @@ describe("helpers/crypto", () => {
         });
     });
 
-    describe("#encrypt", () => {
+    describe("#encrypt()", () => {
         const output: string = HelperCrypto.encrypt(password, key);
         it("should return a string with 2x + 33 characters of the original", () => {
             expect(output).to.have.lengthOf(2 * password.length + 33);
@@ -67,7 +67,7 @@ describe("helpers/crypto", () => {
         });
     });
 
-    describe("#decrypt", () => {
+    describe("#decrypt()", () => {
         const encrypted: string = HelperCrypto.encrypt(password, key);
         const decrypted: string = HelperCrypto.decrypt(encrypted, key);
         it("should return the original string given the correct key", () => {

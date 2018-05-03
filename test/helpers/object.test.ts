@@ -23,7 +23,7 @@ describe("helpers/object", () => {
     });
 
     describe("#recursiveKeys()", () => {
-        const obj = {
+        const data = {
             foo: true,
             bar: {
                 a: true,
@@ -32,8 +32,7 @@ describe("helpers/object", () => {
                 }, true]
             }
         };
-        const keys = HelperObject.recursiveKeys(obj);
-        console.log(keys);
+        const keys = HelperObject.recursiveKeys(data);
         it("should return first-level keys", () => {
             expect(keys).to.deep.include(["foo"]);
         });
@@ -45,6 +44,10 @@ describe("helpers/object", () => {
         });
         it("should return array indices as keys", () => {
             expect(keys).to.deep.include(["bar", "b", "0"]);
+        });
+        const keysLeavesOnly = HelperObject.recursiveKeys(data, false);
+        it("should exclude objects if asked to", () => {
+          expect(keysLeavesOnly).to.deep.equal([["foo"], ["bar", "a"], ["bar", "b", "0", "c"], ["bar", "b", "1"]]);
         });
     });
 });

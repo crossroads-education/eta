@@ -1,27 +1,8 @@
 import * as moment from "moment";
-import * as momentTimezone from "moment-timezone";
 
 export default class HelperDate {
     public static Week: Week;
     public static Month: Month;
-
-    /**
-     * Returns the current date according to the config's timezone
-     */
-    public static now(): Date {
-        return this.toConfigTimezone(new Date());
-    }
-
-    /**
-     * Returns the passed date converted to the config's timezone.
-     * Mutates the parameter.
-     */
-    public static toConfigTimezone(date: Date): Date {
-        if (!date) return date;
-        const etaOffset = momentTimezone.tz(process.env.eta_timezone).utcOffset();
-        date.setUTCMinutes(date.getUTCMinutes() + etaOffset);
-        return date;
-    }
 
     /**
      * Truncates the time component of a Date.

@@ -73,12 +73,12 @@ export default class RequestHandler extends eta.RequestHandler {
      * Checks if this request is for a static file.
      * Returns the static file's path if the request is for a static file, undefined otherwise.
      */
-    private async isStaticFile(): Promise<string> {
-        const staticPath: string = this.app.staticFiles[this.req.mvcPath];
+    public async isStaticFile(): Promise<string> {
+        const staticPath: string = this.app.staticFiles[this.req.path];
         if (staticPath) return staticPath;
         if (!this.config.get("dev.enable")) return undefined; // no live-reloading without dev mode
-        if (await this.app.verifyStaticFile(this.req.mvcPath)) {
-            return this.app.staticFiles[this.req.mvcPath]; // changed by verifyStaticFile()
+        if (await this.app.verifyStaticFile(this.req.path)) {
+            return this.app.staticFiles[this.req.path]; // changed by verifyStaticFile()
         }
         return undefined;
     }

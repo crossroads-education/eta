@@ -30,16 +30,4 @@ export default class HelperObject {
             return keys;
         }).reduce((p, v) => p.concat(v), []);
     }
-
-    /**
-     * Top-level object can be anything (including a function), but recursively looks only into
-     * objects (including arrays).
-     */
-    public static forEachPath(obj: any, fn: (path: string[], parent: any, key: string) => void, prefix: string[] = []): void {
-        Object.keys(obj).forEach(k => {
-            const path: string[] = prefix.concat([k]);
-            fn(path, obj, k);
-            if (typeof(obj[k]) === "object") this.forEachPath(obj[k], fn, path);
-        });
-    }
 }

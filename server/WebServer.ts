@@ -115,21 +115,26 @@ export default class WebServer {
             passport: passport.initialize(),
             passportSession: passport.session()
         };
+        // check for a static file before anything else
+        this.express.use((req, res, next) => {
+            const handler = this.createRequestHandler(req, res, next);
+            (async () => {
+                if (await handler.isStaticFile()) {
+                    return handler.handleRequest();
+                }
+                next();
+            })().catch(err => eta.logger.error(err));
+        });
         Object.keys(this.middleware).forEach(m => {
             this.express.use(this.middleware[m]);
         });
     }
 
     private onRequest(req: express.Request, res: express.Response, next: express.NextFunction): void {
-        new RequestHandler({
-            req, res, next,
-            app: this.app,
-            config: this.app.configs[req.hostname] || this.config,
-            db: new RepositoryManager(req.hostname)
-        }).handleRequest()
-        .catch(err => {
-            eta.logger.error(err);
-        });
+        this.createRequestHandler(req, res, next)
+            .handleRequest().catch(err => {
+                eta.logger.error(err);
+            });
     }
 
     private setupHttpServer(): void {
@@ -153,6 +158,15 @@ export default class WebServer {
                 Location: "https://" + this.config.get("http.host") + ":" + this.config.get("https.realPort") + req.url
             });
             res.end();
+        });
+    }
+
+    private createRequestHandler(req: express.Request, res: express.Response, next: express.NextFunction) {
+        return new RequestHandler({
+            req, res, next,
+            app: this.app,
+            config: this.app.configs[req.hostname] || this.config,
+            db: new RepositoryManager(req.hostname)
         });
     }
 }

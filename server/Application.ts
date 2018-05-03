@@ -76,11 +76,11 @@ export default class Application extends EventEmitter {
     }
 
     /** checks that the static file referenced by mvcPath actually exists in filesystem */
-    public async verifyStaticFile(mvcPath: string): Promise<boolean> {
-        if (this.staticFiles[mvcPath]) {
-            const exists: boolean = await fs.pathExists(this.staticFiles[mvcPath]);
+    public async verifyStaticFile(path: string): Promise<boolean> {
+        if (this.staticFiles[path]) {
+            const exists: boolean = await fs.pathExists(this.staticFiles[path]);
             if (!exists) {
-                delete this.staticFiles[mvcPath];
+                delete this.staticFiles[path];
             }
             return exists;
         }
@@ -88,8 +88,8 @@ export default class Application extends EventEmitter {
             .map(m => this.configs.global.get<string[]>(`modules.${m}.dirs.staticFiles`) || [])
             .reduce((p, v) => p.concat(v), []);
         for (const staticDir of staticDirs) {
-            if (await fs.pathExists(staticDir + mvcPath)) {
-                this.staticFiles[mvcPath] = staticDir + mvcPath;
+            if (await fs.pathExists(staticDir + path)) {
+                this.staticFiles[path] = staticDir + path;
                 return true;
             }
         }

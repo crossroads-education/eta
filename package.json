@@ -78,7 +78,7 @@
     "@types/supertest": "^2.0.4",
     "@types/useragent": "^2.1.1",
     "@types/uuid": "^3.4.3",
-    "@xroadsed/eta-cli": "^1.3.8",
+    "@xroadsed/eta-cli": "^1.3.12",
     "chai": "^4.1.2",
     "supertest": "^3.0.0"
   },

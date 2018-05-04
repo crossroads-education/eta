@@ -99,24 +99,15 @@ export default class Application extends EventEmitter {
         flagValue: any;
         action: (...args: any[]) => Promise<T>;
     }[] {
+        context = context || <any>{ server: this.server };
         return Object.values(this.controllers).map(route => {
-            return route.actions.filter(a => !!a[flag] && (flagValue === undefined || a[flag] === flagValue)).map(a => {
-                const action = (...args: any[]) => {
-                    let params = { server: this };
-                    if (context !== undefined) {
-                        params = eta._.extend(params, {
-                            req: context.req,
-                            res: context.res,
-                            next: context.next
-                        });
-                    }
-                    const instance: eta.HttpController = new route.controller({ server: this.server });
+            return route.actions.filter(a => !!a[flag] && (flagValue === undefined || a[flag] === flagValue)).map(a => ({
+                flagValue: a[flag],
+                action: (...args: any[]) => {
+                    const instance: eta.HttpController = new route.controller(context);
                     return (<any>instance)[a.name].bind(instance)(...args);
-                };
-                return {
-                    action, flagValue: a[flag]
-                };
-            });
+                }
+            }));
         }).reduce((p, v) => p.concat(v), []);
     }
 

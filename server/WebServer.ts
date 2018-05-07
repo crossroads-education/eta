@@ -8,10 +8,10 @@ import * as http from "http";
 import * as https from "https";
 import * as multer from "multer";
 import * as passport from "passport";
-import * as eta from "../eta";
+import * as eta from "@eta/eta";
 import Application from "./Application";
 import Authenticator from "./Authenticator";
-import RepositoryManager from "../db";
+import RepositoryManager from "@eta/db";
 import RequestHandler from "./RequestHandler";
 
 export default class WebServer {

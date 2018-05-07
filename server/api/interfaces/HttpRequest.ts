@@ -1,5 +1,5 @@
 import * as express from "express";
-import Configuration from "../../../lib/Configuration";
+import Configuration from "@eta/lib/Configuration";
 
 export default interface HttpRequest {
     req: express.Request;

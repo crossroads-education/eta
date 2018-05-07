@@ -1,4 +1,4 @@
-import * as eta from "../../eta";
+import * as eta from "@eta/eta";
 import * as fs from "fs-extra";
 import RequestHandler from "../RequestHandler";
 
@@ -23,6 +23,9 @@ export default class DynamicRequestHandler extends RequestHandler {
         if (this.res.finished) return;
         if (this.controller && this.action) {
             if (this.action.isAuthRequired && !this.isLoggedIn()) { // requires login but is not logged in
+                if (this.req.header("x-requested-with") === "XMLHttpRequest") {
+                    return this.renderError(eta.constants.http.AccessDenied);
+                }
                 this.req.session.authFrom = this.req.mvcFullPath;
                 if (this.shouldSaveLastPage) this.req.session.lastPage = this.req.mvcFullPath;
                 await this.saveSession();

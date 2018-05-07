@@ -1,11 +1,11 @@
-import * as eta from "../eta";
+import * as eta from "@eta/eta";
 import * as events from "events";
 import * as fs from "fs-extra";
 import * as orm from "typeorm";
 import * as redis from "redis";
 import ModuleLoader from "./ModuleLoader";
 import WebServer from "./WebServer";
-import * as db from "../db";
+import * as db from "@eta/db";
 Object.keys(db); // initializes models
 const EventEmitter: typeof events.EventEmitter = require("promise-events");
 

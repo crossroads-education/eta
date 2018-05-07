@@ -1,5 +1,5 @@
 import * as orm from "typeorm";
-import * as eta from "../eta";
+import * as eta from "@eta/eta";
 
 export default class EntityCache<T> {
     public repository: orm.Repository<T> = undefined;

@@ -1,5 +1,5 @@
 import * as crypto from "crypto";
-import * as eta from "../../eta";
+import * as eta from "@eta/eta";
 import * as fs from "fs-extra";
 import * as mime from "mime";
 import RequestHandler from "../RequestHandler";

@@ -1,5 +1,5 @@
 import * as fs from "fs-extra";
-import * as eta from "../eta";
+import * as eta from "@eta/eta";
 import * as path from "path";
 
 /**

@@ -1,5 +1,5 @@
 import * as chokidar from "chokidar";
-import * as eta from "../eta";
+import * as eta from "@eta/eta";
 import * as events from "events";
 import * as fs from "fs-extra";
 import * as path from "path";

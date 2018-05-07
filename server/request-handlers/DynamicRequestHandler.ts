@@ -13,7 +13,7 @@ export default class DynamicRequestHandler extends RequestHandler {
                 req: this.req,
                 res: this.res,
                 next: this.next,
-                server: this.app.server,
+                app: this.app,
                 config: this.config,
                 db: this.db
             });

@@ -2,7 +2,6 @@ import * as orm from "typeorm";
 import * as eta from "../eta";
 
 export default class EntityCache<T> {
-
     public repository: orm.Repository<T> = undefined;
 
     /**
@@ -49,10 +48,7 @@ export default class EntityCache<T> {
             this.cache = [];
         } else {
             // cache is big enough to justify generating SQL
-            this.dumpMany().then(() => { })
-            .catch(err => {
-                eta.logger.error(err);
-            });
+            this.dumpMany().catch(console.error);
         }
     }
 

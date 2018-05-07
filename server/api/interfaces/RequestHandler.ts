@@ -1,11 +1,11 @@
 import * as express from "express";
-import * as helpers from "../../../helpers/index";
-import Configuration from "../../../lib/Configuration";
-import RepositoryManager from "../../../db";
-import WebServer from "../../WebServer";
+import Application from "@eta/server/Application";
+import * as helpers from "@eta/helpers/index";
+import Configuration from "@eta/lib/Configuration";
+import RepositoryManager from "@eta/db";
 
 abstract class RequestHandler {
-    public server: WebServer;
+    public app: Application;
     public req: express.Request;
     public res: express.Response;
     public next: express.NextFunction;

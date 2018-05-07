@@ -3,7 +3,6 @@ import "reflect-metadata";
 import "./helpers/require";
 import * as dbInit from "./db";
 Object.keys(dbInit); // initializes all database models
-import logger from "./server/api/logger"; // Required to setup logger
 import Application from "./server/Application";
 
 function onUncaughtError(err: Error | string, extra?: any) {
@@ -23,11 +22,10 @@ export default async function main(): Promise<Application> {
         if (!app) {
             return;
         }
-        logger.trace("Stopping Eta...");
         try {
             await app.close();
         } catch (err) {
-            logger.error(err);
+            console.error(err);
         } finally {
             process.exit();
         }

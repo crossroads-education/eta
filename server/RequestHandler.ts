@@ -1,7 +1,6 @@
 import * as fs from "fs-extra";
 import * as eta from "../eta";
 import * as path from "path";
-import Application from "./Application";
 
 /**
  * Logic for processing HTTP requests. Instantiated per request.
@@ -11,7 +10,6 @@ export default class RequestHandler extends eta.RequestHandler {
         route: string;
         action: string;
     };
-    public app: Application;
 
     public constructor(init: Partial<RequestHandler>) {
         super(init);

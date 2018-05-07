@@ -7,7 +7,6 @@ import ModuleLoader from "./ModuleLoader";
 import WebServer from "./WebServer";
 import * as db from "../db";
 Object.keys(db); // initializes models
-import { connect as connectRedis } from "./api/redis";
 const EventEmitter: typeof events.EventEmitter = require("promise-events");
 
 export default class Application extends EventEmitter {
@@ -26,7 +25,8 @@ export default class Application extends EventEmitter {
 
     public async init(): Promise<boolean> {
         await this.loadConfiguration();
-        eta.logger.config = this.configs.global;
+        process.env.eta_timezone = this.configs.global.get("server.timezone");
+        (<any>eta).logger = await new eta.StackLogger(__dirname + "/../logs");
         this.server = new WebServer();
         this.server.app = this;
         await this.loadModules();
@@ -34,28 +34,33 @@ export default class Application extends EventEmitter {
         eta.logger.info("Connecting to the database and initalizing ORM...");
         await this.connectDatabases();
         eta.logger.info("Successfully connected to the database.");
-        this.redis = await connectRedis(this.configs.global);
+        try {
+            this.redis = <any>await this.connectRedis();
+        } catch (err) {
+            eta.logger.error(err);
+            return false;
+        }
         eta.logger.info("Successfully connected to the Redis server.");
         await this.emit("database:connect");
         return await this.server.init();
     }
 
-    public start(): void {
+    start(): void {
         this.server.start();
     }
 
-    public close(): Promise<void> {
+    close(): Promise<void> {
         return this.server.close();
     }
 
-    public async loadConfiguration(): Promise<void> {
+    private async loadConfiguration(): Promise<void> {
         this.configs.root = await eta.Configuration.load();
         const hosts: string[] = await fs.readdir(eta.constants.basePath + "/config");
         hosts.forEach(h => this.configs[h] = this.configs.root.buildChild(["global.", h + "."]));
         delete this.configs.root;
     }
 
-    public connectDatabases(): Promise<orm.Connection[]> {
+    private connectDatabases(): Promise<orm.Connection[]> {
         return Promise.all(Object.keys(this.configs).filter(k => k !== "global").map(k => {
             const config = this.configs[k];
             const modelDirs = this.configs.global.modules()
@@ -74,8 +79,18 @@ export default class Application extends EventEmitter {
         }));
     }
 
+    private connectRedis(): Promise<redis.RedisClient> {
+        const tempClient: redis.RedisClient = redis.createClient(
+            this.configs.global.get("session.port"),
+            this.configs.global.get("session.host"));
+        return new Promise<redis.RedisClient>((resolve, reject) => {
+            tempClient.on("error", reject);
+            tempClient.on("ready", resolve);
+        });
+    }
+
     /** checks that the static file referenced by mvcPath actually exists in filesystem */
-    public async verifyStaticFile(path: string): Promise<boolean> {
+    async verifyStaticFile(path: string): Promise<boolean> {
         if (this.staticFiles[path]) {
             const exists: boolean = await fs.pathExists(this.staticFiles[path]);
             if (!exists) {
@@ -95,7 +110,7 @@ export default class Application extends EventEmitter {
         return false;
     }
 
-    public getActionsWithFlag<T = void>(flag: string, context: eta.RequestHandler, flagValue?: string | boolean | number): {
+    getActionsWithFlag<T = void>(flag: string, context: eta.RequestHandler, flagValue?: string | boolean | number): {
         flagValue: any;
         action: (...args: any[]) => Promise<T>;
     }[] {
@@ -112,9 +127,6 @@ export default class Application extends EventEmitter {
     }
 
     private async loadModules(): Promise<void> {
-        eta.constants.controllerPaths = [];
-        eta.constants.staticPaths = [];
-        eta.constants.viewPaths = [];
         const moduleDirs: string[] = await fs.readdir(eta.constants.modulesPath);
         eta.logger.info(`Found ${moduleDirs.length} modules: ${moduleDirs.join(", ")}`);
         for (const moduleName of moduleDirs) {

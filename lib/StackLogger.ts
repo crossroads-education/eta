@@ -60,7 +60,5 @@ export default class StackLogger extends winston.Logger {
         return super.log(level, msg, meta);
     };
 
-    error = (msg: string | Error, ...meta: any[]) => {
-        return super.error(<any>msg, meta);
-    }
+    error: (msg: string | Error, ...meta: any[]) => winston.LoggerInstance;
 }

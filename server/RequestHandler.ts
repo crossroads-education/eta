@@ -29,7 +29,7 @@ export default class RequestHandler extends eta.RequestHandler {
         if (staticPath !== undefined) {
             const staticHandler = new StaticRequestHandler(this);
             staticHandler.staticPath = staticPath;
-            return await staticHandler.handle();
+            return staticHandler.handle();
         }
         await new DynamicRequestHandler(this).handle();
     }

@@ -44,7 +44,7 @@ export default class EntityCache<T> {
             // don't bother if cache is empty
         } else if (this.cache.length === 1 && this.repository !== undefined) {
             // just dump the single object normally, not worth generating SQL
-            this.repository.save(<any[]>this.cache);
+            this.repository.save(<any[]>this.cache).catch(console.error);
             this.cache = [];
         } else {
             // cache is big enough to justify generating SQL

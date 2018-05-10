@@ -1,5 +1,6 @@
+/// <reference path="../def/promise-events.d.ts" />
+
 import * as eta from "@eta/eta";
-import * as events from "events";
 import * as fs from "fs-extra";
 import * as orm from "typeorm";
 import * as redis from "redis";
@@ -7,9 +8,9 @@ import ModuleLoader from "./ModuleLoader";
 import WebServer from "./WebServer";
 import * as db from "@eta/db";
 Object.keys(db); // initializes models
-const EventEmitter: typeof events.EventEmitter = require("promise-events");
+import * as promiseEvents from "promise-events";
 
-export default class Application extends EventEmitter {
+export default class Application extends promiseEvents.EventEmitter {
     public server: WebServer;
     /**
      * Load module files
@@ -26,7 +27,7 @@ export default class Application extends EventEmitter {
     public async init(): Promise<boolean> {
         await this.loadConfiguration();
         process.env.eta_timezone = this.configs.global.get("server.timezone");
-        (<any>eta).logger = await new eta.StackLogger(__dirname + "/../logs");
+        (<any>eta).logger = new eta.StackLogger(__dirname + "/../logs");
         this.server = new WebServer();
         this.server.app = this;
         await this.loadModules();
@@ -42,7 +43,7 @@ export default class Application extends EventEmitter {
         }
         eta.logger.info("Successfully connected to the Redis server.");
         await this.emit("database:connect");
-        return await this.server.init();
+        return this.server.init();
     }
 
     start(): void {
@@ -112,18 +113,18 @@ export default class Application extends EventEmitter {
 
     getActionsWithFlag<T = void>(flag: string, context: eta.RequestHandler, flagValue?: string | boolean | number): {
         flagValue: any;
-        action: (...args: any[]) => Promise<T>;
+        action(...args: any[]): Promise<T>;
     }[] {
         context = context || <any>{ server: this.server };
-        return Object.values(this.controllers).map(route => {
-            return route.actions.filter(a => !!a[flag] && (flagValue === undefined || a[flag] === flagValue)).map(a => ({
+        return Object.values(this.controllers).map(route =>
+            route.actions.filter(a => !!a[flag] && (flagValue === undefined || a[flag] === flagValue)).map(a => ({
                 flagValue: a[flag],
                 action: (...args: any[]) => {
                     const instance: eta.HttpController = new route.controller(context);
                     return (<any>instance)[a.name].bind(instance)(...args);
                 }
-            }));
-        }).reduce((p, v) => p.concat(v), []);
+            }))
+        ).reduce((p, v) => p.concat(v), []);
     }
 
     private async loadModules(): Promise<void> {
@@ -134,7 +135,7 @@ export default class Application extends EventEmitter {
             this.moduleLoaders[moduleName].on("controller-load", (route: eta.HttpRoute) => {
                 delete(this.controllers[route.route]);
                 this.controllers[route.route] = route;
-                this.emit("load:controller", route);
+                this.emit("load:controller", route).catch(err => eta.logger.error(err));
             }).on("metadata-load", (mvcPath: string) => {
                 this.viewMetadata[mvcPath] = this.moduleLoaders[moduleName].viewMetadata[mvcPath];
                 if (this.moduleLoaders[moduleName].isInitialized) {
@@ -143,7 +144,7 @@ export default class Application extends EventEmitter {
                         this.viewMetadata[mvcPath] = eta._.merge(this.viewMetadata[includePath] || {}, this.viewMetadata[mvcPath]);
                     }
                 }
-                this.emit("load:view-metadata");
+                this.emit("load:view-metadata").catch(err => eta.logger.error(err));
             });
             await this.moduleLoaders[moduleName].loadAll();
             if (!this.moduleLoaders[moduleName].isInitialized) {

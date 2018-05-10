@@ -16,7 +16,7 @@ export default class HelperObject {
         return names;
     }
 
-    /** 
+    /**
      * Turns {a: 1, b: {x: 2, y: 3}} into [['a'], ['b'], ['b','x'], ['b','y']].
      * To exclude ['b'], pass includeObjects=false.
      */
@@ -24,7 +24,7 @@ export default class HelperObject {
         return Object.keys(obj).map(k => {
             let keys: string[][] = [[k]];
             if (typeof(obj[k]) === "object") {
-                const newKeys = this.recursiveKeys(obj[k], includeObjects).map(_k => [k].concat(_k));
+                const newKeys = this.recursiveKeys(obj[k], includeObjects).map(newKey => [k].concat(newKey));
                 keys = includeObjects ? keys.concat(newKeys) : newKeys;
             }
             return keys;

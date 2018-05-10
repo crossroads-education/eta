@@ -33,12 +33,12 @@ export default class DynamicRequestHandler extends RequestHandler {
             } else if (this.action.isAuthRequired) {
                 const isAuthorizedResults: boolean[] = await <any>this.app.emit("request:auth", this, this.action.permissionsRequired || []);
                 if (!isAuthorizedResults.includes(false)) {
-                    this.callController();
+                    await this.callController();
                 } else {
-                    this.renderError(eta.constants.http.AccessDenied);
+                    await this.renderError(eta.constants.http.AccessDenied);
                 }
             } else {
-                this.callController();
+                await this.callController();
             }
         } else {
             await this.serveView();
@@ -51,7 +51,7 @@ export default class DynamicRequestHandler extends RequestHandler {
     private async callController(): Promise<void> {
         const queryParams: any[] = this.buildQueryParams();
         if (queryParams === undefined) {
-            return await this.renderError(eta.constants.http.MissingParameters);
+            return this.renderError(eta.constants.http.MissingParameters);
         }
         let result: any; // return value from the controller's action
         try {
@@ -73,11 +73,11 @@ export default class DynamicRequestHandler extends RequestHandler {
             return;
         }
         if (this.res.statusCode !== 200) {
-            return await this.renderError(this.res.statusCode);
+            return this.renderError(this.res.statusCode);
         }
         if (result === undefined) {
             // if the action returns undefined, it wants us to render the associated view
-            return await this.serveView();
+            return this.serveView();
         }
         let val: string | Buffer = undefined;
         if (typeof(result) === "string" || result instanceof Buffer) {
@@ -116,21 +116,19 @@ export default class DynamicRequestHandler extends RequestHandler {
     private async serveView(): Promise<void> {
         const viewPath: string = this.app.viewFiles[this.req.mvcPath];
         if (viewPath === undefined || !await fs.pathExists(viewPath)) {
-            this.renderError(eta.constants.http.NotFound);
-            return;
+            return this.renderError(eta.constants.http.NotFound);
         }
         await this.app.emit("request:pre-response", this);
         if (this.res.finished) return;
         if (this.config.get("dev.enable")) {
-            this.res.view["compileDebug"] = true;
+            this.res.view.compileDebug = true;
         }
         let html: string;
         try {
             html = await this.renderView(viewPath);
         } catch (err) {
             eta.logger.error(`Rendering ${viewPath} failed: ${err.message}`);
-            this.renderError(eta.constants.http.InternalError);
-            return;
+            return this.renderError(eta.constants.http.InternalError);
         }
         if (this.shouldSaveLastPage()) {
             this.req.session.lastPage = this.req.mvcFullPath;

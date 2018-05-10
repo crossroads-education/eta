@@ -1,7 +1,7 @@
 import { expect } from "chai";
 import HelperDate from "../../helpers/date";
 
-describe("helpers/date", function() {
+describe("helpers/date", () => {
     const start: Date = new Date("2017-02-07");
     const end: Date = new Date("2017-05-10");
 
@@ -55,15 +55,15 @@ describe("helpers/date", function() {
         });
         it("should return the correct start dates", () => {
             const temp: Date = new Date("2017-02-05 00:00:00");
-            for (let i = 0; i < result.length; i++) {
-                expect(result[i].start.toDate()).to.deep.equal(temp);
+            for (const item of result) {
+                expect(item.start.toDate()).to.deep.equal(temp);
                 temp.setDate(temp.getDate() + 7);
             }
         });
         it("should return the correct end dates", () => {
             const temp: Date = new Date("2017-02-11 00:00:00");
-            for (let i = 0; i < result.length; i++) {
-                expect(result[i].end.toDate()).to.deep.equal(temp);
+            for (const item of result) {
+                expect(item.end.toDate()).to.deep.equal(temp);
                 temp.setDate(temp.getDate() + 7);
             }
         });

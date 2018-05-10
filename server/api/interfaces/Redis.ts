@@ -1,3 +1,3 @@
-export default interface Redis {
-    <T>(method: string, ...args: any[]): T;
-}
+type Redis = <T>(method: string, ...args: any[]) => T;
+
+export default Redis;

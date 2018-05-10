@@ -26,6 +26,10 @@ export default class Authenticator {
             req, res, next,
             config: this.app.configs[req.hostname] || this.app.configs.global
         };
+        if (req.query.redirectTo) {
+            req.session.lastPage = req.session.authFrom = req.query.redirectTo;
+            await eta.session.promise(req.session, "save");
+        }
         await this.app.emit("auth:pre", http);
         if (res.finished) return;
         const user = await new Promise((resolve, reject) => {

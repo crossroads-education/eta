@@ -56,9 +56,10 @@ export default class DynamicRequestHandler extends RequestHandler {
         let result: any; // return value from the controller's action
         try {
             // call the action with proper params (forcing correct context with `apply()`)
-            result = await (<any>this.controller)[this.action.name].apply(this.controller, queryParams);
+            result = await (<any>this.controller)[this.action.name](...queryParams);
         } catch (err) {
             eta.logger.error(err);
+            eta.logger.verbose("error occurred in controller for " + this.route.route + "/" + this.action.name);
             await this.renderError(eta.constants.http.InternalError);
             return;
         }

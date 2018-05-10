@@ -14,6 +14,7 @@ export default class StackLogger extends winston.Logger {
 
     public constructor(logDir: string, options?: winston.LoggerOptions) {
         super({
+            level: "verbose",
             transports: [
                 new winston.transports.Console({
                     formatter(options: {

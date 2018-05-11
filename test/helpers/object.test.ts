@@ -16,9 +16,20 @@ describe("helpers/object", () => {
     });
 
     describe("#getFunctionParameterNames()", () => {
-        function foo(a: number, b: string) { console.log(a, b); }
-        it("should get function parameters correctly", () => {
-            expect(HelperObject.getFunctionParameterNames(foo)).to.deep.equal(["a", "b"]);
+        it("should return correctly given a function with several parameters", () => {
+            expect(HelperObject.getFunctionParameterNames(
+                (a: number, b: string) => [a, b]
+            )).to.deep.equal(["a", "b"]);
+        });
+        it("should return correctly given a function with one parameter", () => {
+            expect(HelperObject.getFunctionParameterNames(
+                (a: number) => a
+            )).to.deep.equal(["a"]);
+        });
+        it("should return correctly given a function with no parameters", () => {
+            expect(HelperObject.getFunctionParameterNames(
+                () => { }
+            )).to.deep.equal([]);
         });
     });
 

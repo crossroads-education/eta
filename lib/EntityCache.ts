@@ -1,8 +1,7 @@
 import * as orm from "typeorm";
-import * as eta from "../eta";
+import * as eta from "@eta/eta";
 
 export default class EntityCache<T> {
-
     public repository: orm.Repository<T> = undefined;
 
     /**
@@ -45,14 +44,11 @@ export default class EntityCache<T> {
             // don't bother if cache is empty
         } else if (this.cache.length === 1 && this.repository !== undefined) {
             // just dump the single object normally, not worth generating SQL
-            this.repository.save(<any[]>this.cache);
+            this.repository.save(<any[]>this.cache).catch(console.error);
             this.cache = [];
         } else {
             // cache is big enough to justify generating SQL
-            this.dumpMany().then(() => { })
-            .catch(err => {
-                eta.logger.error(err);
-            });
+            this.dumpMany().catch(console.error);
         }
     }
 

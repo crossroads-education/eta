@@ -16,14 +16,25 @@ describe("helpers/object", () => {
     });
 
     describe("#getFunctionParameterNames()", () => {
-        function foo(a: number, b: string) { console.log(a, b); }
-        it("should get function parameters correctly", () => {
-            expect(HelperObject.getFunctionParameterNames(foo)).to.deep.equal(["a", "b"]);
+        it("should return correctly given a function with several parameters", () => {
+            expect(HelperObject.getFunctionParameterNames(
+                (a: number, b: string) => [a, b]
+            )).to.deep.equal(["a", "b"]);
+        });
+        it("should return correctly given a function with one parameter", () => {
+            expect(HelperObject.getFunctionParameterNames(
+                (a: number) => a
+            )).to.deep.equal(["a"]);
+        });
+        it("should return correctly given a function with no parameters", () => {
+            expect(HelperObject.getFunctionParameterNames(
+                () => { }
+            )).to.deep.equal([]);
         });
     });
 
     describe("#recursiveKeys()", () => {
-        const obj = {
+        const data = {
             foo: true,
             bar: {
                 a: true,
@@ -32,8 +43,7 @@ describe("helpers/object", () => {
                 }, true]
             }
         };
-        const keys = HelperObject.recursiveKeys(obj);
-        console.log(keys);
+        const keys = HelperObject.recursiveKeys(data);
         it("should return first-level keys", () => {
             expect(keys).to.deep.include(["foo"]);
         });
@@ -45,6 +55,10 @@ describe("helpers/object", () => {
         });
         it("should return array indices as keys", () => {
             expect(keys).to.deep.include(["bar", "b", "0"]);
+        });
+        const keysLeavesOnly = HelperObject.recursiveKeys(data, false);
+        it("should exclude objects if asked to", () => {
+          expect(keysLeavesOnly).to.deep.equal([["foo"], ["bar", "a"], ["bar", "b", "0", "c"], ["bar", "b", "1"]]);
         });
     });
 });

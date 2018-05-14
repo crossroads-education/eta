@@ -1,4 +1,4 @@
-import Application from "../../Application";
+import Application from "@eta/server/Application";
 
 export default abstract class LifecycleHandler {
     protected app: Application;

@@ -6,11 +6,14 @@ export default class HelperArray {
      * @param arr Array to build object from: [label: string, result: U]
      * @return Transformed object
      */
-    public static mapObject<T>(pairs: (string | T)[][]): {[key: string]: T} {
+    public static mapObject<T>(pairs: ((string | T)[] | {
+        key: string;
+        value: T;
+    })[]): {[key: string]: T} {
         const object: {[key: string]: T} = {};
         pairs.forEach(pair => {
-            const key = <string>pair[0];
-            object[key] = <T>pair[1];
+            const key = pair instanceof Array ? <string>pair[0] : pair.key;
+            object[key] = pair instanceof Array ? <T>pair[1] : pair.value;
         });
         return object;
     }

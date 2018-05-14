@@ -1,4 +1,5 @@
-import * as eta from "../../eta";
+import * as crypto from "crypto";
+import * as eta from "@eta/eta";
 import * as fs from "fs-extra";
 import * as mime from "mime";
 import RequestHandler from "../RequestHandler";
@@ -19,7 +20,8 @@ export default class StaticRequestHandler extends RequestHandler {
             this.res.setHeader("Pragma", "no-cache");
             this.res.setHeader("Expires", "0");
         } else if (this.mimeType !== "application/javascript" && this.mimeType !== "text/css") { // don't cache JS and CSS
-            const hash: string = eta.crypto.getUnique(new Buffer(this.staticPath + "-" + this.stats.mtime.getTime()));
+            // unique hash to detect changes
+            const hash = crypto.createHash("md5").update(this.staticPath + "-" + this.stats.mtimeMs).digest("hex");
             this.res.setHeader("Cache-Control", "max-age=" + 60 * 60 * 24 * 30); // 30 days
             this.res.setHeader("ETag", hash);
             if (this.req.header("If-None-Match") === hash) {

@@ -1,5 +1,5 @@
 import * as chokidar from "chokidar";
-import * as eta from "../eta";
+import * as eta from "@eta/eta";
 import * as events from "events";
 import * as fs from "fs-extra";
 import * as path from "path";
@@ -196,7 +196,7 @@ export default class ModuleLoader extends events.EventEmitter {
         }).on("change", (path: string) => {
             const route: eta.HttpRoute = this.loadController(path);
             if (route !== undefined) {
-                eta.logger.trace(`Reloaded controller: ${route.controller.prototype.constructor.name} (${route.route})`);
+                eta.logger.info(`Reloaded controller: ${route.controller.prototype.constructor.name} (${route.route})`);
             }
         });
         // view metadata
@@ -207,7 +207,7 @@ export default class ModuleLoader extends events.EventEmitter {
             path = path.replace(/\\/g, "/");
             const viewDir = this.config.dirs.views.find(d => path.startsWith(d));
             this.loadViewMetadataFile(path, viewDir, true).then(() => {
-                eta.logger.trace(`Reloaded view metadata: ${path.substring(viewDir.length)}`);
+                eta.logger.info(`Reloaded view metadata: ${path.substring(viewDir.length)}`);
             }).catch(err => {
                 eta.logger.error(err);
             });

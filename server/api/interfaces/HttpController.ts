@@ -1,3 +1,5 @@
+import * as redis from "redis";
+import Redis from "./Redis";
 import RequestHandler from "./RequestHandler";
 
 export default abstract class HttpController extends RequestHandler {
@@ -6,12 +8,11 @@ export default abstract class HttpController extends RequestHandler {
         Object.assign(this, init);
     }
 
-    public redis<T>(method: string, ...args: any[]): Promise<T> {
-        return new Promise<T>((resolve, reject) => {
-            (<any>this.app.redis)[method].bind(this.app.redis)(...args, (err: Error, result: T) => {
+    public redis: Redis = <T>(method: keyof redis.Commands<redis.RedisClient>, ...args: any[]): Promise<T> =>
+        new Promise<T>((resolve, reject) => {
+            this.app.redis[method].apply(this.app.redis, args.concat([(err: Error, result: T) => {
                 if (err) reject(err);
                 else resolve(result);
-            });
-        });
-    }
+            }]));
+        })
 }

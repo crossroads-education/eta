@@ -40,7 +40,9 @@ export default class WebServer {
     public async init(): Promise<boolean> {
         this.express = express();
         this.configureExpress();
+        await this.app.emit("server:middleware:before");
         this.setupMiddleware();
+        await this.app.emit("server:middleware:after");
         try {
             Authenticator.setup(this.app);
         } catch (err) {
@@ -49,7 +51,6 @@ export default class WebServer {
         }
         this.express.all("/*", this.onRequest.bind(this));
         this.setupHttpServer();
-        // await this.app.emit("pre-start");
         return true;
     }
 

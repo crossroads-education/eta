@@ -1,7 +1,7 @@
 /// <reference path="./def/express.d.ts" />
 import * as lodash from "lodash";
 /**
- * Link to the "underscore" library for convenience
+ * Link to lodash for convenience
  */
 export const _ = lodash;
 export * from "./helpers/index";

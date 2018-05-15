@@ -31,6 +31,10 @@ export default class Application extends promiseEvents.EventEmitter {
         this.server = new WebServer();
         this.server.app = this;
         await this.loadModules();
+        await Promise.all(Object.keys(this.moduleLoaders).map(async k =>
+            eta.logger.stackDirs[k] = (await fs.realpath(this.moduleLoaders[k].baseDir)).replace(/\\/g, "/")
+        ));
+        eta.logger.generateStackKeys();
         await this.emit("app:start");
         eta.logger.info("Connecting to the database and initalizing ORM...");
         await this.connectDatabases();

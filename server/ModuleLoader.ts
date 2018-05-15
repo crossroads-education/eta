@@ -23,6 +23,10 @@ export default class ModuleLoader extends events.EventEmitter {
     private app: Application;
     private requireFunc: (path: string) => any = require;
 
+    public get baseDir() {
+        return eta.constants.modulesPath + "/" + this.moduleName;
+    }
+
     public constructor(moduleName: string, app: Application) {
         super();
         this.moduleName = moduleName;

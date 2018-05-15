@@ -6,5 +6,7 @@ export default interface HttpAction {
     groupParams: boolean;
     method: "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
     params: {[key: string]: HttpActionParam};
+    isAuthRequired: boolean;
+    permissionsRequired: string[];
     [key: string]: any;
 }

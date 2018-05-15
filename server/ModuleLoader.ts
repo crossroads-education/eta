@@ -124,7 +124,9 @@ export default class ModuleLoader extends events.EventEmitter {
                         url: routeUrl + "/" + method,
                         method: "GET",
                         params,
-                        groupParams: false
+                        groupParams: false,
+                        isAuthRequired: false,
+                        permissionsRequired: []
                     });
                 })
         };

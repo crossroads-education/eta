@@ -58,8 +58,13 @@ export default class StackLogger extends winston.Logger {
         }
         msg = `[${stackKey} | ${filename}:${stack.getLineNumber()}] ${msg}`;
         this.stackLevel = STACK_LEVEL; // reset to default
-        return super.log(level, msg, meta);
+        return super.log(level, util.format(msg, ...meta));
     };
 
     error: (msg: string | Error, ...meta: any[]) => winston.LoggerInstance;
+
+    obj: winston.LeveledLogMethod = (...objects: any[]) => {
+        this.stackLevel += 1;
+        return this.info(objects.map(() => "%o").join(" "), ...objects);
+    }
 }

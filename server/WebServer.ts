@@ -113,6 +113,7 @@ export default class WebServer {
             bodyParser: bodyParser.urlencoded({ // sets up support for standard POST bodies
                 extended: true
             }),
+            bodyParserJSON: bodyParser.json(),
             passport: passport.initialize(),
             passportSession: passport.session()
         };

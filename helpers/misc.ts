@@ -18,7 +18,7 @@ export default class MiscHelper {
         const modules: any[] = (await HelperFS.recursiveReaddirs(dirs)).map(filename => {
             if (!filename.endsWith(".js")) return;
             try {
-                return requireFunc(filename);
+                return requireFunc(filename.slice(0, -3));
             } catch (err) {
                 errors.push(err);
                 return undefined;

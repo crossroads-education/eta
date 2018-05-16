@@ -35,12 +35,12 @@ export default class RequestHandler extends eta.RequestHandler {
         // initialize custom express properties
         this.transformExpressObjects();
         const staticPath: string = await this.isStaticFile();
-        if (staticPath !== undefined) {
-            const staticHandler = new StaticRequestHandler(this);
-            staticHandler.staticPath = staticPath;
-            return staticHandler.handle();
+        if (staticPath === undefined) {
+            return new DynamicRequestHandler(this).handle();
         }
-        await new DynamicRequestHandler(this).handle();
+        const staticHandler = new StaticRequestHandler(this);
+        staticHandler.staticPath = staticPath;
+        await staticHandler.handle();
     }
 
     private transformExpressObjects(): void {

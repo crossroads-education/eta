@@ -63,10 +63,10 @@ export default class DynamicRequestHandler extends RequestHandler {
             await this.renderError(eta.constants.http.InternalError);
             return;
         }
-        if (this.res.finished) {
+        if (this.res.finished || this.res.locals.finished) {
             // methods like IRequestHandler.redirect() mark res.finished as true,
             // and Express handles it poorly (usually by sending headers multiple times)
-            if (this.req.method === "GET") {
+            if (this.req.method === "GET" && !this.res.locals.finished) {
                 this.req.session.lastPage = this.req.mvcFullPath;
                 await this.saveSession();
             }

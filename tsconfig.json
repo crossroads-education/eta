@@ -21,7 +21,7 @@
   },
   "compileOnSave": true,
   "buildOnSave": false,
-  "exclude": ["node_modules", "typings", "modules/*/static/js"],
+  "exclude": ["node_modules", "typings", "modules/*/static/js", "modules/*/web"],
   "atom": {
     "rewriteTsconfig": false
   }

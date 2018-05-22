@@ -23,15 +23,6 @@ export default class RequestHandler extends eta.RequestHandler {
      * Entry point for a new request. Called by WebServer.
      */
     public async handleRequest(): Promise<void> {
-        if (this.config.get("dev.enable")) {
-            this.res.setHeader("Access-Control-Allow-Origin", "*");
-            this.res.setHeader("Access-Control-Allow-Headers", "*");
-            this.res.setHeader("Access-Control-Allow-Methods", "*");
-            if (this.req.method === "OPTIONS") {
-                this.res.sendStatus(200);
-                return;
-            }
-        }
         // initialize custom express properties
         this.transformExpressObjects();
         const staticPath: string = await this.isStaticFile();

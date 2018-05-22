@@ -117,6 +117,20 @@ export default class WebServer {
             passport: passport.initialize(),
             passportSession: passport.session()
         };
+        if (this.config.get("dev.enable")) { // basically disable CORS if dev mode is enabled
+            this.express.all("/*", (req, res, next) => {
+                if (!req.headers.origin) return next();
+                res.setHeader("Access-Control-Allow-Origin", "http://localhost:3000");
+                res.setHeader("Access-Control-Allow-Headers", "*");
+                res.setHeader("Access-Control-Allow-Methods", "*");
+                res.setHeader("Access-Control-Allow-Credentials", "true");
+                if (req.method === "OPTIONS") {
+                    res.sendStatus(200);
+                } else {
+                    next();
+                }
+            });
+        }
         // check for a static file before anything else
         this.express.use((req, res, next) => {
             const handler = this.createRequestHandler(req, res, next);

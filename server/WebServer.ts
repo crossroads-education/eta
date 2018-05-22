@@ -120,7 +120,7 @@ export default class WebServer {
         if (this.config.get("dev.enable")) { // basically disable CORS if dev mode is enabled
             this.express.all("/*", (req, res, next) => {
                 if (!req.headers.origin) return next();
-                res.setHeader("Access-Control-Allow-Origin", "http://localhost:3000");
+                res.setHeader("Access-Control-Allow-Origin", req.headers.origin);
                 res.setHeader("Access-Control-Allow-Headers", "*");
                 res.setHeader("Access-Control-Allow-Methods", "*");
                 res.setHeader("Access-Control-Allow-Credentials", "true");

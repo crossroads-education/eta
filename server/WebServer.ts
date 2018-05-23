@@ -117,7 +117,7 @@ export default class WebServer {
             passport: passport.initialize(),
             passportSession: passport.session()
         };
-        if (this.config.get("dev.enable")) { // basically disable CORS if dev mode is enabled
+        if (this.config.get("dev.enable")) { // basically disable any CORS security if dev mode is enabled
             this.express.all("/*", (req, res, next) => {
                 if (!req.headers.origin) return next();
                 res.setHeader("Access-Control-Allow-Origin", req.headers.origin);

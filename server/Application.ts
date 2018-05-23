@@ -107,7 +107,7 @@ export default class Application extends promiseEvents.EventEmitter {
             .map(m => this.configs.global.get<string[]>(`modules.${m}.dirs.staticFiles`) || [])
             .reduce((p, v) => p.concat(v), []);
         for (const staticDir of staticDirs) {
-            if (await fs.pathExists(staticDir + path)) {
+            if (await fs.pathExists(staticDir + path) && (await fs.lstat(staticDir + path)).isFile()) {
                 this.staticFiles[path] = staticDir + path;
                 return true;
             }

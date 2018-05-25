@@ -7,12 +7,12 @@ export default class EntityCache<T> {
     /**
      * Interval between cache dumps (in milliseconds)
      */
-    public interval = 250;
+    public interval = 50;
 
     /**
      * Number of objects to dump each <interval> milliseconds.
      */
-    public count = 50;
+    public count = 100;
 
     public archive: T[] = [];
     public cache: T[] = [];

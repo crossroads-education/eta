@@ -63,7 +63,7 @@ export default class StackLogger extends winston.Logger {
 
     error: (msg: string | Error, ...meta: any[]) => winston.LoggerInstance;
 
-    obj: winston.LeveledLogMethod = (...objects: any[]) => {
+    obj = (...objects: any[]) => {
         this.stackLevel += 1;
         return this.info(objects.map(() => "%o").join(" "), ...objects);
     }

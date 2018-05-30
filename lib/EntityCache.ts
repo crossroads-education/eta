@@ -121,12 +121,12 @@ export default class EntityCache<T> {
         }
         sql += sqlTokens.join(",");
         const generatedColumns = this.columns.filter(c => c.isGenerated).map(c => `"${c.databaseName}"`);
-        const returningSql = generatedColumns.length > 0 ? ` RETURNING ${generatedColumns.join(", ")}` : "";
         if (this.shouldUpdateOnDuplicate) {
-            sql += ` ON CONFLICT (${this.duplicateConstraints}) DO UPDATE SET ${columns.map(c => `"${c.databaseName}" = EXCLUDED."${c.databaseName}"`).join(",")}${returningSql}`;
+            sql += ` ON CONFLICT (${this.duplicateConstraints}) DO UPDATE SET ${columns.map(c => `"${c.databaseName}" = EXCLUDED."${c.databaseName}"`).join(",")}`;
         } else {
-            sql += ` ON CONFLICT DO NOTHING${returningSql}`;
+            sql += ` ON CONFLICT DO NOTHING`;
         }
+        sql += generatedColumns.length > 0 ? ` RETURNING ${generatedColumns.join(", ")}` : "";
         const resultRows: any[] = await this.connection.query(sql, params);
         await Promise.all(this.repository.metadata.manyToManyRelations.map(relation => {
             for (let i = 0; i < manyToManyRows[relation.propertyName].length; i++) {

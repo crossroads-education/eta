@@ -29,7 +29,10 @@ export default class EntityCache<T> {
         this.connection = this.repository.manager.connection;
         this.tableName = this.repository.metadata.tableName;
         if (this.duplicateConstraints === undefined) {
-            const indices: string[][] = this.repository.metadata.indices.filter(im => im.isUnique).map(im => im.columns.map(c => c.databaseName));
+            let indices: string[][] = this.repository.metadata.indices.filter(im => im.isUnique).map(im => im.columns.map(c => c.databaseName));
+            if (this.shouldUpdateOnDuplicate) {
+                indices = indices.slice(0, 1);
+            }
             this.duplicateConstraints = eta._.uniq(indices.reduce((p, v) => p.concat(v), [])).map(c => `"${c}"`).join(", ");
         }
     }

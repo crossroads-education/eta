@@ -29,7 +29,10 @@ export default class EntityCache<T> {
         this.connection = this.repository.manager.connection;
         this.tableName = this.repository.metadata.tableName;
         if (this.duplicateConstraints === undefined) {
-            const indices: string[][] = this.repository.metadata.indices.filter(im => im.isUnique).map(im => im.columns.map(c => c.databaseName));
+            let indices: string[][] = this.repository.metadata.indices.filter(im => im.isUnique).map(im => im.columns.map(c => c.databaseName));
+            if (this.shouldUpdateOnDuplicate) {
+                indices = indices.slice(0, 1);
+            }
             this.duplicateConstraints = eta._.uniq(indices.reduce((p, v) => p.concat(v), [])).map(c => `"${c}"`).join(", ");
         }
     }
@@ -121,12 +124,12 @@ export default class EntityCache<T> {
         }
         sql += sqlTokens.join(",");
         const generatedColumns = this.columns.filter(c => c.isGenerated).map(c => `"${c.databaseName}"`);
-        const returningSql = generatedColumns.length > 0 ? ` RETURNING ${generatedColumns.join(", ")}` : "";
         if (this.shouldUpdateOnDuplicate) {
-            sql += ` ON CONFLICT (${this.duplicateConstraints}) DO UPDATE SET ${columns.map(c => `"${c.databaseName}" = EXCLUDED."${c.databaseName}"`).join(",")}${returningSql}`;
+            sql += ` ON CONFLICT (${this.duplicateConstraints}) DO UPDATE SET ${columns.map(c => `"${c.databaseName}" = EXCLUDED."${c.databaseName}"`).join(",")}`;
         } else {
-            sql += ` ON CONFLICT DO NOTHING${returningSql}`;
+            sql += ` ON CONFLICT DO NOTHING`;
         }
+        sql += generatedColumns.length > 0 ? ` RETURNING ${generatedColumns.join(", ")}` : "";
         const resultRows: any[] = await this.connection.query(sql, params);
         await Promise.all(this.repository.metadata.manyToManyRelations.map(relation => {
             for (let i = 0; i < manyToManyRows[relation.propertyName].length; i++) {

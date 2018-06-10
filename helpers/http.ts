@@ -6,4 +6,9 @@ export default class HttpHelper {
         res.end();
         res.finished = true;
     }
+
+    public static getClientIP(req: express.Request) {
+        // x-forwarded-for can be a CSV of IPs, get the first
+        return ((req.headers["x-forwarded-for"] as string) || req.connection.remoteAddress || "").split(",")[0].trim();
+    }
 }

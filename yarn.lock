@@ -350,9 +350,9 @@
   dependencies:
     "@types/node" "*"
 
-"@xroadsed/eta-cli@^1.3.14":
-  version "1.3.15"
-  resolved "https://registry.yarnpkg.com/@xroadsed/eta-cli/-/eta-cli-1.3.15.tgz#72702db7b67ad4c17c330eac69c141532ea23933"
+"@xroadsed/eta-cli@^1.3.17":
+  version "1.3.17"
+  resolved "https://registry.yarnpkg.com/@xroadsed/eta-cli/-/eta-cli-1.3.17.tgz#2724378363881d0ce2f710cb16888c119f2c04c2"
   dependencies:
     "@oclif/command" "^1.4.2"
     "@oclif/config" "^1.3.59"

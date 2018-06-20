@@ -46,10 +46,13 @@ export default class StackLogger extends winston.Logger {
             this.stackDirs[b].length - this.stackDirs[a].length);
     }
 
-    log: winston.LogMethod = (level: string, msg: string, ...meta: any[]) => {
-        const errorIndex = (meta || []).findIndex(i => i.constructor.name.endsWith("Error"));
-        const err: Error = errorIndex === -1 ? new Error() : meta.splice(errorIndex, 1)[0];
-        if (errorIndex !== -1) this.stackLevel = 0;
+    log: winston.LogMethod = (level: string, msg: string | Error, ...meta: any[]) => {
+        const isErrorProvided = typeof(msg) !== "string";
+        const err: Error = !isErrorProvided ? new Error() : msg as Error;
+        if (isErrorProvided) {
+            this.stackLevel = 0;
+            msg = err.message;
+        }
         const stack = stackTrace.parse(err)[this.stackLevel];
         let filename = stack.getFileName().replace(/\\/g, "/");
         const stackKey = this.stackSortedKeys.find(k => filename.startsWith(this.stackDirs[k] + "/"));
@@ -61,7 +64,11 @@ export default class StackLogger extends winston.Logger {
         return super.log(level, util.format(msg, ...meta));
     };
 
-    error: (msg: string | Error, ...meta: any[]) => winston.LoggerInstance;
+    error = (msg: string | Error, ...meta: any[]) => {
+        const result = this.log("error", msg as string, ...meta);
+        if (typeof(msg) !== "string") console.error(msg);
+        return result;
+    };
 
     obj = (...objects: any[]) => {
         this.stackLevel += 1;

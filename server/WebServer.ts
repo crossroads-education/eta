@@ -66,15 +66,20 @@ export default class WebServer {
     }
 
     public start(): void {
-        const onHttpServerError = (err: Error) => {
-            eta.logger.error("Web server error occurred: " + err.message);
+        const onHttpServerError = (err: Error & { code: string; }) => {
+            if (err.code === "EADDRINUSE") {
+                eta.logger.error("Can't start server, port is already in use.");
+                this.close().then(() => process.exit(1));
+            } else {
+                eta.logger.error("Web server error occurred: " + err.message);
+            }
         };
         this.server.on("error", onHttpServerError);
         if (this.redirectServer) {
             this.redirectServer.on("error", onHttpServerError);
         }
         const port: number = this.config.get(`http${this.config.get("https.enable") ? "s" : ""}.port`);
-        this.server.listen(port, () => {
+        this.server.listen(port, "0.0.0.0", () => {
             eta.logger.info("Web server (main) started on port " + port);
             (<Promise<void>><any>this.app.emit("server:start")).catch(err => {
                 eta.logger.error(err);

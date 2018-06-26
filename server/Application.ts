@@ -40,7 +40,7 @@ export default class Application extends promiseEvents.EventEmitter {
         await this.connectDatabases();
         eta.logger.info("Successfully connected to the database.");
         try {
-            this.redis = <any>await this.connectRedis();
+            this.redis = await this.connectRedis();
         } catch (err) {
             eta.logger.error(err);
             return false;
@@ -90,7 +90,7 @@ export default class Application extends promiseEvents.EventEmitter {
             this.configs.global.get("session.host"));
         return new Promise<redis.RedisClient>((resolve, reject) => {
             tempClient.on("error", reject);
-            tempClient.on("ready", resolve);
+            tempClient.on("ready", () => resolve(tempClient));
         });
     }
 

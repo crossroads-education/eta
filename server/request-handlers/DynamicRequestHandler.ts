@@ -104,7 +104,7 @@ export default class DynamicRequestHandler extends RequestHandler {
         }
         const params = Object.values(this.action.params);
         // check for required params which aren't provided
-        if (params.find(p => p.isRequired && !rawParams[p.name])) return undefined;
+        if (params.find(p => p.isRequired && rawParams[p.name] === undefined)) return undefined;
         return params.map(p => {
             // don't try to convert params intended to be strings
             if (p.type === String) return rawParams[p.name];

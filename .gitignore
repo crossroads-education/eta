@@ -10,3 +10,5 @@
 /db.ts
 /docker-compose.override.yml
 index.ts
+.DS_Store
+.vscode

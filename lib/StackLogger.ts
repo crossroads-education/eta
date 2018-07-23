@@ -4,12 +4,8 @@ import * as util from "util";
 import * as winston from "winston";
 const WinstonDailyRotateFile: winston.DailyRotateFileTransportInstance = require("winston-daily-rotate-file");
 
-const STACK_LEVEL = 2;
-
 export default class StackLogger extends winston.Logger {
     stackDirs: {[key: string]: string} = {};
-    /** any changes to this variable only have effect on the next log() call */
-    stackLevel = STACK_LEVEL;
     private stackSortedKeys: string[] = [];
 
     public constructor(logDir: string, options?: winston.LoggerOptions) {
@@ -46,32 +42,24 @@ export default class StackLogger extends winston.Logger {
             this.stackDirs[b].length - this.stackDirs[a].length);
     }
 
-    log: winston.LogMethod = (level: string, msg: string | Error, ...meta: any[]) => {
-        const isErrorProvided = typeof(msg) !== "string";
-        const err: Error = !isErrorProvided ? new Error() : msg as Error;
-        if (isErrorProvided) {
-            this.stackLevel = 0;
-            msg = err.message;
-        }
-        const stack = stackTrace.parse(err)[this.stackLevel];
+    private getStackString = (err: Error, level: number) => {
+        const stack = stackTrace.parse(err)[level];
         let filename = stack.getFileName().replace(/\\/g, "/");
-        const stackKey = this.stackSortedKeys.find(k => filename.startsWith(this.stackDirs[k] + "/"));
-        if (stackKey) {
-            filename = filename.substring(this.stackDirs[stackKey].length + 1);
-        }
-        msg = `[${stackKey} | ${filename}:${stack.getLineNumber()}] ${msg}`;
-        this.stackLevel = STACK_LEVEL; // reset to default
-        return super.log(level, util.format(msg, ...meta));
+        const key = this.stackSortedKeys.find(k => filename.startsWith(this.stackDirs[k] + "/"));
+        if (key !== undefined) filename = filename.substring(this.stackDirs[key].length + 1);
+        return `[${key !== undefined ? `${key} | ` : ""}${filename}:${stack.getLineNumber()}]`;
     };
+
+    log: winston.LogMethod = (level: string, msg: string, ...meta: any[]) =>
+        super.log(level, util.format(`${this.getStackString(new Error(), 2)} ${msg}`, ...meta));
 
     error = (msg: string | Error, ...meta: any[]) => {
-        const result = this.log("error", msg as string, ...meta);
-        if (typeof(msg) !== "string") console.error(msg);
-        return result;
+        if (typeof(msg) === "string") return this.log("error", msg, ...meta);
+        const level = (meta.length > 0 && typeof(meta[0]) === "number") ? meta[0] : 0;
+        const logResult = super.log("error", this.getStackString(msg, level) + " " + msg.message);
+        console.error(msg);
+        return logResult;
     };
 
-    obj = (...objects: any[]) => {
-        this.stackLevel += 1;
-        return this.info(objects.map(() => "%o").join(" "), ...objects);
-    }
+    obj = (...objects: any[]) => this.info(objects.map(() => "%o").join(" "), ...objects);
 }

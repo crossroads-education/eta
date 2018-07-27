@@ -69,7 +69,7 @@ export default class WebServer {
         const onHttpServerError = (err: Error & { code: string; }) => {
             if (err.code === "EADDRINUSE") {
                 eta.logger.error("Can't start server, port is already in use.");
-                this.close().then(() => process.exit(1));
+                this.close().then(() => process.exit(1)).catch(err => eta.logger.error(err));
             } else {
                 eta.logger.error("Web server error occurred: " + err.message);
             }

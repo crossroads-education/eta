@@ -12,3 +12,4 @@
 index.ts
 .DS_Store
 .vscode
+package-lock.json

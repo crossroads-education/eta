@@ -48,7 +48,15 @@ export default class DynamicRequestHandler extends RequestHandler {
      * Loads and calls any controller method applicable to this request.
      * It is assumed that a controller is defined for this request, if not an action / route.
      */
-    private async callController(): Promise<void> {
+    private async callController(skipMiddleWare = false): Promise<void> {
+        if (!skipMiddleWare && this.action.middleWare) {
+            const mwPromise = new Promise((succeed, fail) => {
+                this.action.middleWare(this.req, this.res, (err: any, data: any) => {
+                    if (err) fail(err); else succeed(data);
+                });
+            });
+            return mwPromise.then(() => this.callController(true));
+        }
         const queryParams: any[] = this.buildQueryParams();
         if (queryParams === undefined) {
             return this.renderError(eta.constants.http.MissingParameters);

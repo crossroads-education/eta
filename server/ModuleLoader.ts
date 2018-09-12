@@ -127,6 +127,7 @@ export default class ModuleLoader extends events.EventEmitter {
                         name: method,
                         url: routeUrl + "/" + method,
                         method: "GET",
+                        middleWare: undefined,
                         params,
                         groupParams: false,
                         isAuthRequired: false,

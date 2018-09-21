@@ -6,7 +6,7 @@ import RepositoryManager from "@eta/db";
 
 abstract class RequestHandler {
     public app: Application;
-    public req: express.Request;
+    public req: express.Request & { db?: RepositoryManager };
     public res: express.Response;
     public next: express.NextFunction;
     public config: Configuration;

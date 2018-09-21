@@ -7,7 +7,7 @@ import * as expressSession from "express-session";
 import * as fs from "fs-extra";
 import * as http from "http";
 import * as https from "https";
-import * as multer from "multer";
+// import * as multer from "multer";
 import * as passport from "passport";
 import * as eta from "@eta/eta";
 import Application from "./Application";
@@ -113,9 +113,9 @@ export default class WebServer {
                 saveUninitialized: false,
                 secret: this.config.get("session.secret")
             }),
-            multer: multer({ // sets up support for file uploads
-                storage: multer.memoryStorage()
-            }).any(),
+            // multer: multer({ // sets up support for file uploads
+            //     storage: multer.memoryStorage()
+            // }).any(),
             bodyParser: bodyParser.urlencoded({ // sets up support for standard POST bodies
                 extended: true
             }),

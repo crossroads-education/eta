@@ -8,6 +8,7 @@ export default class DynamicRequestHandler extends RequestHandler {
     private controller: eta.HttpController;
     public async handle(): Promise<void> {
         this.route = this.app.controllers[this.path.route];
+        this.req.db = this.db; // make repository handler available to custom middleware
         if (this.route !== undefined) {
             this.controller = new this.route.controller({
                 req: this.req,
@@ -48,7 +49,15 @@ export default class DynamicRequestHandler extends RequestHandler {
      * Loads and calls any controller method applicable to this request.
      * It is assumed that a controller is defined for this request, if not an action / route.
      */
-    private async callController(): Promise<void> {
+    private async callController(skipMiddleWare = false): Promise<void> {
+        if (!skipMiddleWare && this.action.middleWare) {
+            const mwPromise = new Promise((succeed, fail) => {
+                this.action.middleWare(this.req, this.res, (err: any, data: any) => {
+                    if (err) fail(err); else succeed(data);
+                });
+            });
+            return mwPromise.then(() => this.callController(true));
+        }
         const queryParams: any[] = this.buildQueryParams();
         if (queryParams === undefined) {
             return this.renderError(eta.constants.http.MissingParameters);
@@ -63,7 +72,7 @@ export default class DynamicRequestHandler extends RequestHandler {
             await this.renderError(eta.constants.http.InternalError);
             return;
         }
-        if (this.res.finished || this.res.locals.finished) {
+        if ((this.req as any).etaFinished || this.res.finished || this.res.locals.finished) {
             // methods like IRequestHandler.redirect() mark res.finished as true,
             // and Express handles it poorly (usually by sending headers multiple times)
             if (this.req.method === "GET" && !this.res.locals.finished) {

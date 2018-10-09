@@ -30,7 +30,7 @@
     "no-for-in-array": true,
     "no-inferrable-types": true,
     "no-internal-module": true,
-    "no-null-keyword": true,
+    "no-null-keyword": false,
     "no-return-await": true,
     "no-string-literal": true,
     "no-string-throw": true,

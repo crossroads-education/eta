@@ -102,6 +102,11 @@ export default class RequestHandler extends eta.RequestHandler {
         return RequestHandler.renderError(this, code);
     }
 
+    protected sendError(code: number, error: any): void {
+        this.res.statusCode = code;
+        this.res.send(error);
+    }
+
     protected shouldSaveLastPage(): boolean {
         return !this.req.mvcPath.includes("/auth/") && this.req.method === "GET" && this.req.mvcPath !== "/home/login" && this.req.mvcPath !== "/home/logout";
     }

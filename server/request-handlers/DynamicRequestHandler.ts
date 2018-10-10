@@ -24,8 +24,8 @@ export default class DynamicRequestHandler extends RequestHandler {
         if (this.res.finished) return;
         if (this.controller && this.action) {
             if (this.action.isAuthRequired && !this.isLoggedIn()) { // requires login but is not logged in
-                if (this.req.header("x-requested-with") === "XMLHttpRequest") {
-                    return this.renderError(eta.constants.http.AccessDenied);
+                if (this.isAPICall()) {
+                    return this.sendError(eta.constants.http.AccessDenied, { error: "Access denied." });
                 }
                 this.req.session.authFrom = this.req.mvcFullPath;
                 if (this.shouldSaveLastPage) this.req.session.lastPage = this.req.mvcFullPath;
@@ -60,7 +60,11 @@ export default class DynamicRequestHandler extends RequestHandler {
         }
         const queryParams: any[] = this.buildQueryParams();
         if (queryParams === undefined) {
-            return this.renderError(eta.constants.http.MissingParameters);
+            if (this.isAPICall()) {
+                return this.sendError(eta.constants.http.MissingParameters, "Missing parameters.");
+            } else {
+                return this.renderError(eta.constants.http.MissingParameters);
+            }
         }
         let result: any; // return value from the controller's action
         try {
@@ -69,8 +73,11 @@ export default class DynamicRequestHandler extends RequestHandler {
         } catch (err) {
             eta.logger.verbose("error occurred in controller for " + this.route.route + "/" + this.action.name);
             eta.logger.error(err);
-            await this.renderError(eta.constants.http.InternalError);
-            return;
+            if (this.isAPICall()) {
+                return this.sendError(eta.constants.http.InternalError, "Internal Error.");
+            } else {
+                return this.renderError(eta.constants.http.InternalError);
+            }
         }
         if ((this.req as any).etaFinished || this.res.finished || this.res.locals.finished) {
             // methods like IRequestHandler.redirect() mark res.finished as true,
@@ -82,7 +89,11 @@ export default class DynamicRequestHandler extends RequestHandler {
             return;
         }
         if (this.res.statusCode !== 200) {
-            return this.renderError(this.res.statusCode);
+            if (this.isAPICall()) {
+                return this.sendError(this.res.statusCode, result);
+            } else {
+                return this.renderError(this.res.statusCode);
+            }
         }
         if (result === undefined) {
             // if the action returns undefined, it wants us to render the associated view
@@ -96,6 +107,10 @@ export default class DynamicRequestHandler extends RequestHandler {
             this.res.set("Content-Type", "application/json");
         }
         this.res.send(val);
+    }
+
+    private isAPICall() {
+        return this.req.header("x-requested-with") === "XMLHttpRequest";
     }
 
     private buildQueryParams(): any[] {

@@ -6,7 +6,7 @@ export default class TestRunner {
     private pathPrefix: string;
     private apiToken: string;
 
-    public constructor(baseUrl = "http://localhost:3000", pathPrefix = "", apiToken = "ari5END35D__53") {
+    public constructor(baseUrl = "http://localhost:3000", pathPrefix = "", apiToken = "") {
         this.agent = supertest.agent(baseUrl);
         this.pathPrefix = pathPrefix;
         this.apiToken = apiToken;

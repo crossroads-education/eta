@@ -39,7 +39,15 @@ export default class DynamicRequestHandler extends RequestHandler {
                     await this.renderError(eta.constants.http.AccessDenied);
                 }
             } else {
-                await this.callController();
+                try {
+                    await this.callController();
+                } catch (error) {
+                    if (this.isAPICall()) {
+                        return this.sendError(eta.constants.http.InternalError, { error: error.toString() });
+                    } else {
+                        return this.renderError(eta.constants.http.InternalError, error.toString());
+                    }
+                }
             }
         } else {
             await this.serveView();

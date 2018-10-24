@@ -94,6 +94,7 @@ export default class WebServer {
 
     private configureExpress(): void {
         this.express.set("view engine", "pug");
+        this.express.set("trust proxy", "loopback"); // this makes express look at the x-forwarded-* headers set by e.g. apache with proxy server setup
         if (this.config.get("dev.enable")) {
             this.express.locals.pretty = true; // render Pug as readable HTML
             this.express.disable("view cache"); // pull Pug views from filesystem on request

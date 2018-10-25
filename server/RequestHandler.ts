@@ -98,11 +98,12 @@ export default class RequestHandler extends eta.RequestHandler {
         });
     }
 
-    protected renderError(code: number): Promise<void> {
-        return RequestHandler.renderError(this, code);
+    protected renderError(code: number, description?: string): Promise<void> {
+        return RequestHandler.renderError(this, code, description);
     }
 
     protected sendError(code: number, error: any): void {
+        console.log("Sending error response:", code, error);
         this.res.statusCode = code;
         this.res.send(error);
     }
@@ -111,7 +112,8 @@ export default class RequestHandler extends eta.RequestHandler {
         return !this.req.mvcPath.includes("/auth/") && this.req.method === "GET" && this.req.mvcPath !== "/home/login" && this.req.mvcPath !== "/home/logout";
     }
 
-    public static async renderError(http: eta.HttpRequest, code: number): Promise<void> {
+    public static async renderError(http: eta.HttpRequest, code: number, description?: string): Promise<void> {
+        console.log("Sending error page:", http.req.fullUrl, code, description);
         if (http.res.statusCode !== code) {
             http.res.statusCode = code;
         }
@@ -122,6 +124,7 @@ export default class RequestHandler extends eta.RequestHandler {
         }
         http.res.render(errorView, {
             errorCode: code,
+            errorDescription: description,
             email: "support@" + http.config.get("http.host")
         });
     }

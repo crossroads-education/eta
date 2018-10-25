@@ -7,7 +7,7 @@ html
         h1 Error #{errorCode}
         p
             block explanation
-                | There is no further information available for this error code.
+                | #{errorDescription}
         p Please report this error code to the email below, along with a description of what you were doing when the error occurred.
         footer For further support, please contact us at 
             a(href="mailto:" + email) #{email}

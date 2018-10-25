@@ -117,7 +117,6 @@ export default class RequestHandler extends eta.RequestHandler {
         if (http.res.statusCode !== code) {
             http.res.statusCode = code;
         }
-        http.res.statusCode = 500;
         const errorDir: string = eta.constants.basePath + "server/errors/";
         let errorView: string = errorDir + code.toString();
         if (!await fs.pathExists(errorView + ".pug")) {

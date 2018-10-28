@@ -131,7 +131,9 @@ export default class DynamicRequestHandler extends RequestHandler {
             } catch { return rawParams[name]; }
         };
         if (this.action.groupParams) {
-            return [Object.keys(rawParams).map(checkParam)];
+            const processedParams: any = {};
+            Object.keys(rawParams).forEach(key => processedParams[key] = checkParam(key));
+            return [processedParams];
         }
         const params = Object.values(this.action.params);
         // check for required params which aren't provided

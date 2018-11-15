@@ -1,4 +1,4 @@
-import * as moment from "moment";
+const moment = require("moment");
 
 export default class HelperDate {
     public static Week: Week;
@@ -33,8 +33,8 @@ export default class HelperDate {
         const startMonth: number = moment(start).month() + 1;
         const endMonth: number = moment(end).month() + 1;
         for (let month: number = startMonth; month < endMonth; month++) {
-            const start: moment.Moment = moment(month, "M");
-            const end: moment.Moment = moment(start).add(1, "month").subtract(1, "day");
+            const start = moment(month, "M");
+            const end = moment(start).add(1, "month").subtract(1, "day");
             months.push({
                 number: month,
                 name: start.format("MMMM"),
@@ -55,8 +55,8 @@ export default class HelperDate {
         const startWeek: number = moment(startDate).week();
         const endWeek: number = moment(endDate).week();
         for (let week: number = startWeek; week < endWeek; week++) {
-            const start: moment.Moment = moment(week + "-" + startDate.getFullYear(), "w-YYYY");
-            const end: moment.Moment = moment(start).add(6, "day");
+            const start = moment(week + "-" + startDate.getFullYear(), "w-YYYY");
+            const end = moment(start).add(6, "day");
             weeks.push({
                 number: week,
                 start,
@@ -69,8 +69,8 @@ export default class HelperDate {
 
 class Week {
     public number: number;
-    public start: moment.Moment;
-    public end: moment.Moment;
+    public start: any;
+    public end: any;
 }
 
 class Month {

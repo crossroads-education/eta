@@ -50,6 +50,10 @@ jobs:
           command:
             sudo apt-get -y -qq install awscli
       - run:
+          name: Update permissions on cache
+          command:
+            sudo chown -R cirlcleci:circleci /
+      - run:
           name: Setting Signature Version 4 for S3 Request Authentication
           command: aws configure set default.s3.signature_version s3v4
       - run:

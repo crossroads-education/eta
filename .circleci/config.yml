@@ -50,7 +50,7 @@ jobs:
           command: echo ${CIRCLE_BRANCH}
        run:
           name: Show info
-          command: pwd && ls -a
+          command: pwd && ls
       - restore_cache:
           key: v1-build-{{ .Environment.CIRCLE_BRANCH }}-{{ .Environment.CIRCLE_SHA1 }}
       - run:

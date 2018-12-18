@@ -35,27 +35,27 @@ jobs:
           path: /home/circleci/junit
       - store_artifacts:
           path: /home/circleci/junit
-    deploy:
-      working_directory: ~/project
-      docker:
-        - image: circleci/node:8.10
-      steps:
-        - run:
-            name: Show current branch
-            command: echo ${CIRCLE_BRANCH}
-        - restore_cache:
-            key: v1-build-{{ .Environment.CIRCLE_BRANCH }}-{{ .Environment.CIRCLE_SHA1 }}
-        - run:
-            name: Install aws cli
-            command:
-              sudo apt-get -y -qq install awscli
-        - run:
-            name: Setting Signature Version 4 for S3 Request Authentication
-            command: aws configure set default.s3.signature_version s3v4
-        - run:
-            name: Deploy to S3
-            command:
-              aws --region us-east-1 s3 sync controllers s3://eta-deployments/eta/${CIRCLE_BRANCH}/ --delete
+  deploy:
+    working_directory: ~/project
+    docker:
+      - image: circleci/node:8.10
+    steps:
+      - run:
+          name: Show current branch
+          command: echo ${CIRCLE_BRANCH}
+      - restore_cache:
+          key: v1-build-{{ .Environment.CIRCLE_BRANCH }}-{{ .Environment.CIRCLE_SHA1 }}
+      - run:
+          name: Install aws cli
+          command:
+            sudo apt-get -y -qq install awscli
+      - run:
+          name: Setting Signature Version 4 for S3 Request Authentication
+          command: aws configure set default.s3.signature_version s3v4
+      - run:
+          name: Deploy to S3
+          command:
+            aws --region us-east-1 s3 sync controllers s3://eta-deployments/eta/${CIRCLE_BRANCH}/ --delete
 
 deployment:
   staging:

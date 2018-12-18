@@ -22,6 +22,10 @@ jobs:
           paths:
             - node_modules
           key: v1-dependencies-{{ checksum "package.json" }}
+      - save_cache:
+          key: v1-build-{{ .Environment.CIRCLE_BRANCH }}-{{ .Environment.CIRCLE_SHA1 }}
+          paths:
+            - /
       - run:
           name: Unit Tests
           command: npm run eta -- test:core --reporter=mocha-junit-reporter
@@ -31,3 +35,56 @@ jobs:
           path: /home/circleci/junit
       - store_artifacts:
           path: /home/circleci/junit
+    deploy:
+      working_directory: ~/project
+      docker:
+        - image: circleci/node:8.10
+      steps:
+        - run:
+            name: Show current branch
+            command: echo ${CIRCLE_BRANCH}
+        - restore_cache:
+            key: v1-build-{{ .Environment.CIRCLE_BRANCH }}-{{ .Environment.CIRCLE_SHA1 }}
+        - run:
+            name: Install aws cli
+            command:
+              sudo apt-get -y -qq install awscli
+        - run:
+            name: Setting Signature Version 4 for S3 Request Authentication
+            command: aws configure set default.s3.signature_version s3v4
+        - run:
+            name: Deploy to S3
+            command:
+              aws --region us-east-1 s3 sync controllers s3://eta-deployments/eta/${CIRCLE_BRANCH}/ --delete
+
+deployment:
+  staging:
+    branch: circle-ci
+    codedeploy:
+      eta-deployment:
+        deployment_group: eta-deployment-group
+        deployment_config: CodeDeployDefault.OneAtATime
+        application_root: /
+        region: us-east-1
+        revision_location:
+          revision_type: S3
+          s3_location:
+            bucket: eta-deployments
+            key_pattern: eta/${CIRCLE_BRANCH}/
+
+workflows:
+  version: 2
+  build_and_deploy:
+    jobs:
+      - build
+      - deploy:
+          requires:
+            - build
+          filters:
+            branches:
+              only:
+                - deployments
+                - circle-ci
+                - dev
+                - staging
+                - master

@@ -1,0 +1,18 @@
+version: 0.0
+os: linux
+files:
+  - source: /
+    destination: /root/sigma/
+hooks:
+  BeforeInstall:
+    - location: /root/scripts/install_dependencies
+      timeout: 300
+      runas: root
+  ApplicationStop:
+    - location: /root/scripts/stop_server
+      timeout: 300
+      runas: root
+  ApplicationStart:
+    - location: /root/scripts/start_server
+      timeout: 300
+      runas: root

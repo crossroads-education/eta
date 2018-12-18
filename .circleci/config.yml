@@ -66,7 +66,7 @@ jobs:
       - run:
           name: Deploy to S3
           command:
-            aws --region us-east-1 s3 sync / s3://eta-deployments/eta/${CIRCLE_BRANCH}/ --delete
+            aws --region us-east-1 s3 sync /home/circleci/project s3://eta-deployments/eta/${CIRCLE_BRANCH}/ --delete
 
 deployment:
   staging:

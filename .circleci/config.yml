@@ -52,7 +52,7 @@ jobs:
       - run:
           name: Update permissions on cache
           command:
-            sudo chown -R cirlcleci:circleci /
+            sudo chown -R $USER /
       - run:
           name: Setting Signature Version 4 for S3 Request Authentication
           command: aws configure set default.s3.signature_version s3v4

@@ -59,18 +59,18 @@ jobs:
 
 deployment:
   staging:
-    branch: circle-ci
+    branch: deployments
     codedeploy:
       eta-deployment:
         deployment_group: eta-deployment-group
         deployment_config: CodeDeployDefault.OneAtATime
-        application_root: /
-        region: us-east-1
-        revision_location:
-          revision_type: S3
-          s3_location:
-            bucket: eta-deployments
-            key_pattern: eta/${CIRCLE_BRANCH}/
+        # application_root: /
+        # region: us-east-1
+        # revision_location:
+        #   revision_type: S3
+        #   s3_location:
+        #     bucket: eta-deployments
+        #     key_pattern: eta/${CIRCLE_BRANCH}/
 
 workflows:
   version: 2

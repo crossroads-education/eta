@@ -25,7 +25,12 @@ jobs:
       - save_cache:
           key: v1-build-{{ .Environment.CIRCLE_BRANCH }}-{{ .Environment.CIRCLE_SHA1 }}
           paths:
-            - /
+            - helpers
+            - lib
+            - server
+            - appspec.yml
+            - package.json
+            - package-lock.json
       - run:
           name: Unit Tests
           command: npm run eta -- test:core --reporter=mocha-junit-reporter
@@ -49,10 +54,6 @@ jobs:
           name: Install aws cli
           command:
             sudo apt-get -y -qq install awscli
-      - run:
-          name: Update permissions on cache
-          command:
-            sudo chown -R $USER /
       - run:
           name: Setting Signature Version 4 for S3 Request Authentication
           command: aws configure set default.s3.signature_version s3v4

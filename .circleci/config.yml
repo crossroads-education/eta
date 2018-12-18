@@ -54,6 +54,9 @@ jobs:
       - restore_cache:
           key: v1-build-{{ .Environment.CIRCLE_BRANCH }}-{{ .Environment.CIRCLE_SHA1 }}
       - run:
+          name: Show info again
+          command: pwd && ls -a
+      - run:
           name: Install aws cli
           command:
             sudo apt-get -y -qq install awscli
